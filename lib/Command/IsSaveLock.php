@@ -19,29 +19,17 @@
  *
  */
 
-namespace OCA\Documents\Session;
+namespace OCA\DocumentServer\Command;
 
-use OCA\Documents\Command\CommandDispatcher;
-use OCP\ICacheFactory;
-use OCP\IPC\IIPCFactory;
+use OCA\DocumentServer\Channel\Session;
+use OCP\IPC\IIPCChannel;
 
-class SessionFactory {
-	private $ipcFactory;
-	private $memcacheFactory;
-
-	public function __construct(IIPCFactory $ipcFactory, ICacheFactory $memcacheFactory) {
-		$this->ipcFactory = $ipcFactory;
-		$this->memcacheFactory = $memcacheFactory;
+class IsSaveLock implements ICommandHandler {
+	public function getType(): string {
+		return 'isSaveLock';
 	}
 
-	public function getSession(string $id, CommandDispatcher $commandDispatcher, array $initialResponses = []) {
-		$key = "document_$id";
-
-		return new Session(
-			$this->ipcFactory->getChannel($key),
-			$this->memcacheFactory->createLocal($key),
-			$commandDispatcher,
-			$initialResponses
-		);
+	public function handle(array $command, Session $session, IIPCChannel $channel, CommandDispatcher $commandDispatcher): void {
+		$channel->pushMessage('{"type":"saveLock","saveLock":false}');
 	}
 }

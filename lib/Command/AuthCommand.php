@@ -19,36 +19,49 @@
  *
  */
 
-namespace OCA\Documents\Command;
+namespace OCA\DocumentServer\Command;
 
+use OCA\DocumentServer\Channel\Session;
+use OCA\DocumentServer\Channel\SessionManager;
+use OCA\DocumentServer\Document\Change;
+use OCA\DocumentServer\Document\DocumentStore;
 use OCP\IPC\IIPCChannel;
 use OCP\IURLGenerator;
 use function Sabre\HTTP\encodePathSegment;
 
 class AuthCommand implements ICommandHandler {
 	private $urlGenerator;
+	private $documentStore;
+	private $sessionManager;
 
-	public function __construct(IURLGenerator $urlGenerator) {
+	public function __construct(IURLGenerator $urlGenerator, DocumentStore $documentStore, SessionManager $sessionManager) {
 		$this->urlGenerator = $urlGenerator;
+		$this->documentStore = $documentStore;
+		$this->sessionManager = $sessionManager;
 	}
-
 
 	public function getType(): string {
 		return 'auth';
 	}
 
-	public function handle(array $command, IIPCChannel $channel, CommandDispatcher $commandDispatcher): void {
+	public function handle(array $command, Session $session, IIPCChannel $channel, CommandDispatcher $commandDispatcher): void {
+		$changes = $this->documentStore->getChangesForDocument($session->getDocumentId());
+
 		$channel->pushMessage(json_encode([
-			'type' => 'authChange',
-			'changes' => [],
+			'type' => 'authChanges',
+			'changes' => array_map(function(Change $change) {
+				return $change->formatForClient();
+			}, $changes),
 		]));
 
 		$user = $command['user'];
 
+		$this->sessionManager->newSession($session->getSessionId(), $session->getDocumentId(), $user['id'], $user['id']);
+
 		$channel->pushMessage(json_encode([
 			'type' => 'auth',
 			'result' => 1,
-			'sessionId' => 'foo',
+			'sessionId' => $session->getSessionId(),
 			'sessionTimeConnect' => time(),
 			'participants' => [
 				'id' => $user['id'],
@@ -56,13 +69,13 @@ class AuthCommand implements ICommandHandler {
 				'username' => $user['username'],
 				'indexUser' => 1,
 				'view' => true,
-				'connectionId' => 'foo',
+				'connectionId' => $session->getSessionId(),
 				'isCloseCoAuthoring' => false,
 			],
 			'locks' => [],
 			'indexUser' => 1,
 			'g_cAscSpellCheckUrl' => '/spellchecker',
-			'buildVersion' => '5.0.0',
+			'buildVersion' => '5.3.2',
 			'buildNumber' => 20,
 			'licenseType' => 3,
 			'settings' => [
@@ -75,25 +88,28 @@ class AuthCommand implements ICommandHandler {
 		]));
 
 
-		$openCmd = $command['openCmd'];
-		$documentUrl = $openCmd['url'];
-		$inputFormat = $openCmd['format'];
+		if (isset($command['openCmd'])) {
+			$openCmd = $command['openCmd'];
+			$docId = $command['docid'];
+			$documentUrl = $openCmd['url'];
+			$inputFormat = $openCmd['format'];
 
-		$channel->pushMessage(json_encode([
-			'type' => 'documentOpen',
-			'data' => [
-				'type' => 'open',
-				'status' => 'ok',
+			$channel->pushMessage(json_encode([
+				'type' => 'documentOpen',
 				'data' => [
-					// TODO
-					'Editor.bin' => $this->urlGenerator->linkToRouteAbsolute(
-						'documents.Document.openDocument', [
-							'format' => $inputFormat,
-							'url' => encodePathSegment($documentUrl)
-						]
-					)
+					'type' => 'open',
+					'status' => 'ok',
+					'data' => [
+						'Editor.bin' => $this->urlGenerator->linkToRouteAbsolute(
+							'documentserver.Document.openDocument', [
+								'format' => $inputFormat,
+								'url' => encodePathSegment($documentUrl),
+								'docId' => $docId
+							]
+						)
+					]
 				]
-			]
-		]));
+			]));
+		}
 	}
 }

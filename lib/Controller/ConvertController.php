@@ -19,9 +19,9 @@
  *
  */
 
-namespace OCA\Documents\Controller;
+namespace OCA\DocumentServer\Controller;
 
-use OCA\Documents\XMLResponse;
+use OCA\DocumentServer\XMLResponse;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\DataResponse;
 

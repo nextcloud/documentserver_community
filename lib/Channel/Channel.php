@@ -19,13 +19,13 @@
  *
  */
 
-namespace OCA\Documents\Session;
+namespace OCA\DocumentServer\Channel;
 
-use OCA\Documents\Command\CommandDispatcher;
+use OCA\DocumentServer\Command\CommandDispatcher;
 use OCP\IMemcache;
 use OCP\IPC\IIPCChannel;
 
-class Session {
+class Channel {
 	const TYPE_OPEN = 'o';
 	const TYPE_HEARTBEAT = 'h';
 	const TYPE_ARRAY = 'a';
@@ -34,18 +34,21 @@ class Session {
 	private $ipcChannel;
 	private $state;
 	private $commandDispatcher;
+	private $sessionManager;
 	private $initialResponses = [];
 
 	public function __construct(
 		IIPCChannel $ipcChannel,
 		IMemcache $state,
 		CommandDispatcher $commandDispatcher,
+		SessionManager $sessionManager,
 		array $initialResponses = []
 	) {
 		$this->ipcChannel = $ipcChannel;
 		$this->state = $state;
 		$this->commandDispatcher = $commandDispatcher;
 		$this->initialResponses = $initialResponses;
+		$this->sessionManager = $sessionManager;
 	}
 
 	public function getResponse() {
@@ -53,7 +56,7 @@ class Session {
 
 		switch ($stateId) {
 			case 0:
-				$this->state->set('state', count($this->initialResponses) ? 1: 2);
+				$this->state->set('state', count($this->initialResponses) ? 1 : 2);
 				return [self::TYPE_OPEN, null];
 			case 1:
 				$this->state->set('state', 2);
@@ -73,7 +76,14 @@ class Session {
 		}
 	}
 
-	public function handleCommand(array $command) {
-		$this->commandDispatcher->handle($command, $this->ipcChannel);
+	public function handleCommand(array $command, int $documentId, string $sessionId) {
+		$session = $this->sessionManager->getSession($sessionId);
+
+		// create a fake session so we have document id and session id during the auth command handling
+		if (!$session) {
+			$session = new Session($sessionId, $documentId, '', '', time());
+		}
+
+		$this->commandDispatcher->handle($command, $session, $this->ipcChannel);
 	}
 }

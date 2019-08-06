@@ -1,2 +1,2 @@
 <?php
-(new \OCA\Documents\AppInfo\Application())->register();
+(new \OCA\DocumentServer\AppInfo\Application())->register();

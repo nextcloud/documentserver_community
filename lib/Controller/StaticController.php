@@ -19,12 +19,12 @@
  *
  */
 
-namespace OCA\Documents\Controller;
+namespace OCA\DocumentServer\Controller;
 
 use OC\ForbiddenException;
 use OC\Security\CSP\ContentSecurityPolicy;
 use OC\Security\CSP\ContentSecurityPolicyNonceManager;
-use OCA\Documents\FileResponse;
+use OCA\DocumentServer\FileResponse;
 use OCP\AppFramework\Controller;
 use OCP\Files\IMimeTypeDetector;
 use OCP\Files\NotFoundException;
@@ -90,7 +90,8 @@ class StaticController extends Controller {
 			throw new NotFoundException();
 		}
 		$content = file_get_contents($path);
-		if (pathinfo($path, PATHINFO_EXTENSION) === 'html') {
+		$isHTML = pathinfo($path, PATHINFO_EXTENSION) === 'html';
+		if ($isHTML) {
 			$content = $this->addScriptNonce($content, $this->nonceManager->getNonce());
 		}
 
@@ -105,7 +106,11 @@ class StaticController extends Controller {
 			filemtime($path),
 			$mime
 		);
-		$response->cacheFor(3600);
+
+		// we can't cache the html since the nonce might need to get updated
+		if (!$isHTML) {
+			$response->cacheFor(3600);
+		}
 
 		$csp = new ContentSecurityPolicy();
 		$csp->addAllowedScriptDomain('\'strict-dynamic\'');

@@ -19,42 +19,31 @@
  *
  */
 
-namespace OCA\DocumentServer;
+namespace OCA\DocumentServer\Document;
 
-use OC\AppFramework\Http;
-use OCP\AppFramework\Http\Response;
+class ConverterBinary {
+	const BINARY_DIRECTORY = __DIR__ . '/../../3rdparty/onlyoffice/documentserver/server/FileConverter/bin';
 
-class XMLResponse extends Response {
+	public function run(string $param): string {
+		$descriptorSpec = [
+			0 => ["pipe", "r"],// stdin
+			1 => ["pipe", "w"],// stdout
+			2 => ["pipe", "w"] // stderr
+		];
 
-	/**
-	 * response data
-	 * @var array|object
-	 */
-	protected $data;
+		$pipes = [];
+		$process = proc_open('./x2t ' . $param, $descriptorSpec, $pipes, self::BINARY_DIRECTORY, []);
 
-	public function __construct($data = [], $statusCode = Http::STATUS_OK) {
-		parent::__construct();
+		fclose($pipes[0]);
+		$output = stream_get_contents($pipes[1]);
+		$error = stream_get_contents($pipes[2]);
 
-		$this->data = $data;
-		$this->setStatus($statusCode);
-		$this->addHeader('Content-Type', 'application/xml; charset=utf-8');
+		proc_close($process);
+
+		if ($error) {
+			throw new DocumentConversionException($error);
+		} else {
+			return $output;
+		}
 	}
-
-	public function render() {
-		$xml = new \SimpleXMLElement('<root/>');
-		array_walk_recursive(array_flip($this->data), [$xml, 'addChild']);
-		return $xml->asXML();
-	}
-
-	public function setData($data){
-		$this->data = $data;
-
-		return $this;
-	}
-
-	public function getData(){
-		return $this->data;
-	}
-
 }
-

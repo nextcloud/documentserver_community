@@ -19,7 +19,7 @@
  *
  */
 
-namespace OCA\Documents\Controller;
+namespace OCA\DocumentServer\Controller;
 
 class SpellcheckController extends SessionController {
 	const INITIAL_RESPONSES = [];

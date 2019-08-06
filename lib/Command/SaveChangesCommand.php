@@ -21,28 +21,30 @@
 
 namespace OCA\DocumentServer\Command;
 
+use OCA\Documents\Document\Store;
 use OCA\DocumentServer\Channel\Session;
+use OCA\DocumentServer\Document\DocumentStore;
 use OCP\IPC\IIPCChannel;
 
-class CommandDispatcher {
-	const HANDLERS = [
-		AuthCommand::class,
-	];
+class SaveChangesCommand implements ICommandHandler {
+	private $documentStore;
 
-	/** @var ICommandHandler[] */
-	private $handlers = [];
-
-	public function addHandler(ICommandHandler $handler) {
-		$this->handlers[] = $handler;
+	public function __construct(DocumentStore $documentStore) {
+		$this->documentStore = $documentStore;
 	}
 
-	public function handle(array $command, Session $session, IIPCChannel $channel): void {
-		$type = $command['type'];
-		foreach ($this->handlers as $handler) {
-			if ($handler->getType() === $type) {
-				$handler->handle($command, $session, $channel, $this);
-				return;
-			}
+	public function getType(): string {
+		return 'saveChanges';
+	}
+
+	public function handle(array $command, Session $session, IIPCChannel $channel, CommandDispatcher $commandDispatcher): void {
+		$changes = json_decode($command['changes']);
+
+		foreach ($changes as $change) {
+			$this->documentStore->addChangeForDocument($session->getDocumentId(), $change, $session->getUser(), $session->getUserOriginal());
 		}
+
+		$now = time() * 1000;
+		$channel->pushMessage('{"type":"unSaveLock","index":0,"time":' . $now . '}');
 	}
 }

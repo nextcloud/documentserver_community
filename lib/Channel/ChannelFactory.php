@@ -19,31 +19,32 @@
  *
  */
 
-namespace OCA\Documents\Document;
+namespace OCA\DocumentServer\Channel;
 
-class Converter {
-	const BINARY_DIRECTORY = __DIR__ . '/../../3rdparty/onlyoffice/documentserver/server/FileConverter/bin';
+use OCA\DocumentServer\Command\CommandDispatcher;
+use OCP\ICacheFactory;
+use OCP\IPC\IIPCFactory;
 
-	public function run(string $param): string {
-		$descriptorSpec = [
-			0 => ["pipe", "r"],// stdin
-			1 => ["pipe", "w"],// stdout
-			2 => ["pipe", "w"] // stderr
-		];
+class ChannelFactory {
+	private $ipcFactory;
+	private $memcacheFactory;
+	private $sessionManager;
 
-		$pipes = [];
-		$process = proc_open('./x2t ' . $param, $descriptorSpec, $pipes, self::BINARY_DIRECTORY, []);
+	public function __construct(IIPCFactory $ipcFactory, ICacheFactory $memcacheFactory, SessionManager $sessionManager) {
+		$this->ipcFactory = $ipcFactory;
+		$this->memcacheFactory = $memcacheFactory;
+		$this->sessionManager = $sessionManager;
+	}
 
-		fclose($pipes[0]);
-		$output = stream_get_contents($pipes[1]);
-		$error = stream_get_contents($pipes[2]);
+	public function getSession(string $id, CommandDispatcher $commandDispatcher, array $initialResponses = []) {
+		$key = "document_$id";
 
-		proc_close($process);
-
-		if ($error) {
-			throw new DocumentConversionException($error);
-		} else {
-			return $output;
-		}
+		return new Channel(
+			$this->ipcFactory->getChannel($key),
+			$this->memcacheFactory->createLocal($key),
+			$commandDispatcher,
+			$this->sessionManager,
+			$initialResponses
+		);
 	}
 }

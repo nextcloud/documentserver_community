@@ -19,11 +19,11 @@
  *
  */
 
-namespace OCA\Documents\Controller;
+namespace OCA\DocumentServer\Controller;
 
-use OCA\Documents\Command\CommandDispatcher;
-use OCA\Documents\Session\SessionFactory;
-use OCA\Documents\XHRResponse;
+use OCA\DocumentServer\Command\CommandDispatcher;
+use OCA\DocumentServer\Channel\ChannelFactory;
+use OCA\DocumentServer\XHRResponse;
 use OCP\AppFramework\Controller;
 use OCP\IRequest;
 
@@ -33,7 +33,7 @@ abstract class SessionController extends Controller {
 	public function __construct(
 		$appName,
 		IRequest $request,
-		SessionFactory $sessionFactory
+		ChannelFactory $sessionFactory
 	) {
 		parent::__construct($appName, $request);
 
@@ -62,15 +62,6 @@ abstract class SessionController extends Controller {
 			'cookie_needed' => false,
 			'entropy' => 2305277681 // TODO
 		];
-	}
-
-	/**
-	 * @NoAdminRequired
-	 * @NoCSRFRequired
-	 * @PublicPage
-	 */
-	public function healthCheck() {
-		return true;
 	}
 
 	private function getCommandDispatcher() {
@@ -103,7 +94,7 @@ abstract class SessionController extends Controller {
 		$session = $this->sessionFactory->getSession($sessionId, $this->getCommandDispatcher());
 		foreach ($commands as $encodedCommand) {
 			$command = json_decode($encodedCommand, true);
-			$session->handleCommand($command);
+			$session->handleCommand($command, (int)$documentId, $sessionId);
 		}
 	}
 }

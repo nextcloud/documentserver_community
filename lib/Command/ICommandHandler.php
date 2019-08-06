@@ -19,13 +19,13 @@
  *
  */
 
-namespace OCA\Documents\Command;
+namespace OCA\DocumentServer\Command;
 
-
+use OCA\DocumentServer\Channel\Session;
 use OCP\IPC\IIPCChannel;
 
 interface ICommandHandler {
 	public function getType(): string;
 
-	public function handle(array $command, IIPCChannel $channel, CommandDispatcher $commandDispatcher): void;
+	public function handle(array $command, Session $session, IIPCChannel $channel, CommandDispatcher $commandDispatcher): void;
 }

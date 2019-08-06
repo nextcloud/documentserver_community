@@ -19,7 +19,7 @@
  *
  */
 
-namespace OCA\Documents;
+namespace OCA\DocumentServer;
 
 use OC\AppFramework\Http;
 use OCP\AppFramework\Http\ICallbackResponse;

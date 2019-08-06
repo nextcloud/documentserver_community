@@ -19,9 +19,9 @@
  *
  */
 
-namespace OCA\Documents;
+namespace OCA\DocumentServer;
 
-use OCA\Documents\Document\Converter;
+use OCA\DocumentServer\Document\ConverterBinary;
 use OCP\ITempManager;
 
 class DocumentConverter {
@@ -37,15 +37,21 @@ class DocumentConverter {
 	 * @param string $targetExtension
 	 * @return resource
 	 */
-	public function convert($source, string $sourceExtension, string $targetExtension) {
+	public function convert($source, string $sourceExtension, string $targetFile) {
 		$sourceFile = $this->tempManager->getTemporaryFile(".$sourceExtension");
 		file_put_contents($sourceFile, $source);
-		$targetFile = $this->tempManager->getTemporaryFile(".$targetExtension");
-		unlink($targetFile);
 
 		$this->convertFiles($sourceFile, $targetFile);
 		return fopen($targetFile, 'r');
 	}
+
+	public function getEditorBinary($source, string $sourceExtension, string $targetFolder) {
+		$sourceFile = $this->tempManager->getTemporaryFile(".$sourceExtension");
+		file_put_contents($sourceFile, $source);
+
+		$this->convertFiles($sourceFile, "$targetFolder/Editor.bin");
+	}
+
 
 	public function convertFiles(string $from, string $to) {
 		$xml = "<?xml version=\"1.0\" encoding=\"utf-8\"?>
@@ -58,7 +64,7 @@ class DocumentConverter {
 		$xmlFile = $this->tempManager->getTemporaryFile('.xml');
 		file_put_contents($xmlFile, $xml);
 
-		$converter = new Converter();
+		$converter = new ConverterBinary();
 		$converter->run($xmlFile);
 	}
 }

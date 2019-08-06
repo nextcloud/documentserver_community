@@ -6,7 +6,7 @@ return [
 		['name' => 'Document#xhr', 'url' => '/doc/{documentId}/c/{serverId}/{sessionId}/xhr', 'verb' => 'POST'],
 		['name' => 'Document#xhrSend', 'url' => '/doc/{documentId}/c/{serverId}/{sessionId}/xhr_send', 'verb' => 'POST'],
 		['name' => 'Document#healthCheck', 'url' => '/healthcheck', 'verb' => 'GET'],
-		['name' => 'Document#openDocument', 'url' => '/open/{format}/{url}', 'verb' => 'GET'],
+		['name' => 'Document#openDocument', 'url' => '/open/{docId}/{format}/{url}', 'verb' => 'GET'],
 
 		['name' => 'Spellcheck#info', 'url' => '/spellchecker/doc/{documentId}/c/info', 'verb' => 'GET'],
 		['name' => 'Spellcheck#xhr', 'url' => '/spellchecker/doc/{documentId}/c/{serverId}/{sessionId}/xhr', 'verb' => 'POST'],

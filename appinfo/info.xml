@@ -1,13 +1,13 @@
 <?xml version="1.0"?>
 <info>
-	<id>documents</id>
-	<name>Documents</name>
+	<id>documentserver</id>
+	<name>Document Server</name>
 	<summary>Document editor</summary>
 	<description><![CDATA[Document editor]]>
 	</description>
 	<licence>AGPL</licence>
 	<author>Robin Appelman</author>
-	<namespace>Documents</namespace>
+	<namespace>DocumentServer</namespace>
 	<version>0.1.0</version>
 
 	<dependencies>
@@ -15,9 +15,9 @@
 	</dependencies>
 
 	<category>office</category>
-	<website>https://github.com/nextcloud/documents</website>
-	<bugs>https://github.com/nextcloud/documents/issues</bugs>
+	<website>https://github.com/nextcloud/documentserver</website>
+	<bugs>https://github.com/nextcloud/documentserver/issues</bugs>
 	<repository type="git">
-		https://github.com/nextcloud/documents.git
+		https://github.com/nextcloud/documentserver.git
 	</repository>
 </info>

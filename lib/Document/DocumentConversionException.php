@@ -19,7 +19,7 @@
  *
  */
 
-namespace OCA\Documents\Document;
+namespace OCA\DocumentServer\Document;
 
 class DocumentConversionException extends \Exception {
 

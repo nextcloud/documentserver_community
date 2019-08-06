@@ -19,13 +19,14 @@
  *
  */
 
-namespace OCA\Documents\Controller;
+namespace OCA\DocumentServer\Controller;
 
-use OCA\Documents\Command\AuthCommand;
-use OCA\Documents\DocumentConverter;
-use OCA\Documents\Session\SessionFactory;
+use OCA\DocumentServer\Command\AuthCommand;
+use OCA\DocumentServer\Command\IsSaveLock;
+use OCA\DocumentServer\Command\SaveChangesCommand;
+use OCA\DocumentServer\Document\DocumentStore;
+use OCA\DocumentServer\Channel\ChannelFactory;
 use OCP\AppFramework\Http\StreamResponse;
-use OCP\Files\NotFoundException;
 use OCP\IRequest;
 use function Sabre\HTTP\decodePathSegment;
 
@@ -47,19 +48,22 @@ class DocumentController extends SessionController {
 
 	const COMMAND_HANDLERS = [
 		AuthCommand::class,
+		IsSaveLock::class,
+		SaveChangesCommand::class,
 	];
 
-	private $documentConverter;
+	/** @var DocumentStore */
+	private $documentStore;
 
 	public function __construct(
 		$appName,
 		IRequest $request,
-		SessionFactory $sessionFactory,
-		DocumentConverter $documentConverter
+		ChannelFactory $sessionFactory,
+		DocumentStore $documentStore
 	) {
 		parent::__construct($appName, $request, $sessionFactory);
 
-		$this->documentConverter = $documentConverter;
+		$this->documentStore = $documentStore;
 	}
 
 
@@ -74,14 +78,21 @@ class DocumentController extends SessionController {
 	/**
 	 * @NoAdminRequired
 	 * @NoCSRFRequired
+	 * @PublicPage
 	 */
-	public function openDocument(string $format, string $url) {
-		$source = fopen(decodePathSegment($url), 'r');
+	public function healthCheck() {
+		return true;
+	}
 
-		if (!$source) {
-			throw new NotFoundException();
-		}
+	/**
+	 * @NoAdminRequired
+	 * @NoCSRFRequired
+	 */
+	public function openDocument(int $docId, string $format, string $url) {
+		$url = decodePathSegment($url);
 
-		return new StreamResponse($this->documentConverter->convert($source, $format, 'bin'));
+		$file = $this->documentStore->getDocumentForEditor($docId, $url, $format);
+
+		return new StreamResponse($file->read());
 	}
 }

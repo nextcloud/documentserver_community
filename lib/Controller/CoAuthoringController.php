@@ -19,7 +19,7 @@
  *
  */
 
-namespace OCA\Documents\Controller;
+namespace OCA\DocumentServer\Controller;
 
 use OCP\AppFramework\Controller;
 
