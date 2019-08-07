@@ -28,6 +28,7 @@ use OCA\DocumentServer\Document\DocumentStore;
 use OCA\DocumentServer\Channel\ChannelFactory;
 use OCP\AppFramework\Http\StreamResponse;
 use OCP\IRequest;
+use OCP\Security\ISecureRandom;
 use function Sabre\HTTP\decodePathSegment;
 
 class DocumentController extends SessionController {
@@ -59,9 +60,10 @@ class DocumentController extends SessionController {
 		$appName,
 		IRequest $request,
 		ChannelFactory $sessionFactory,
-		DocumentStore $documentStore
+		DocumentStore $documentStore,
+		ISecureRandom $random
 	) {
-		parent::__construct($appName, $request, $sessionFactory);
+		parent::__construct($appName, $request, $sessionFactory, $random);
 
 		$this->documentStore = $documentStore;
 	}

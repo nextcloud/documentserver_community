@@ -26,18 +26,22 @@ use OCA\DocumentServer\Channel\ChannelFactory;
 use OCA\DocumentServer\XHRResponse;
 use OCP\AppFramework\Controller;
 use OCP\IRequest;
+use OCP\Security\ISecureRandom;
 
 abstract class SessionController extends Controller {
 	private $sessionFactory;
+	private $random;
 
 	public function __construct(
 		$appName,
 		IRequest $request,
-		ChannelFactory $sessionFactory
+		ChannelFactory $sessionFactory,
+		ISecureRandom $random
 	) {
 		parent::__construct($appName, $request);
 
 		$this->sessionFactory = $sessionFactory;
+		$this->random = $random;
 	}
 
 	abstract protected function getInitialResponses(): array;
@@ -60,7 +64,7 @@ abstract class SessionController extends Controller {
 			'websocket' => false,
 			'origins' => ['*:*'],
 			'cookie_needed' => false,
-			'entropy' => 2305277681 // TODO
+			'entropy' => (int)$this->random->generate(10, ISecureRandom::CHAR_DIGITS),
 		];
 	}
 
