@@ -31,6 +31,8 @@ class Channel {
 	const TYPE_ARRAY = 'a';
 	const TYPE_CLOSE = 'c';
 
+	const TIMEOUT = 25;
+
 	private $ipcChannel;
 	private $state;
 	private $commandDispatcher;
@@ -51,8 +53,10 @@ class Channel {
 		$this->sessionManager = $sessionManager;
 	}
 
-	public function getResponse() {
+	public function getResponse($sessionId) {
 		$stateId = (int)($this->state->get('state') ?? 0);
+
+		$this->sessionManager->markAsSeen($sessionId);
 
 		switch ($stateId) {
 			case 0:
@@ -63,7 +67,7 @@ class Channel {
 				return [self::TYPE_ARRAY, $this->initialResponses];
 			default:
 				$slept = 0;
-				while ($slept < 25) {
+				while ($slept < self::TIMEOUT) {
 					$message = $this->ipcChannel->popMessage();
 					if ($message) {
 						return [self::TYPE_ARRAY, json_decode($message, true)];
@@ -79,8 +83,10 @@ class Channel {
 	public function handleCommand(array $command, int $documentId, string $sessionId) {
 		$session = $this->sessionManager->getSession($sessionId);
 
-		// create a fake session so we have document id and session id during the auth command handling
-		if (!$session) {
+		if ($session) {
+			$this->sessionManager->markAsSeen($session->getSessionId());
+		} else {
+			// create a fake session so we have document id and session id during the auth command handling
 			$session = new Session($sessionId, $documentId, '', '', time());
 		}
 

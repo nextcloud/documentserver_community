@@ -21,6 +21,7 @@
 
 namespace OCA\DocumentServer;
 
+use OCA\DocumentServer\Document\Change;
 use OCA\DocumentServer\Document\ConverterBinary;
 use OCP\ITempManager;
 
@@ -52,6 +53,31 @@ class DocumentConverter {
 		$this->convertFiles($sourceFile, "$targetFolder/Editor.bin");
 	}
 
+	/**
+	 * @param string $sourceFolder
+	 * @param Change[] $changes
+	 * @param string $target
+	 */
+	public function saveChanges(string $sourceFolder, array $changes, string $target) {
+		$changesFolder = $sourceFolder . '/changes';
+		mkdir($changesFolder);
+		foreach ($changes as $key => $change) {
+			file_put_contents($changesFolder . '/' . $key, $change->getChange());
+		}
+
+		$xml = "<?xml version=\"1.0\" encoding=\"utf-8\"?>
+<TaskQueueDataConvert xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\">
+	<m_sFileFrom>$sourceFolder/Editor.bin</m_sFileFrom>
+	<m_sFileTo>$target</m_sFileTo>
+	<m_bFromChanges>true</m_bFromChanges>
+</TaskQueueDataConvert>
+";
+
+		$this->runXml($xml);
+
+		\OC_Helper::rmdirr($changesFolder);
+	}
+
 
 	public function convertFiles(string $from, string $to) {
 		$xml = "<?xml version=\"1.0\" encoding=\"utf-8\"?>
@@ -61,6 +87,10 @@ class DocumentConverter {
 </TaskQueueDataConvert>
 ";
 
+		$this->runXml($xml);
+	}
+
+	private function runXml(string $xml) {
 		$xmlFile = $this->tempManager->getTemporaryFile('.xml');
 		file_put_contents($xmlFile, $xml);
 

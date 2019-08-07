@@ -22,13 +22,16 @@
 namespace OCA\DocumentServer\Channel;
 
 
+use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\IDBConnection;
 
 class SessionManager {
 	private $connection;
+	private $timeFactory;
 
-	public function __construct(IDBConnection $connection) {
+	public function __construct(IDBConnection $connection, ITimeFactory $timeFactory) {
 		$this->connection = $connection;
+		$this->timeFactory = $timeFactory;
 	}
 
 	public function getSession(string $sessionId): ?Session {
@@ -53,10 +56,39 @@ class SessionManager {
 			->values([
 				'session_id' => $query->createNamedParameter($sessionId),
 				'document_id' => $query->createNamedParameter($documentId, \PDO::PARAM_INT),
-				'last_seen' => $query->createNamedParameter(time(), \PDO::PARAM_INT),
+				'last_seen' => $query->createNamedParameter($this->timeFactory->getTime(), \PDO::PARAM_INT),
 				'user' => $query->createNamedParameter($user),
 				'user_original' => $query->createNamedParameter($userOriginal),
 			]);
 		$query->execute();
+	}
+
+	public function markAsSeen(string $sessionId) {
+		$query = $this->connection->getQueryBuilder();
+
+		$query->update('documentserver_sessions')
+			->set('last_seen', $query->createNamedParameter($this->timeFactory->getTime(), \PDO::PARAM_INT))
+			->where($query->expr()->eq('session_id', $query->createNamedParameter($sessionId)));
+		$query->execute();
+	}
+
+	public function cleanSessions() {
+		$query = $this->connection->getQueryBuilder();
+
+		$cutoffTime = $this->timeFactory->getTime() - (Channel::TIMEOUT * 4);
+
+		$query->delete('documentserver_sessions')
+			->where($query->expr()->lt('last_seen', $query->createNamedParameter($cutoffTime, \PDO::PARAM_INT)));
+		$query->execute();
+	}
+
+	public function isDocumentActive(int $documentId): bool {
+		$query = $this->connection->getQueryBuilder();
+
+		$query->select('session_id')
+			->from('documentserver_sessions')
+			->where($query->expr()->eq('document_id', $query->createNamedParameter($documentId, \PDO::PARAM_INT)));
+
+		return (bool)$query->execute()->fetchColumn();
 	}
 }

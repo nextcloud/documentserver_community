@@ -83,7 +83,7 @@ abstract class SessionController extends Controller {
 	 */
 	public function xhr(?string $version, string $documentId, string $serverId, string $sessionId) {
 		$session = $this->sessionFactory->getSession($sessionId, $this->getCommandDispatcher(), $this->getInitialResponses());
-		list($type, $data) = $session->getResponse();
+		list($type, $data) = $session->getResponse($sessionId);
 
 		return new XHRResponse($type, $data);
 	}
