@@ -21,7 +21,7 @@
 
 namespace OCA\DocumentServer\Channel;
 
-use OCA\DocumentServer\Command\CommandDispatcher;
+use OCA\DocumentServer\XHRCommand\CommandDispatcher;
 use OCP\IMemcache;
 use OCP\IPC\IIPCChannel;
 

@@ -19,30 +19,17 @@
  *
  */
 
-namespace OCA\DocumentServer\Command;
+namespace OCA\DocumentServer\XHRCommand;
 
 use OCA\DocumentServer\Channel\Session;
 use OCP\IPC\IIPCChannel;
 
-class CommandDispatcher {
-	const HANDLERS = [
-		AuthCommand::class,
-	];
-
-	/** @var ICommandHandler[] */
-	private $handlers = [];
-
-	public function addHandler(ICommandHandler $handler) {
-		$this->handlers[] = $handler;
+class IsSaveLock implements ICommandHandler {
+	public function getType(): string {
+		return 'isSaveLock';
 	}
 
-	public function handle(array $command, Session $session, IIPCChannel $channel): void {
-		$type = $command['type'];
-		foreach ($this->handlers as $handler) {
-			if ($handler->getType() === $type) {
-				$handler->handle($command, $session, $channel, $this);
-				return;
-			}
-		}
+	public function handle(array $command, Session $session, IIPCChannel $channel, CommandDispatcher $commandDispatcher): void {
+		$channel->pushMessage('{"type":"saveLock","saveLock":false}');
 	}
 }

@@ -19,7 +19,7 @@
  *
  */
 
-namespace OCA\DocumentServer\Command;
+namespace OCA\DocumentServer\XHRCommand;
 
 use OCA\DocumentServer\Channel\Session;
 use OCP\IPC\IIPCChannel;

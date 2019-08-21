@@ -28,15 +28,20 @@ use OCA\DocumentServer\FileResponse;
 use OCP\AppFramework\Controller;
 use OCP\Files\IMimeTypeDetector;
 use OCP\Files\NotFoundException;
+use OCP\IRequest;
 
 class StaticController extends Controller {
 	private $mimeTypeHelper;
 	private $nonceManager;
 
 	public function __construct(
+		$appName,
+		IRequest $request,
 		IMimeTypeDetector $mimeTypeHelper,
 		ContentSecurityPolicyNonceManager $nonceManager
 	) {
+		parent::__construct($appName, $request);
+
 		$this->mimeTypeHelper = $mimeTypeHelper;
 		$this->nonceManager = $nonceManager;
 	}

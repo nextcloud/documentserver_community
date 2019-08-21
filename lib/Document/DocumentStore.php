@@ -21,26 +21,32 @@
 
 namespace OCA\DocumentServer\Document;
 
+use OCP\Files\File;
 use OCA\DocumentServer\DocumentConverter;
 use OCP\Files\Folder;
 use OCP\Files\IAppData;
+use OCP\Files\IRootFolder;
 use OCP\Files\NotFoundException;
 use OCP\Files\SimpleFS\ISimpleFile;
 use OCP\Files\SimpleFS\ISimpleFolder;
 use OCP\IConfig;
-use OCP\IDBConnection;
 
 class DocumentStore {
 	private $appData;
-	private $connection;
 	private $documentConverter;
 	private $config;
+	private $rootFolder;
 
-	public function __construct(IAppData $appData, IDBConnection $connection, DocumentConverter $documentConverter, IConfig $config) {
+	public function __construct(
+		IAppData $appData,
+		DocumentConverter $documentConverter,
+		IConfig $config,
+		IRootFolder $rootFolder
+	) {
 		$this->appData = $appData;
-		$this->connection = $connection;
 		$this->documentConverter = $documentConverter;
 		$this->config = $config;
+		$this->rootFolder = $rootFolder;
 	}
 
 	/**
@@ -59,6 +65,10 @@ class DocumentStore {
 		return $this->config->getSystemValueString('datadirectory') . $path;
 	}
 
+	public function getDocumentPath(int $documentId): string {
+		return $this->getLocalPath($this->getDocumentFolder($documentId));
+	}
+
 	private function getDocumentFolder(int $documentId): ISimpleFolder {
 		try {
 			return $this->appData->getFolder("doc_$documentId");
@@ -67,12 +77,12 @@ class DocumentStore {
 		}
 	}
 
-	public function getDocumentForEditor(int $documentId, string $documentUrl, string $sourceFormat): ISimpleFile {
+	public function getDocumentForEditor(int $documentId, File $sourceFile, string $sourceFormat): ISimpleFile {
 		$docFolder = $this->getDocumentFolder($documentId);
 		try {
 			return $docFolder->getFile('Editor.bin');
 		} catch (NotFoundException $e) {
-			$source = fopen($documentUrl, 'r');
+			$source = $sourceFile->fopen('r');
 
 			if (!$source) {
 				throw new NotFoundException();
@@ -81,31 +91,50 @@ class DocumentStore {
 			$localPath = $this->getLocalPath($docFolder);
 			$this->documentConverter->getEditorBinary($source, $sourceFormat, $localPath);
 
+			// maybe save in a new db table
+			$docFolder->newFile('fileid')->putContent((string)$sourceFile->getId());
+			$docFolder->newFile('owner')->putContent((string)$sourceFile->getOwner()->getUID());
+
 			return $docFolder->getFile('Editor.bin');
 		}
 	}
 
-	public function addChangeForDocument(int $documentId, string $change, string $user, string $userOriginal) {
-		$query = $this->connection->getQueryBuilder();
+	public function saveChanges(int $documentId, array $changes) {
+		$docFolder = $this->getDocumentFolder($documentId);
 
-		$query->insert('documentserver_changes')
-			->values([
-				'document_id' => $query->createNamedParameter($documentId, \PDO::PARAM_INT),
-				'change' => $query->createNamedParameter($change),
-				'time' => time(),
-				'user' => $query->createNamedParameter($user),
-				'user_original' => $query->createNamedParameter($userOriginal),
-			]);
-		$query->execute();
+		$owner = $docFolder->getFile('owner')->getContent();
+		$sourceFileId = (int)$docFolder->getFile('fileid')->getContent();
+		$sourceFiles = $this->rootFolder->getUserFolder($owner)->getById($sourceFileId);
+		if (count($sourceFiles)) {
+			/** @var File $sourceFile */
+			$sourceFile = current($sourceFiles);
+		} else {
+			throw new NotFoundException('Source file not found');
+		}
+
+		$targetExtension = $sourceFile->getExtension();
+
+		$localPath = $this->getLocalPath($docFolder);
+
+		$target = $localPath . '/saved.' . $targetExtension;
+		$this->documentConverter->saveChanges($localPath, $changes, $target);
+		$savedContent = fopen($target, 'r');
+
+		$sourceFile->putContent(stream_get_contents($savedContent));
 	}
 
-	public function getChangesForDocument(int $documentId): array {
-		$query = $this->connection->getQueryBuilder();
+	/**
+	 * @return int[]
+	 * @throws NotFoundException
+	 */
+	public function getOpenDocuments(): array {
+		$content = $this->appData->getDirectoryListing();
+		$content = array_filter($content, function (ISimpleFolder $folder) {
+			return substr($folder->getName(), 0, 4) === 'doc_';
+		});
 
-		$query->select('change', 'time', 'document_id', 'user', 'user_original')
-			->from('documentserver_changes')
-			->where($query->expr()->eq('document_id', $query->createNamedParameter($documentId, \PDO::PARAM_INT)));
-		$rows = $query->execute()->fetchAll();
-		return array_map([Change::class, 'fromRow'], $rows);
+		return array_map(function (ISimpleFolder $folder) {
+			return (int)substr($folder->getName(), 4);
+		}, $content);
 	}
 }

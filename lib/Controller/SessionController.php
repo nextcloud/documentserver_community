@@ -21,7 +21,7 @@
 
 namespace OCA\DocumentServer\Controller;
 
-use OCA\DocumentServer\Command\CommandDispatcher;
+use OCA\DocumentServer\XHRCommand\CommandDispatcher;
 use OCA\DocumentServer\Channel\ChannelFactory;
 use OCA\DocumentServer\XHRResponse;
 use OCP\AppFramework\Controller;

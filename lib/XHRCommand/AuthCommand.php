@@ -19,24 +19,24 @@
  *
  */
 
-namespace OCA\DocumentServer\Command;
+namespace OCA\DocumentServer\XHRCommand;
 
 use OCA\DocumentServer\Channel\Session;
 use OCA\DocumentServer\Channel\SessionManager;
 use OCA\DocumentServer\Document\Change;
-use OCA\DocumentServer\Document\DocumentStore;
+use OCA\DocumentServer\Document\ChangeStore;
 use OCP\IPC\IIPCChannel;
 use OCP\IURLGenerator;
 use function Sabre\HTTP\encodePathSegment;
 
 class AuthCommand implements ICommandHandler {
 	private $urlGenerator;
-	private $documentStore;
+	private $changeStore;
 	private $sessionManager;
 
-	public function __construct(IURLGenerator $urlGenerator, DocumentStore $documentStore, SessionManager $sessionManager) {
+	public function __construct(IURLGenerator $urlGenerator, ChangeStore $changeStore, SessionManager $sessionManager) {
 		$this->urlGenerator = $urlGenerator;
-		$this->documentStore = $documentStore;
+		$this->changeStore = $changeStore;
 		$this->sessionManager = $sessionManager;
 	}
 
@@ -45,7 +45,7 @@ class AuthCommand implements ICommandHandler {
 	}
 
 	public function handle(array $command, Session $session, IIPCChannel $channel, CommandDispatcher $commandDispatcher): void {
-		$changes = $this->documentStore->getChangesForDocument($session->getDocumentId());
+		$changes = $this->changeStore->getChangesForDocument($session->getDocumentId());
 
 		$channel->pushMessage(json_encode([
 			'type' => 'authChanges',

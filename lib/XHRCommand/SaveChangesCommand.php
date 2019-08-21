@@ -19,17 +19,32 @@
  *
  */
 
-namespace OCA\DocumentServer\Command;
+namespace OCA\DocumentServer\XHRCommand;
 
+use OCA\Documents\Document\Store;
 use OCA\DocumentServer\Channel\Session;
+use OCA\DocumentServer\Document\ChangeStore;
 use OCP\IPC\IIPCChannel;
 
-class IsSaveLock implements ICommandHandler {
+class SaveChangesCommand implements ICommandHandler {
+	private $changeStore;
+
+	public function __construct(ChangeStore $changeStore) {
+		$this->changeStore = $changeStore;
+	}
+
 	public function getType(): string {
-		return 'isSaveLock';
+		return 'saveChanges';
 	}
 
 	public function handle(array $command, Session $session, IIPCChannel $channel, CommandDispatcher $commandDispatcher): void {
-		$channel->pushMessage('{"type":"saveLock","saveLock":false}');
+		$changes = json_decode($command['changes']);
+
+		foreach ($changes as $change) {
+			$this->changeStore->addChangeForDocument($session->getDocumentId(), $change, $session->getUser(), $session->getUserOriginal());
+		}
+
+		$now = time() * 1000;
+		$channel->pushMessage('{"type":"unSaveLock","index":0,"time":' . $now . '}');
 	}
 }

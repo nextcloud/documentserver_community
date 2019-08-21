@@ -21,30 +21,37 @@
 
 namespace OCA\DocumentServer\Command;
 
-use OCA\Documents\Document\Store;
-use OCA\DocumentServer\Channel\Session;
+use OC\Core\Command\Base;
 use OCA\DocumentServer\Document\DocumentStore;
-use OCP\IPC\IIPCChannel;
+use OCA\DocumentServer\Document\SaveHandler;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Output\OutputInterface;
 
-class SaveChangesCommand implements ICommandHandler {
+class FlushChanges extends Base {
+	private $saveHandler;
 	private $documentStore;
 
-	public function __construct(DocumentStore $documentStore) {
+	public function __construct(
+		SaveHandler $saveHandler,
+	DocumentStore $documentStore
+	) {
+		parent::__construct();
+
+		$this->saveHandler = $saveHandler;
 		$this->documentStore = $documentStore;
 	}
 
-	public function getType(): string {
-		return 'saveChanges';
+	protected function configure() {
+		$this
+			->setName('documentserver:flush')
+			->setDescription('Flush all pending changes made to documents');
+		parent::configure();
 	}
 
-	public function handle(array $command, Session $session, IIPCChannel $channel, CommandDispatcher $commandDispatcher): void {
-		$changes = json_decode($command['changes']);
-
-		foreach ($changes as $change) {
-			$this->documentStore->addChangeForDocument($session->getDocumentId(), $change, $session->getUser(), $session->getUserOriginal());
+	protected function execute(InputInterface $input, OutputInterface $output) {
+		$documents = $this->documentStore->getOpenDocuments();
+		foreach($documents as $documentId) {
+			$this->saveHandler->flushChanges($documentId);
 		}
-
-		$now = time() * 1000;
-		$channel->pushMessage('{"type":"unSaveLock","index":0,"time":' . $now . '}');
 	}
 }

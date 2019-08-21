@@ -39,9 +39,14 @@ class Version001000Date20190806104527 extends SimpleMigrationStep {
 			$table->addColumn('user_original', 'text', [
 				'notnull' => true,
 			]);
+			$table->addColumn('processing', 'boolean', [
+				'notnull' => true,
+				'default' => false
+			]);
 			$table->setPrimaryKey(['change_id']);
 			$table->addIndex(['document_id'], 'documentserver_change_document');
 			$table->addIndex(['time'], 'documentserver_change_time');
+			$table->addIndex(['document_id', 'processing'], 'documentserver_change_proc');
 		}
 
 		if (!$schema->hasTable('documentserver_sessions')) {

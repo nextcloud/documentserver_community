@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 /**
  * @copyright Copyright (c) 2019 Robin Appelman <robin@icewind.nl>
  *
@@ -19,35 +19,30 @@
  *
  */
 
-namespace OCA\DocumentServer\AppInfo;
+namespace OCA\DocumentServer\XHRCommand;
 
-use OCA\DocumentServer\OnlyOffice\URLDecoder;
-use OCA\Onlyoffice\AppConfig;
-use OCA\Onlyoffice\Crypt;
-use \OCP\AppFramework\App;
-use OCP\AppFramework\IAppContainer;
+use OCA\DocumentServer\Channel\Session;
+use OCP\IPC\IIPCChannel;
 
-class Application extends App {
-	public function __construct(array $urlParams = []) {
-		parent::__construct('documentserver', $urlParams);
+class CommandDispatcher {
+	const HANDLERS = [
+		AuthCommand::class,
+	];
 
-		$container = $this->getContainer();
+	/** @var ICommandHandler[] */
+	private $handlers = [];
 
-		$container->registerService(URLDecoder::class, function (IAppContainer $container) {
-			$server = $container->getServer();
-			$appConfig = new AppConfig('onlyoffice');
-			$crypto = new Crypt($appConfig);
-
-			return new URLDecoder(
-				$crypto,
-				$server->getUserSession(),
-				$server->getShareManager(),
-				$server->getRootFolder()
-			);
-		});
+	public function addHandler(ICommandHandler $handler) {
+		$this->handlers[] = $handler;
 	}
 
-	public function register() {
-
+	public function handle(array $command, Session $session, IIPCChannel $channel): void {
+		$type = $command['type'];
+		foreach ($this->handlers as $handler) {
+			if ($handler->getType() === $type) {
+				$handler->handle($command, $session, $channel, $this);
+				return;
+			}
+		}
 	}
 }

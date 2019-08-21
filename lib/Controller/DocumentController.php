@@ -21,9 +21,11 @@
 
 namespace OCA\DocumentServer\Controller;
 
-use OCA\DocumentServer\Command\AuthCommand;
-use OCA\DocumentServer\Command\IsSaveLock;
-use OCA\DocumentServer\Command\SaveChangesCommand;
+use OC\ForbiddenException;
+use OCA\DocumentServer\OnlyOffice\URLDecoder;
+use OCA\DocumentServer\XHRCommand\AuthCommand;
+use OCA\DocumentServer\XHRCommand\IsSaveLock;
+use OCA\DocumentServer\XHRCommand\SaveChangesCommand;
 use OCA\DocumentServer\Document\DocumentStore;
 use OCA\DocumentServer\Channel\ChannelFactory;
 use OCP\AppFramework\Http\StreamResponse;
@@ -56,16 +58,20 @@ class DocumentController extends SessionController {
 	/** @var DocumentStore */
 	private $documentStore;
 
+	private $urlDecoder;
+
 	public function __construct(
 		$appName,
 		IRequest $request,
 		ChannelFactory $sessionFactory,
 		DocumentStore $documentStore,
-		ISecureRandom $random
+		ISecureRandom $random,
+		URLDecoder $urlDecoder
 	) {
 		parent::__construct($appName, $request, $sessionFactory, $random);
 
 		$this->documentStore = $documentStore;
+		$this->urlDecoder = $urlDecoder;
 	}
 
 
@@ -91,9 +97,19 @@ class DocumentController extends SessionController {
 	 * @NoCSRFRequired
 	 */
 	public function openDocument(int $docId, string $format, string $url) {
+		// instead of downloading the source document from the onlyoffice app,
+		// we get the source file from the token directly
+		// this saves a round trip and gives us the fileid to use for saving later
 		$url = decodePathSegment($url);
+		$query = [];
+		parse_str(parse_url($url, PHP_URL_QUERY), $query);
 
-		$file = $this->documentStore->getDocumentForEditor($docId, $url, $format);
+		$sourceFile = $this->urlDecoder->getFileForToken($query['doc']);
+		if (!$sourceFile) {
+			throw new ForbiddenException('Failed to get document');
+		}
+
+		$file = $this->documentStore->getDocumentForEditor($docId, $sourceFile, $format);
 
 		return new StreamResponse($file->read());
 	}
