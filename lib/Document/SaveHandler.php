@@ -21,7 +21,6 @@
 
 namespace OCA\DocumentServer\Document;
 
-
 use OCA\DocumentServer\DocumentConverter;
 use OCP\Lock\ILockingProvider;
 

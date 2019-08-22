@@ -21,7 +21,6 @@
 
 namespace OCA\DocumentServer\Channel;
 
-
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\IDBConnection;
 
