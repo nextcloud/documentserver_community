@@ -65,10 +65,6 @@ class DocumentStore {
 		return $this->config->getSystemValueString('datadirectory') . $path;
 	}
 
-	public function getDocumentPath(int $documentId): string {
-		return $this->getLocalPath($this->getDocumentFolder($documentId));
-	}
-
 	private function getDocumentFolder(int $documentId): ISimpleFolder {
 		try {
 			return $this->appData->getFolder("doc_$documentId");
@@ -125,10 +121,13 @@ class DocumentStore {
 
 	/**
 	 * @return int[]
-	 * @throws NotFoundException
 	 */
 	public function getOpenDocuments(): array {
-		$content = $this->appData->getDirectoryListing();
+		try {
+			$content = $this->appData->getDirectoryListing();
+		} catch (NotFoundException $e) {
+			return [];
+		}
 		$content = array_filter($content, function (ISimpleFolder $folder) {
 			return substr($folder->getName(), 0, 4) === 'doc_';
 		});
@@ -136,5 +135,9 @@ class DocumentStore {
 		return array_map(function (ISimpleFolder $folder) {
 			return (int)substr($folder->getName(), 4);
 		}, $content);
+	}
+
+	public function closeDocument(int $documentId) {
+		$this->getDocumentFolder($documentId)->delete();
 	}
 }

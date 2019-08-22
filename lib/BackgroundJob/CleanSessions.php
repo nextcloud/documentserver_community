@@ -22,19 +22,37 @@
 namespace OCA\DocumentServer\BackgroundJob;
 
 use OCA\DocumentServer\Channel\SessionManager;
+use OCA\DocumentServer\Document\DocumentStore;
+use OCA\DocumentServer\Document\SaveHandler;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\Job;
 
 class CleanSessions extends Job {
-	/** @var SessionManager */
 	private $sessionManager;
+	private $documentStore;
+	private $saveHandler;
 
-	public function __construct(ITimeFactory $time, SessionManager $sessionManager) {
+	public function __construct(
+		ITimeFactory $time,
+		SessionManager $sessionManager,
+		DocumentStore $documentStore,
+		SaveHandler $saveHandler
+	) {
 		parent::__construct($time);
+
 		$this->sessionManager = $sessionManager;
+		$this->documentStore = $documentStore;
+		$this->saveHandler = $saveHandler;
 	}
 
 	protected function run($argument) {
 		$this->sessionManager->cleanSessions();
+
+		$documents = $this->documentStore->getOpenDocuments();
+		foreach ($documents as $documentId) {
+			if (!$this->sessionManager->isDocumentActive($documentId)) {
+				$this->saveHandler->flushChanges($documentId);
+			}
+		}
 	}
 }

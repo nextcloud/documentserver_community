@@ -21,6 +21,7 @@
 
 namespace OCA\DocumentServer\Document;
 
+use OCA\DocumentServer\Channel\SessionManager;
 use OCA\DocumentServer\DocumentConverter;
 use OCP\Lock\ILockingProvider;
 
@@ -29,17 +30,20 @@ class SaveHandler {
 	private $changeStore;
 	private $documentConverter;
 	private $lockingProvider;
+	private $sessionManager;
 
 	public function __construct(
 		DocumentStore $documentStore,
 		ChangeStore $changeStore,
 		DocumentConverter $documentConverter,
-		ILockingProvider $lockingProvider
+		ILockingProvider $lockingProvider,
+		SessionManager $sessionManager
 	) {
 		$this->documentStore = $documentStore;
 		$this->changeStore = $changeStore;
 		$this->documentConverter = $documentConverter;
 		$this->lockingProvider = $lockingProvider;
+		$this->sessionManager = $sessionManager;
 	}
 
 	public function flushChanges(int $documentId) {
@@ -48,13 +52,15 @@ class SaveHandler {
 		try {
 			$changes = $this->changeStore->getChangesAndMarkProcessingForDocument($documentId);
 
-			if (count($changes) === 0) {
-				return;
+			if (count($changes)) {
+				$this->documentStore->saveChanges($documentId, $changes);
+
+				$this->changeStore->deleteProcessedChanges($documentId);
 			}
 
-			$this->documentStore->saveChanges($documentId, $changes);
-
-			$this->changeStore->deleteProcessedChanges($documentId);
+			if (!$this->sessionManager->isDocumentActive($documentId)) {
+				$this->documentStore->closeDocument($documentId);
+			}
 		} catch (\Exception $e) {
 			$this->changeStore->unmarkProcessing($documentId);
 			throw $e;
