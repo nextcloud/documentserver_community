@@ -25,6 +25,8 @@ use OCA\DocumentServer\Channel\Session;
 use OCA\DocumentServer\Channel\SessionManager;
 use OCA\DocumentServer\Document\Change;
 use OCA\DocumentServer\Document\ChangeStore;
+use OCA\DocumentServer\Document\DocumentStore;
+use OCA\DocumentServer\OnlyOffice\URLDecoder;
 use OCP\IPC\IIPCChannel;
 use OCP\IURLGenerator;
 use function Sabre\HTTP\encodePathSegment;
@@ -33,11 +35,21 @@ class AuthCommand implements ICommandHandler {
 	private $urlGenerator;
 	private $changeStore;
 	private $sessionManager;
+	private $documentStore;
+	private $urlDecoder;
 
-	public function __construct(IURLGenerator $urlGenerator, ChangeStore $changeStore, SessionManager $sessionManager) {
+	public function __construct(
+		IURLGenerator $urlGenerator,
+		ChangeStore $changeStore,
+		SessionManager $sessionManager,
+		DocumentStore $documentStore,
+		URLDecoder $urlDecoder
+	) {
 		$this->urlGenerator = $urlGenerator;
 		$this->changeStore = $changeStore;
 		$this->sessionManager = $sessionManager;
+		$this->documentStore = $documentStore;
+		$this->urlDecoder = $urlDecoder;
 	}
 
 	public function getType(): string {
@@ -49,7 +61,7 @@ class AuthCommand implements ICommandHandler {
 
 		$channel->pushMessage(json_encode([
 			'type' => 'authChanges',
-			'changes' => array_map(function(Change $change) {
+			'changes' => array_map(function (Change $change) {
 				return $change->formatForClient();
 			}, $changes),
 		]));
@@ -90,26 +102,31 @@ class AuthCommand implements ICommandHandler {
 
 		if (isset($command['openCmd'])) {
 			$openCmd = $command['openCmd'];
-			$docId = $command['docid'];
+			$docId = (int)$command['docid'];
 			$documentUrl = $openCmd['url'];
 			$inputFormat = $openCmd['format'];
 
-			$channel->pushMessage(json_encode([
-				'type' => 'documentOpen',
-				'data' => [
-					'type' => 'open',
-					'status' => 'ok',
-					'data' => [
-						'Editor.bin' => $this->urlGenerator->linkToRouteAbsolute(
-							'documentserver.Document.openDocument', [
-								'format' => $inputFormat,
-								'url' => encodePathSegment($documentUrl),
-								'docId' => $docId
-							]
-						)
+			$documentFile = $this->urlDecoder->getFileForUrl($documentUrl);
+			$this->documentStore->getDocumentForEditor($docId, $documentFile, $inputFormat);
+
+			$files = array_merge(['Editor.bin'], $this->documentStore->getEmbeddedFiles($docId));
+			$urls = array_map(function(string $file) use ($docId) {
+				return $this->urlGenerator->linkToRouteAbsolute(
+					'documentserver.Document.documentFile', [
+						'path' => $file,
+						'docId' => $docId,
 					]
-				]
-			]));
+				);
+			}, $files);
+
+			$channel->pushMessage(json_encode([
+					'type' => 'documentOpen',
+					'data' => [
+						'type' => 'open',
+						'status' => 'ok',
+						'data' => array_combine($files, $urls),
+					],
+				]));
 		}
 	}
 }

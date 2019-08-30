@@ -134,7 +134,7 @@ class StaticController extends Controller {
 	 * @NoAdminRequired
 	 */
 	public function pluginsJSON() {
-		return "asdasd";
+		return "[]";
 	}
 }
 

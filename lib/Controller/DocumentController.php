@@ -22,6 +22,7 @@
 namespace OCA\DocumentServer\Controller;
 
 use OC\ForbiddenException;
+use OCA\DocumentServer\FileResponse;
 use OCA\DocumentServer\OnlyOffice\URLDecoder;
 use OCA\DocumentServer\XHRCommand\AuthCommand;
 use OCA\DocumentServer\XHRCommand\IsSaveLock;
@@ -96,21 +97,14 @@ class DocumentController extends SessionController {
 	 * @NoAdminRequired
 	 * @NoCSRFRequired
 	 */
-	public function openDocument(int $docId, string $format, string $url) {
-		// instead of downloading the source document from the onlyoffice app,
-		// we get the source file from the token directly
-		// this saves a round trip and gives us the fileid to use for saving later
-		$url = decodePathSegment($url);
-		$query = [];
-		parse_str(parse_url($url, PHP_URL_QUERY), $query);
+	public function documentFile(int $docId, string $path) {
+		$file = $this->documentStore->openDocumentFile($docId, $path);
 
-		$sourceFile = $this->urlDecoder->getFileForToken($query['doc']);
-		if (!$sourceFile) {
-			throw new ForbiddenException('Failed to get document');
-		}
-
-		$file = $this->documentStore->getDocumentForEditor($docId, $sourceFile, $format);
-
-		return new StreamResponse($file->read());
+		return new FileResponse(
+			$file->fopen('r'),
+			$file->getSize(),
+			$file->getMTime(),
+			$file->getMimeType()
+		);
 	}
 }

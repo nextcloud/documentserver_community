@@ -29,6 +29,7 @@ use OCA\Onlyoffice\Crypt;
 use OCP\Files\Folder;
 use OCP\IUserSession;
 use OCP\Share\IManager;
+use function Sabre\HTTP\decodePathSegment;
 
 class URLDecoder {
 	/** @var Crypt */
@@ -53,6 +54,16 @@ class URLDecoder {
 		$this->userSession = $userSession;
 		$this->shareManager = $shareManager;
 		$this->rootFolder = $rootFolder;
+	}
+
+	public function getFileForUrl(string $url): ?File {
+		$url = decodePathSegment($url);
+		$query = [];
+		parse_str(parse_url($url, PHP_URL_QUERY), $query);
+		if (!isset($query['doc'])) {
+			return null;
+		}
+		return $this->getFileForToken($query['doc']);
 	}
 
 

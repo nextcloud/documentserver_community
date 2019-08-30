@@ -29,7 +29,7 @@ use OCP\AppFramework\Http\Response;
 class FileResponse extends Response implements ICallbackResponse {
 	private $data;
 
-	public function __construct(string $data, int $length, int $lastModified, string $mimeType, int $statusCode = Http::STATUS_OK,
+	public function __construct($data, int $length, int $lastModified, string $mimeType, int $statusCode = Http::STATUS_OK,
 	                            $headers = []) {
 		$this->data = $data;
 		$this->setStatus($statusCode);
@@ -48,7 +48,11 @@ class FileResponse extends Response implements ICallbackResponse {
 	 */
 	public function callback(IOutput $output) {
 		if ($output->getHttpResponseCode() !== Http::STATUS_NOT_MODIFIED) {
-			print $this->data;
+			if (is_resource($this->data)) {
+				fpassthru($this->data);
+			} else {
+				print $this->data;
+			}
 		}
 	}
 }

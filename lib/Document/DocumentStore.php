@@ -56,13 +56,17 @@ class DocumentStore {
 	 * @return string
 	 */
 	private function getLocalPath(ISimpleFolder $folder): string {
+		$fullFolder = $this->upgradeFolder($folder);
+		$path = $fullFolder->getPath();
+		return $this->config->getSystemValueString('datadirectory') . $path;
+	}
+
+	private function upgradeFolder(ISimpleFolder $folder): Folder {
 		$class = new \ReflectionClass($folder);
 		$prop = $class->getProperty('folder');
 		$prop->setAccessible(true);
 		/** @var Folder $fullFolder */
-		$fullFolder = $prop->getValue($folder);
-		$path = $fullFolder->getPath();
-		return $this->config->getSystemValueString('datadirectory') . $path;
+		return $prop->getValue($folder);
 	}
 
 	private function getDocumentFolder(int $documentId): ISimpleFolder {
@@ -93,6 +97,27 @@ class DocumentStore {
 
 			return $docFolder->getFile('Editor.bin');
 		}
+	}
+
+	public function getEmbeddedFiles(int $documentId): array {
+		$docFolder = $this->upgradeFolder($this->getDocumentFolder($documentId));
+		$files = [];
+		try {
+			/** @var Folder $mediaFolder */
+			$mediaFolder = $docFolder->get('media');
+			foreach ($mediaFolder->getDirectoryListing() as $mediaFile) {
+				$files[] = 'media/' . $mediaFile->getName();
+			}
+		} catch (NotFoundException $e) {
+
+		}
+
+		return $files;
+	}
+
+	public function openDocumentFile(int $documentId, string $path): File {
+		$docFolder = $this->upgradeFolder($this->getDocumentFolder($documentId));
+		return $docFolder->get($path);
 	}
 
 	public function saveChanges(int $documentId, array $changes) {
