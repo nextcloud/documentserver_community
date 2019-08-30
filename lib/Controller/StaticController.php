@@ -26,8 +26,8 @@ use OC\Security\CSP\ContentSecurityPolicy;
 use OC\Security\CSP\ContentSecurityPolicyNonceManager;
 use OCA\DocumentServer\FileResponse;
 use OCP\AppFramework\Controller;
+use OCP\AppFramework\Http\NotFoundResponse;
 use OCP\Files\IMimeTypeDetector;
-use OCP\Files\NotFoundException;
 use OCP\IRequest;
 
 class StaticController extends Controller {
@@ -92,7 +92,7 @@ class StaticController extends Controller {
 	private function createFileResponse($path) {
 
 		if (!file_exists($path)) {
-			throw new NotFoundException();
+			return new NotFoundResponse();
 		}
 		$content = file_get_contents($path);
 		$isHTML = pathinfo($path, PATHINFO_EXTENSION) === 'html';
