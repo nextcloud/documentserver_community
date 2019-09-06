@@ -36,7 +36,7 @@ class SessionManager {
 	public function getSession(string $sessionId): ?Session {
 		$query = $this->connection->getQueryBuilder();
 
-		$query->select('session_id', 'document_id', 'user', 'user_original', 'last_seen')
+		$query->select('session_id', 'document_id', 'user', 'user_original', 'last_seen', 'readonly', 'user_index')
 			->from('documentserver_sessions')
 			->where($query->expr()->eq('session_id', $query->createNamedParameter($sessionId)));
 
@@ -48,18 +48,35 @@ class SessionManager {
 		}
 	}
 
-	public function newSession(string $sessionId, int $documentId, string $user, string $userOriginal) {
+	private function getNextUserIndex(int $documentId): int {
 		$query = $this->connection->getQueryBuilder();
+
+		$query->select($query->createFunction('MAX(' . $query->getColumnName('user_index') . ')'))
+			->from('documentserver_sessions')
+			->where($query->expr()->eq('document_id', $query->createNamedParameter($documentId, \PDO::PARAM_INT)));
+
+		return $query->execute()->fetchColumn() + 1;
+	}
+
+	public function newSession(string $sessionId, int $documentId, string $user, string $userOriginal, bool $readOnly): Session {
+		$userId = $this->getNextUserIndex($documentId);
+
+		$query = $this->connection->getQueryBuilder();
+		$now = $this->timeFactory->getTime();
 
 		$query->insert('documentserver_sessions')
 			->values([
 				'session_id' => $query->createNamedParameter($sessionId),
 				'document_id' => $query->createNamedParameter($documentId, \PDO::PARAM_INT),
-				'last_seen' => $query->createNamedParameter($this->timeFactory->getTime(), \PDO::PARAM_INT),
+				'last_seen' => $query->createNamedParameter($now, \PDO::PARAM_INT),
 				'user' => $query->createNamedParameter($user),
 				'user_original' => $query->createNamedParameter($userOriginal),
+				'readonly' => $query->createNamedParameter($readOnly, \PDO::PARAM_INT),
+				'user_index' => $query->createNamedParameter($userId, \PDO::PARAM_INT),
 			]);
 		$query->execute();
+
+		return new Session($sessionId, $documentId, $user, $userOriginal, $now, $readOnly, $userId);
 	}
 
 	public function markAsSeen(string $sessionId) {
@@ -82,12 +99,22 @@ class SessionManager {
 	}
 
 	public function isDocumentActive(int $documentId): bool {
+		return count($this->getSessionsForDocument($documentId)) > 0;
+	}
+
+	/**
+	 * @param int $documentId
+	 * @return Session[]
+	 */
+	public function getSessionsForDocument(int $documentId): array {
 		$query = $this->connection->getQueryBuilder();
 
-		$query->select('session_id')
+		$query->select('session_id', 'document_id', 'user', 'user_original', 'last_seen', 'readonly', 'user_index')
 			->from('documentserver_sessions')
 			->where($query->expr()->eq('document_id', $query->createNamedParameter($documentId, \PDO::PARAM_INT)));
 
-		return (bool)$query->execute()->fetchColumn();
+		return array_map(function(array $row) {
+			return Session::fromRow($row);
+		},$query->execute()->fetchAll());
 	}
 }

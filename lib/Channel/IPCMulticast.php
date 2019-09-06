@@ -21,31 +21,42 @@
 
 namespace OCA\DocumentServer\Channel;
 
-use OCA\DocumentServer\XHRCommand\CommandDispatcher;
-use OCP\ICacheFactory;
+
+use OCP\IPC\IIPCChannel;
 use OCP\IPC\IIPCFactory;
 
-class ChannelFactory {
+/**
+ * IPC Channel that sends to all other sessions connected for a document
+ */
+class IPCMulticast implements IIPCChannel {
 	private $ipcFactory;
-	private $memcacheFactory;
 	private $sessionManager;
+	private $documentId;
+	private $sessionId;
 
-	public function __construct(IIPCFactory $ipcFactory, ICacheFactory $memcacheFactory, SessionManager $sessionManager) {
+	public function __construct(IIPCFactory $ipcFactory, SessionManager $sessionManager, int $documentId, string $sessionId) {
 		$this->ipcFactory = $ipcFactory;
-		$this->memcacheFactory = $memcacheFactory;
 		$this->sessionManager = $sessionManager;
+		$this->documentId = $documentId;
+		$this->sessionId = $sessionId;
 	}
 
-	public function getSession(string $sessionId, string $documentId, CommandDispatcher $commandDispatcher, array $initialResponses = []) {
-		$key = "session_$sessionId";
 
-		return new Channel(
-			$this->ipcFactory->getChannel($key),
-			new IPCMulticast($this->ipcFactory, $this->sessionManager, (int)$documentId, $sessionId),
-			$this->memcacheFactory->createLocal($key),
-			$commandDispatcher,
-			$this->sessionManager,
-			$initialResponses
-		);
+	public function getName(): string {
+		return "document_{$this->documentId}";
+	}
+
+	public function pushMessage(string $message) {
+		$allSessions = $this->sessionManager->getSessionsForDocument($this->documentId);
+		foreach ($allSessions as $session) {
+			if ($session->getSessionId() != $this->sessionId) {
+				$channel = $this->ipcFactory->getChannel("session_" . $session->getSessionId());
+				$channel->pushMessage($message);
+			}
+		}
+	}
+
+	public function popMessage(): ?string {
+		return null;
 	}
 }

@@ -27,13 +27,17 @@ class Session {
 	private $user;
 	private $userOriginal;
 	private $lastSeen;
+	private $readOnly;
+	private $userId;
 
-	public function __construct(string $sessionId, int $documentId, string $user, string $userOriginal, int $lastSeen) {
+	public function __construct(string $sessionId, int $documentId, string $user, string $userOriginal, int $lastSeen, bool $readOnly, int $userId) {
 		$this->documentId = $documentId;
 		$this->sessionId = $sessionId;
 		$this->user = $user;
 		$this->userOriginal = $userOriginal;
 		$this->lastSeen = $lastSeen;
+		$this->readOnly = $readOnly;
+		$this->userId = $userId;
 	}
 
 	public function getDocumentId(): int {
@@ -56,13 +60,39 @@ class Session {
 		return $this->lastSeen;
 	}
 
+	public function isReadOnly(): bool {
+		return $this->readOnly;
+	}
+
+	public function getUserIndex(): int {
+		return $this->userId;
+	}
+
+	public function getUserId(): string {
+		return $this->getUser() . $this->getUserIndex();
+	}
+
+	public function formatForClient(): array {
+		return [
+			"id" => $this->getUserId(),
+			"idOriginal" => $this->getUserOriginal(),
+			"username" => $this->getUser(),
+			"indexUser" => $this->getUserIndex(),
+			"view" => $this->isReadOnly(),
+			"connectionId" => $this->getSessionId(),
+			"isCloseCoAuthoring" => false,
+		];
+	}
+
 	public static function fromRow(array $row): self {
 		return new Session(
 			$row['session_id'],
 			(int)$row['document_id'],
 			$row['user'],
 			$row['user_original'],
-			(int)$row['last_seen']
+			(int)$row['last_seen'],
+			(bool)$row['readonly'],
+			(int)$row['user_index']
 		);
 	}
 }

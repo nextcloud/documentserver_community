@@ -27,5 +27,5 @@ use OCP\IPC\IIPCChannel;
 interface ICommandHandler {
 	public function getType(): string;
 
-	public function handle(array $command, Session $session, IIPCChannel $channel, CommandDispatcher $commandDispatcher): void;
+	public function handle(array $command, Session $session, IIPCChannel $sessionChannel, IIPCChannel $documentChannel, CommandDispatcher $commandDispatcher): void;
 }

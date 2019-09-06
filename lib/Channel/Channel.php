@@ -33,20 +33,23 @@ class Channel {
 
 	const TIMEOUT = 25;
 
-	private $ipcChannel;
+	private $sessionChannel;
+	private $documentChannel;
 	private $state;
 	private $commandDispatcher;
 	private $sessionManager;
 	private $initialResponses = [];
 
 	public function __construct(
-		IIPCChannel $ipcChannel,
+		IIPCChannel $sessionChannel,
+		IIPCChannel $documentChannel,
 		IMemcache $state,
 		CommandDispatcher $commandDispatcher,
 		SessionManager $sessionManager,
 		array $initialResponses = []
 	) {
-		$this->ipcChannel = $ipcChannel;
+		$this->sessionChannel = $sessionChannel;
+		$this->documentChannel = $documentChannel;
 		$this->state = $state;
 		$this->commandDispatcher = $commandDispatcher;
 		$this->initialResponses = $initialResponses;
@@ -68,7 +71,7 @@ class Channel {
 			default:
 				$slept = 0;
 				while ($slept < self::TIMEOUT) {
-					$message = $this->ipcChannel->popMessage();
+					$message = $this->sessionChannel->popMessage();
 					if ($message) {
 						return [self::TYPE_ARRAY, json_decode($message, true)];
 					}
@@ -87,9 +90,9 @@ class Channel {
 			$this->sessionManager->markAsSeen($session->getSessionId());
 		} else {
 			// create a fake session so we have document id and session id during the auth command handling
-			$session = new Session($sessionId, $documentId, '', '', time());
+			$session = new Session($sessionId, $documentId, '', '', time(), false, 0);
 		}
 
-		$this->commandDispatcher->handle($command, $session, $this->ipcChannel);
+		$this->commandDispatcher->handle($command, $session, $this->sessionChannel, $this->documentChannel);
 	}
 }

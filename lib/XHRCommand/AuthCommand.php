@@ -56,10 +56,10 @@ class AuthCommand implements ICommandHandler {
 		return 'auth';
 	}
 
-	public function handle(array $command, Session $session, IIPCChannel $channel, CommandDispatcher $commandDispatcher): void {
+	public function handle(array $command, Session $session, IIPCChannel $sessionChannel, IIPCChannel $documentChannel, CommandDispatcher $commandDispatcher): void {
 		$changes = $this->changeStore->getChangesForDocument($session->getDocumentId());
 
-		$channel->pushMessage(json_encode([
+		$sessionChannel->pushMessage(json_encode([
 			'type' => 'authChanges',
 			'changes' => array_map(function (Change $change) {
 				return $change->formatForClient();
@@ -67,20 +67,21 @@ class AuthCommand implements ICommandHandler {
 		]));
 
 		$user = $command['user'];
+		$readOnly = $command['view'];
 
-		$this->sessionManager->newSession($session->getSessionId(), $session->getDocumentId(), $user['id'], $user['id']);
+		$session = $this->sessionManager->newSession($session->getSessionId(), $session->getDocumentId(), $user['id'], $user['id'], $readOnly);
 
-		$channel->pushMessage(json_encode([
+		$sessionChannel->pushMessage(json_encode([
 			'type' => 'auth',
 			'result' => 1,
 			'sessionId' => $session->getSessionId(),
-			'sessionTimeConnect' => time(),
+			'sessionTimeConnect' => $session->getLastSeen(),
 			'participants' => [
-				'id' => $user['id'],
-				'idOriginal' => $user['id'],
-				'username' => $user['username'],
-				'indexUser' => 1,
-				'view' => true,
+				'id' => $session->getUserId(),
+				'idOriginal' => $session->getUserOriginal(),
+				'username' => $session->getUser(),
+				'indexUser' => $session->getUserIndex(),
+				'view' => $session->isReadOnly(),
 				'connectionId' => $session->getSessionId(),
 				'isCloseCoAuthoring' => false,
 			],
@@ -99,6 +100,18 @@ class AuthCommand implements ICommandHandler {
 			],
 		]));
 
+		$participants = $this->sessionManager->getSessionsForDocument($session->getDocumentId());
+		$message = json_encode([
+			'type' => 'connectState',
+			'participantsTimestamp' => time() * 1000,
+			'participants' => array_map(function (Session $session) {
+				return $session->formatForClient();
+			}, $participants),
+			'waitAuth' => false,
+		]);
+		$documentChannel->pushMessage($message);
+		$sessionChannel->pushMessage($message);
+
 
 		if (isset($command['openCmd'])) {
 			$openCmd = $command['openCmd'];
@@ -110,7 +123,7 @@ class AuthCommand implements ICommandHandler {
 			$this->documentStore->getDocumentForEditor($docId, $documentFile, $inputFormat);
 
 			$files = array_merge(['Editor.bin'], $this->documentStore->getEmbeddedFiles($docId));
-			$urls = array_map(function(string $file) use ($docId) {
+			$urls = array_map(function (string $file) use ($docId) {
 				return $this->urlGenerator->linkToRouteAbsolute(
 					'documentserver.Document.documentFile', [
 						'path' => $file,
@@ -119,14 +132,14 @@ class AuthCommand implements ICommandHandler {
 				);
 			}, $files);
 
-			$channel->pushMessage(json_encode([
-					'type' => 'documentOpen',
-					'data' => [
-						'type' => 'open',
-						'status' => 'ok',
-						'data' => array_combine($files, $urls),
-					],
-				]));
+			$sessionChannel->pushMessage(json_encode([
+				'type' => 'documentOpen',
+				'data' => [
+					'type' => 'open',
+					'status' => 'ok',
+					'data' => array_combine($files, $urls),
+				],
+			]));
 		}
 	}
 }

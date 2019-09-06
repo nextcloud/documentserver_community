@@ -69,6 +69,13 @@ class Version001000Date20190806104527 extends SimpleMigrationStep {
 				'notnull' => true,
 				'length' => 6
 			]);
+			$table->addColumn('readonly', 'boolean', [
+				'notnull' => true
+			]);
+			$table->addColumn('user_index', 'bigint', [
+				'notnull' => true,
+				'length' => 6,
+			]);
 			$table->setPrimaryKey(['session_id']);
 			$table->addIndex(['document_id'], 'documentserver_session_doc');
 			$table->addIndex(['last_seen'], 'documentserver_session_last');

@@ -82,7 +82,7 @@ abstract class SessionController extends Controller {
 	 * @PublicPage
 	 */
 	public function xhr(?string $version, string $documentId, string $serverId, string $sessionId) {
-		$session = $this->sessionFactory->getSession($sessionId, $this->getCommandDispatcher(), $this->getInitialResponses());
+		$session = $this->sessionFactory->getSession($sessionId, $documentId, $this->getCommandDispatcher(), $this->getInitialResponses());
 		list($type, $data) = $session->getResponse($sessionId);
 
 		return new XHRResponse($type, $data);
@@ -95,7 +95,7 @@ abstract class SessionController extends Controller {
 	 */
 	public function xhrSend(?string $version, string $documentId, string $serverId, string $sessionId) {
 		$commands = json_decode(file_get_contents('php://input'));
-		$session = $this->sessionFactory->getSession($sessionId, $this->getCommandDispatcher());
+		$session = $this->sessionFactory->getSession($sessionId, $documentId, $this->getCommandDispatcher());
 		foreach ($commands as $encodedCommand) {
 			$command = json_decode($encodedCommand, true);
 			$session->handleCommand($command, (int)$documentId, $sessionId);

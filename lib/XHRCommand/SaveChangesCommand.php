@@ -23,6 +23,7 @@ namespace OCA\DocumentServer\XHRCommand;
 
 use OCA\Documents\Document\Store;
 use OCA\DocumentServer\Channel\Session;
+use OCA\DocumentServer\Document\Change;
 use OCA\DocumentServer\Document\ChangeStore;
 use OCP\IPC\IIPCChannel;
 
@@ -37,14 +38,25 @@ class SaveChangesCommand implements ICommandHandler {
 		return 'saveChanges';
 	}
 
-	public function handle(array $command, Session $session, IIPCChannel $channel, CommandDispatcher $commandDispatcher): void {
+	public function handle(array $command, Session $session, IIPCChannel $sessionChannel, IIPCChannel $documentChannel, CommandDispatcher $commandDispatcher): void {
 		$changes = json_decode($command['changes']);
 
 		foreach ($changes as $change) {
-			$this->changeStore->addChangeForDocument($session->getDocumentId(), $change, $session->getUser(), $session->getUserOriginal());
+			$this->changeStore->addChangeForDocument($session->getDocumentId(), $change, $session->getUserId(), $session->getUserOriginal());
 		}
 
+		$documentChannel->pushMessage(json_encode([
+			'type' => 'saveChanges',
+			'changes' => array_map(function (string $changeString) use ($session) {
+				$change = new Change($session->getDocumentId(), time(), $changeString, $session->getUserId(), $session->getUserOriginal());
+				return $change->formatForClient();
+			}, $changes),
+			'changesIndex' => 10,
+			'locks' => [],
+			'excelAdditionalInfo' => '{}'
+		]));
+
 		$now = time() * 1000;
-		$channel->pushMessage('{"type":"unSaveLock","index":0,"time":' . $now . '}');
+		$sessionChannel->pushMessage('{"type":"unSaveLock","index":0,"time":' . $now . '}');
 	}
 }

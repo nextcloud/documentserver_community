@@ -29,7 +29,7 @@ class IsSaveLock implements ICommandHandler {
 		return 'isSaveLock';
 	}
 
-	public function handle(array $command, Session $session, IIPCChannel $channel, CommandDispatcher $commandDispatcher): void {
-		$channel->pushMessage('{"type":"saveLock","saveLock":false}');
+	public function handle(array $command, Session $session, IIPCChannel $sessionChannel, IIPCChannel $documentChannel, CommandDispatcher $commandDispatcher): void {
+		$sessionChannel->pushMessage('{"type":"saveLock","saveLock":false}');
 	}
 }

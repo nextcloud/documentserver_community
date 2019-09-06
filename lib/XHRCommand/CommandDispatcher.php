@@ -36,11 +36,11 @@ class CommandDispatcher {
 		$this->handlers[] = $handler;
 	}
 
-	public function handle(array $command, Session $session, IIPCChannel $channel): void {
+	public function handle(array $command, Session $session, IIPCChannel $sessionChannel, IIPCChannel $documentChannel): void {
 		$type = $command['type'];
 		foreach ($this->handlers as $handler) {
 			if ($handler->getType() === $type) {
-				$handler->handle($command, $session, $channel, $this);
+				$handler->handle($command, $session, $sessionChannel, $documentChannel, $this);
 				return;
 			}
 		}
