@@ -88,14 +88,14 @@ class SessionManager {
 		$query->execute();
 	}
 
-	public function cleanSessions() {
+	public function cleanSessions(): int {
 		$query = $this->connection->getQueryBuilder();
 
 		$cutoffTime = $this->timeFactory->getTime() - (Channel::TIMEOUT * 4);
 
 		$query->delete('documentserver_sessions')
 			->where($query->expr()->lt('last_seen', $query->createNamedParameter($cutoffTime, \PDO::PARAM_INT)));
-		$query->execute();
+		return $query->execute();
 	}
 
 	public function isDocumentActive(int $documentId): bool {

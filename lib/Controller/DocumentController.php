@@ -25,10 +25,12 @@ use OC\ForbiddenException;
 use OCA\DocumentServer\FileResponse;
 use OCA\DocumentServer\OnlyOffice\URLDecoder;
 use OCA\DocumentServer\XHRCommand\AuthCommand;
+use OCA\DocumentServer\XHRCommand\IIdleHandler;
 use OCA\DocumentServer\XHRCommand\IsSaveLock;
 use OCA\DocumentServer\XHRCommand\SaveChangesCommand;
 use OCA\DocumentServer\Document\DocumentStore;
 use OCA\DocumentServer\Channel\ChannelFactory;
+use OCA\DocumentServer\XHRCommand\SessionDisconnect;
 use OCP\AppFramework\Http\StreamResponse;
 use OCP\IRequest;
 use OCP\Security\ISecureRandom;
@@ -54,6 +56,10 @@ class DocumentController extends SessionController {
 		AuthCommand::class,
 		IsSaveLock::class,
 		SaveChangesCommand::class,
+	];
+
+	const IDLE_HANDLERS = [
+		SessionDisconnect::class
 	];
 
 	/** @var DocumentStore */
@@ -82,6 +88,10 @@ class DocumentController extends SessionController {
 
 	protected function getCommandHandlerClasses(): array {
 		return self::COMMAND_HANDLERS;
+	}
+
+	protected function getIdleHandlerClasses(): array {
+		return self::IDLE_HANDLERS;
 	}
 
 	/**

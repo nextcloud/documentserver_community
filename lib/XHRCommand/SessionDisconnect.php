@@ -21,36 +21,34 @@
 
 namespace OCA\DocumentServer\XHRCommand;
 
+
 use OCA\DocumentServer\Channel\Session;
+use OCA\DocumentServer\Channel\SessionManager;
 use OCP\IPC\IIPCChannel;
 
-class CommandDispatcher {
-	/** @var ICommandHandler[] */
-	private $handlers = [];
-	/** @var IIdleHandler[] */
-	private $idleHandlers = [];
+class SessionDisconnect implements IIdleHandler {
+	private $sessionManager;
 
-	public function addHandler(ICommandHandler $handler) {
-		$this->handlers[] = $handler;
+	public function __construct(SessionManager $sessionManager) {
+		$this->sessionManager = $sessionManager;
 	}
 
-	public function addIdleHandler(IIdleHandler $handler) {
-		$this->idleHandlers[] = $handler;
-	}
 
-	public function handle(array $command, Session $session, IIPCChannel $sessionChannel, IIPCChannel $documentChannel): void {
-		$type = $command['type'];
-		foreach ($this->handlers as $handler) {
-			if ($handler->getType() === $type) {
-				$handler->handle($command, $session, $sessionChannel, $documentChannel, $this);
-				return;
-			}
-		}
-	}
+	public function handle(Session $session, IIPCChannel $sessionChannel, IIPCChannel $documentChannel, CommandDispatcher $commandDispatcher): void {
+		$deleted = $this->sessionManager->cleanSessions();
 
-	public function idleWork(Session $session, IIPCChannel $sessionChannel, IIPCChannel $documentChannel): void {
-		foreach ($this->idleHandlers as $handler) {
-			$handler->handle($session, $sessionChannel, $documentChannel, $this);
+		if ($deleted) {
+			$participants = $this->sessionManager->getSessionsForDocument($session->getDocumentId());
+			$message = json_encode([
+				'type' => 'connectState',
+				'participantsTimestamp' => time() * 1000,
+				'participants' => array_map(function (Session $session) {
+					return $session->formatForClient();
+				}, $participants),
+				'waitAuth' => false,
+			]);
+			$documentChannel->pushMessage($message);
+			$sessionChannel->pushMessage($message);
 		}
 	}
 }

@@ -79,6 +79,13 @@ class Channel {
 					usleep(100 * 1000);
 					$slept += 0.1;
 				}
+
+				$session = $this->sessionManager->getSession($sessionId);
+
+				if ($session) {
+					$this->commandDispatcher->idleWork($session, $this->sessionChannel, $this->documentChannel);
+				}
+
 				return [self::TYPE_HEARTBEAT, null];
 		}
 	}

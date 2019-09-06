@@ -24,33 +24,6 @@ namespace OCA\DocumentServer\XHRCommand;
 use OCA\DocumentServer\Channel\Session;
 use OCP\IPC\IIPCChannel;
 
-class CommandDispatcher {
-	/** @var ICommandHandler[] */
-	private $handlers = [];
-	/** @var IIdleHandler[] */
-	private $idleHandlers = [];
-
-	public function addHandler(ICommandHandler $handler) {
-		$this->handlers[] = $handler;
-	}
-
-	public function addIdleHandler(IIdleHandler $handler) {
-		$this->idleHandlers[] = $handler;
-	}
-
-	public function handle(array $command, Session $session, IIPCChannel $sessionChannel, IIPCChannel $documentChannel): void {
-		$type = $command['type'];
-		foreach ($this->handlers as $handler) {
-			if ($handler->getType() === $type) {
-				$handler->handle($command, $session, $sessionChannel, $documentChannel, $this);
-				return;
-			}
-		}
-	}
-
-	public function idleWork(Session $session, IIPCChannel $sessionChannel, IIPCChannel $documentChannel): void {
-		foreach ($this->idleHandlers as $handler) {
-			$handler->handle($session, $sessionChannel, $documentChannel, $this);
-		}
-	}
+interface IIdleHandler {
+	public function handle(Session $session, IIPCChannel $sessionChannel, IIPCChannel $documentChannel, CommandDispatcher $commandDispatcher): void;
 }

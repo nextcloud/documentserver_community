@@ -48,10 +48,20 @@ abstract class SessionController extends Controller {
 
 	abstract protected function getCommandHandlerClasses(): array;
 
+	protected function getIdleHandlerClasses(): array {
+		return [];
+	}
+
 	protected function getCommandHandlers(): array {
 		return array_map(function (string $class) {
 			return \OC::$server->query($class);
 		}, $this->getCommandHandlerClasses());
+	}
+
+	protected function getIdleHandlers(): array {
+		return array_map(function (string $class) {
+			return \OC::$server->query($class);
+		}, $this->getIdleHandlerClasses());
 	}
 
 	/**
@@ -72,6 +82,9 @@ abstract class SessionController extends Controller {
 		$dispatcher = new CommandDispatcher();
 		foreach ($this->getCommandHandlers() as $commandHandler) {
 			$dispatcher->addHandler($commandHandler);
+		}
+		foreach ($this->getIdleHandlers() as $idleHandler) {
+			$dispatcher->addIdleHandler($idleHandler);
 		}
 		return $dispatcher;
 	}
