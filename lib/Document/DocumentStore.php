@@ -120,6 +120,11 @@ class DocumentStore {
 		return $docFolder->get($path);
 	}
 
+	public function saveDocumentFile(int $documentId, string $path, $data) {
+		$docFolder = $this->upgradeFolder($this->getDocumentFolder($documentId));
+		$docFolder->newFile($path)->putContent($data);
+	}
+
 	public function saveChanges(int $documentId, array $changes) {
 		$docFolder = $this->getDocumentFolder($documentId);
 

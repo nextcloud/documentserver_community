@@ -21,20 +21,18 @@
 
 namespace OCA\DocumentServer\Controller;
 
-use OC\ForbiddenException;
 use OCA\DocumentServer\FileResponse;
 use OCA\DocumentServer\OnlyOffice\URLDecoder;
 use OCA\DocumentServer\XHRCommand\AuthCommand;
-use OCA\DocumentServer\XHRCommand\IIdleHandler;
 use OCA\DocumentServer\XHRCommand\IsSaveLock;
 use OCA\DocumentServer\XHRCommand\SaveChangesCommand;
 use OCA\DocumentServer\Document\DocumentStore;
 use OCA\DocumentServer\Channel\ChannelFactory;
 use OCA\DocumentServer\XHRCommand\SessionDisconnect;
-use OCP\AppFramework\Http\StreamResponse;
+use OCP\AppFramework\Http\DataResponse;
 use OCP\IRequest;
+use OCP\IURLGenerator;
 use OCP\Security\ISecureRandom;
-use function Sabre\HTTP\decodePathSegment;
 
 class DocumentController extends SessionController {
 	const INITIAL_RESPONSES = [
@@ -59,7 +57,7 @@ class DocumentController extends SessionController {
 	];
 
 	const IDLE_HANDLERS = [
-		SessionDisconnect::class
+		SessionDisconnect::class,
 	];
 
 	/** @var DocumentStore */
@@ -67,18 +65,22 @@ class DocumentController extends SessionController {
 
 	private $urlDecoder;
 
+	private $urlGenerator;
+
 	public function __construct(
 		$appName,
 		IRequest $request,
 		ChannelFactory $sessionFactory,
 		DocumentStore $documentStore,
 		ISecureRandom $random,
-		URLDecoder $urlDecoder
+		URLDecoder $urlDecoder,
+		IURLGenerator $urlGenerator
 	) {
 		parent::__construct($appName, $request, $sessionFactory, $random);
 
 		$this->documentStore = $documentStore;
 		$this->urlDecoder = $urlDecoder;
+		$this->urlGenerator = $urlGenerator;
 	}
 
 
@@ -116,5 +118,26 @@ class DocumentController extends SessionController {
 			$file->getMTime(),
 			$file->getMimeType()
 		);
+	}
+
+	/**
+	 * @NoAdminRequired
+	 * @NoCSRFRequired
+	 */
+	public function upload(int $docId, string $index) {
+		$content = fopen('php://input', 'r');
+		$mime = $this->request->getHeader('Content-Type');
+		list(, $extension) = explode('/', $mime);
+		$path = "media/$index.$extension";
+		$this->documentStore->saveDocumentFile($docId, $path, $content);
+
+		return new DataResponse([
+			$path => $this->urlGenerator->linkToRouteAbsolute(
+				'documentserver.Document.documentFile', [
+					'path' => $path,
+					'docId' => $docId,
+				]
+			),
+		]);
 	}
 }
