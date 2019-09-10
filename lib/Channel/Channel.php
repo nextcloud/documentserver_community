@@ -23,7 +23,7 @@ namespace OCA\DocumentServer\Channel;
 
 use OCA\DocumentServer\XHRCommand\CommandDispatcher;
 use OCP\IMemcache;
-use OCP\IPC\IIPCChannel;
+use OCA\DocumentServer\IPC\IIPCChannel;
 
 class Channel {
 	const TYPE_OPEN = 'o';

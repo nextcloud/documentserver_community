@@ -19,11 +19,29 @@
  *
  */
 
-namespace OCA\DocumentServer\XHRCommand;
+namespace OCA\DocumentServer\IPC;
 
-use OCA\DocumentServer\Channel\Session;
-use OCA\DocumentServer\IPC\IIPCChannel;
+interface IIPCBackend {
+	/**
+	 * Initialize an ipc channel
+	 *
+	 * @param string $channel
+	 */
+	public function initChannel(string $channel);
 
-interface IIdleHandler {
-	public function handle(Session $session, IIPCChannel $sessionChannel, IIPCChannel $documentChannel, CommandDispatcher $commandDispatcher): void;
+	/**
+	 * Push a new message in the channel
+	 *
+	 * @param string $channel
+	 * @param string $message
+	 */
+	public function pushMessage(string $channel, string $message);
+
+	/**
+	 * Get a message from the channel if one is available
+	 *
+	 * @param string $channel
+	 * @return string|null
+	 */
+	public function popMessage(string $channel): ?string;
 }

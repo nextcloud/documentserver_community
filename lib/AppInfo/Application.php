@@ -21,10 +21,13 @@
 
 namespace OCA\DocumentServer\AppInfo;
 
+use OCA\DocumentServer\IPC\IIPCFactory;
+use OCA\DocumentServer\IPC\IPCFactory;
+use OCA\DocumentServer\IPC\MemcacheIPCFactory;
 use OCA\DocumentServer\OnlyOffice\URLDecoder;
 use OCA\Onlyoffice\AppConfig;
 use OCA\Onlyoffice\Crypt;
-use \OCP\AppFramework\App;
+use OCP\AppFramework\App;
 use OCP\AppFramework\IAppContainer;
 
 class Application extends App {
@@ -32,6 +35,13 @@ class Application extends App {
 		parent::__construct('documentserver', $urlParams);
 
 		$container = $this->getContainer();
+
+		$container->registerService(IIPCFactory::class, function (IAppContainer $c) {
+			$factory = new IPCFactory();
+			$factory->registerBackend($c->query(MemcacheIPCFactory::class));
+
+			return $factory;
+		});
 
 		$container->registerService(URLDecoder::class, function (IAppContainer $container) {
 			$server = $container->getServer();

@@ -19,11 +19,27 @@
  *
  */
 
-namespace OCA\DocumentServer\XHRCommand;
+namespace OCA\DocumentServer\IPC;
 
-use OCA\DocumentServer\Channel\Session;
-use OCA\DocumentServer\IPC\IIPCChannel;
+class IPCChannel implements IIPCChannel {
+	private $channel;
 
-interface IIdleHandler {
-	public function handle(Session $session, IIPCChannel $sessionChannel, IIPCChannel $documentChannel, CommandDispatcher $commandDispatcher): void;
+	private $backend;
+
+	public function __construct(string $channel, IIPCBackend $backend) {
+		$this->channel = $channel;
+		$this->backend = $backend;
+	}
+
+	public function getName(): string {
+		return $this->channel;
+	}
+
+	public function pushMessage(string $message) {
+		$this->backend->pushMessage($this->channel, $message);
+	}
+
+	public function popMessage(): ?string {
+		return $this->backend->popMessage($this->channel);
+	}
 }

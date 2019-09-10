@@ -22,7 +22,7 @@
 namespace OCA\DocumentServer\XHRCommand;
 
 use OCA\DocumentServer\Channel\Session;
-use OCP\IPC\IIPCChannel;
+use OCA\DocumentServer\IPC\IIPCChannel;
 
 interface ICommandHandler {
 	public function getType(): string;

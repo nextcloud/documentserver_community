@@ -19,11 +19,15 @@
  *
  */
 
-namespace OCA\DocumentServer\XHRCommand;
+namespace OCA\DocumentServer\IPC;
 
-use OCA\DocumentServer\Channel\Session;
-use OCA\DocumentServer\IPC\IIPCChannel;
-
-interface IIdleHandler {
-	public function handle(Session $session, IIPCChannel $sessionChannel, IIPCChannel $documentChannel, CommandDispatcher $commandDispatcher): void;
+interface IIPCFactory {
+	/**
+	 * Get an ipc channel
+	 *
+	 * @param string $name
+	 * @return IIPCChannel
+	 * @throws \Exception if no ipc backend is available
+	 */
+	public function getChannel(string $name): IIPCChannel;
 }

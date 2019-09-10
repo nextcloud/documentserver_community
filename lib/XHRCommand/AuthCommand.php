@@ -27,7 +27,7 @@ use OCA\DocumentServer\Document\Change;
 use OCA\DocumentServer\Document\ChangeStore;
 use OCA\DocumentServer\Document\DocumentStore;
 use OCA\DocumentServer\OnlyOffice\URLDecoder;
-use OCP\IPC\IIPCChannel;
+use OCA\DocumentServer\IPC\IIPCChannel;
 use OCP\IURLGenerator;
 use function Sabre\HTTP\encodePathSegment;
 

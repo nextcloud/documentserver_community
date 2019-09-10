@@ -21,9 +21,8 @@
 
 namespace OCA\DocumentServer\Channel;
 
-
-use OCP\IPC\IIPCChannel;
-use OCP\IPC\IIPCFactory;
+use OCA\DocumentServer\IPC\IIPCChannel;
+use OCA\DocumentServer\IPC\IIPCFactory;
 
 /**
  * IPC Channel that sends to all other sessions connected for a document

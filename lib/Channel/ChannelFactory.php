@@ -23,7 +23,7 @@ namespace OCA\DocumentServer\Channel;
 
 use OCA\DocumentServer\XHRCommand\CommandDispatcher;
 use OCP\ICacheFactory;
-use OCP\IPC\IIPCFactory;
+use OCA\DocumentServer\IPC\IIPCFactory;
 
 class ChannelFactory {
 	private $ipcFactory;

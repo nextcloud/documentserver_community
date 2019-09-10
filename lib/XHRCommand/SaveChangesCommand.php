@@ -21,11 +21,10 @@
 
 namespace OCA\DocumentServer\XHRCommand;
 
-use OCA\Documents\Document\Store;
 use OCA\DocumentServer\Channel\Session;
 use OCA\DocumentServer\Document\Change;
 use OCA\DocumentServer\Document\ChangeStore;
-use OCP\IPC\IIPCChannel;
+use OCA\DocumentServer\IPC\IIPCChannel;
 
 class SaveChangesCommand implements ICommandHandler {
 	private $changeStore;

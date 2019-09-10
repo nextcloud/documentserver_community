@@ -19,11 +19,36 @@
  *
  */
 
-namespace OCA\DocumentServer\XHRCommand;
+namespace OCA\DocumentServer\IPC;
 
-use OCA\DocumentServer\Channel\Session;
-use OCA\DocumentServer\IPC\IIPCChannel;
+interface IIPCBackendFactory {
+	/**
+	 * Whether or not this backend is available on the current instance
+	 *
+	 * @return bool
+	 */
+	public function isAvailable(): bool;
 
-interface IIdleHandler {
-	public function handle(Session $session, IIPCChannel $sessionChannel, IIPCChannel $documentChannel, CommandDispatcher $commandDispatcher): void;
+	/**
+	 * Get the priority of this backend, lower meaning higher priority
+	 *
+	 * Backend priority is used to select the highest performing backend that is
+	 * available in an instance.
+	 *
+	 * Some guidelines for priority values:
+	 *
+	 * 1: high performance and scalability, no reason not to use if available
+	 * 10: decent performance, should work fine on most instances
+	 * 100: fallback backends, not great but work pretty much anywhere
+	 *
+	 * @return int
+	 */
+	public function getPriority(): int;
+
+	/**
+	 * Create a new backend instance
+	 *
+	 * @return IIPCBackend
+	 */
+	public function getInstance(): IIPCBackend;
 }

@@ -19,11 +19,29 @@
  *
  */
 
-namespace OCA\DocumentServer\XHRCommand;
+namespace OCA\DocumentServer\IPC;
 
-use OCA\DocumentServer\Channel\Session;
-use OCA\DocumentServer\IPC\IIPCChannel;
+use OCP\ICacheFactory;
+use OCP\IMemcache;
 
-interface IIdleHandler {
-	public function handle(Session $session, IIPCChannel $sessionChannel, IIPCChannel $documentChannel, CommandDispatcher $commandDispatcher): void;
+class MemcacheIPCFactory implements IIPCBackendFactory {
+	private $memcacheFactory;
+
+	public function __construct(ICacheFactory $memcacheFactory) {
+		$this->memcacheFactory = $memcacheFactory;
+	}
+
+	public function isAvailable(): bool {
+		return $this->memcacheFactory->isAvailable() && (
+				$this->memcacheFactory->create() instanceof IMemcache
+			);
+	}
+
+	public function getPriority(): int {
+		return 20;
+	}
+
+	public function getInstance(): IIPCBackend {
+		return new MemcacheIPCBackend($this->memcacheFactory->create('ipc'));
+	}
 }

@@ -24,7 +24,7 @@ namespace OCA\DocumentServer\XHRCommand;
 
 use OCA\DocumentServer\Channel\Session;
 use OCA\DocumentServer\Channel\SessionManager;
-use OCP\IPC\IIPCChannel;
+use OCA\DocumentServer\IPC\IIPCChannel;
 
 class SessionDisconnect implements IIdleHandler {
 	private $sessionManager;
