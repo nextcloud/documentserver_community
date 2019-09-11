@@ -30,7 +30,7 @@ class IPCFactory implements IIPCFactory {
 	}
 
 	/**
-	 * @return \OCP\IPC\IIPCBackend
+	 * @return IIPCBackend
 	 * @throws \Exception if no ipc backend is available
 	 */
 	private function getBackend() {

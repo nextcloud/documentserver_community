@@ -24,6 +24,7 @@ namespace OCA\DocumentServer\AppInfo;
 use OCA\DocumentServer\IPC\IIPCFactory;
 use OCA\DocumentServer\IPC\IPCFactory;
 use OCA\DocumentServer\IPC\MemcacheIPCFactory;
+use OCA\DocumentServer\IPC\RedisIPCFactory;
 use OCA\DocumentServer\OnlyOffice\URLDecoder;
 use OCA\Onlyoffice\AppConfig;
 use OCA\Onlyoffice\Crypt;
@@ -39,6 +40,7 @@ class Application extends App {
 		$container->registerService(IIPCFactory::class, function (IAppContainer $c) {
 			$factory = new IPCFactory();
 			$factory->registerBackend($c->query(MemcacheIPCFactory::class));
+			$factory->registerBackend($c->query(RedisIPCFactory::class));
 
 			return $factory;
 		});

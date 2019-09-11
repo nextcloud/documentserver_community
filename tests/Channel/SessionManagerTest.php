@@ -19,7 +19,7 @@
  *
  */
 
-namespace OCA\documentserver\tests\Channel;
+namespace OCA\DocumentServer\Tests\Channel;
 
 use OCA\DocumentServer\Channel\SessionManager;
 use OCP\AppFramework\Utility\ITimeFactory;
@@ -58,7 +58,7 @@ class SessionManagerTest extends TestCase {
 
 		$this->assertNull($this->manager->getSession('foo'));
 
-		$this->manager->newSession('foo', 5, 'user', 'original');
+		$this->manager->newSession('foo', 5, 'user', 'original', false);
 
 		$session = $this->manager->getSession('foo');
 		$this->assertNotNull($session);
@@ -84,7 +84,7 @@ class SessionManagerTest extends TestCase {
 
 		$this->time = 11;
 
-		$this->manager->newSession('foo', 5, 'user', 'original');
+		$this->manager->newSession('foo', 5, 'user', 'original', false);
 
 		$session = $this->manager->getSession('foo');
 
@@ -101,10 +101,10 @@ class SessionManagerTest extends TestCase {
 
 	public function testCleanSessions() {
 		$this->time = 10;
-		$this->manager->newSession('foo', 5, 'user', 'original');
+		$this->manager->newSession('foo', 5, 'user', 'original', false);
 
 		$this->time = 50;
-		$this->manager->newSession('bar', 5, 'user', 'original');
+		$this->manager->newSession('bar', 5, 'user', 'original', false);
 
 		$this->assertNotNull($this->manager->getSession('foo'));
 		$this->assertNotNull($this->manager->getSession('bar'));
@@ -122,7 +122,7 @@ class SessionManagerTest extends TestCase {
 		$this->assertFalse($this->manager->isDocumentActive(5));
 		$this->assertFalse($this->manager->isDocumentActive(6));
 
-		$this->manager->newSession('foo', 5, 'user', 'original');
+		$this->manager->newSession('foo', 5, 'user', 'original', false);
 
 		$this->assertTrue($this->manager->isDocumentActive(5));
 		$this->assertFalse($this->manager->isDocumentActive(6));
