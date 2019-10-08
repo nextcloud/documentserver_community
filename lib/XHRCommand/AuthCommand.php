@@ -76,7 +76,7 @@ class AuthCommand implements ICommandHandler {
 			'result' => 1,
 			'sessionId' => $session->getSessionId(),
 			'sessionTimeConnect' => $session->getLastSeen(),
-			'participants' => [
+			'participants' => [[
 				'id' => $session->getUserId(),
 				'idOriginal' => $session->getUserOriginal(),
 				'username' => $session->getUser(),
@@ -84,13 +84,13 @@ class AuthCommand implements ICommandHandler {
 				'view' => $session->isReadOnly(),
 				'connectionId' => $session->getSessionId(),
 				'isCloseCoAuthoring' => false,
-			],
+			]],
 			'locks' => [],
 			'indexUser' => 1,
 			'g_cAscSpellCheckUrl' => '/spellchecker',
 			'buildVersion' => '5.3.2',
 			'buildNumber' => 20,
-			'licenseType' => 3,
+			'licenseType' => 7,
 			'settings' => [
 				'spellcheckerUrl' => '/spellchecker',
 				'reconnection' => [

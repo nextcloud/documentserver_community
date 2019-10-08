@@ -84,6 +84,7 @@ class DocumentConverter {
 <TaskQueueDataConvert xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\">
 	<m_sFileFrom>$from</m_sFileFrom>
 	<m_sFileTo>$to</m_sFileTo>
+	<m_nFormatTo>8192</m_nFormatTo>
 </TaskQueueDataConvert>
 ";
 
