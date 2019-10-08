@@ -21,46 +21,28 @@
 
 namespace OCA\DocumentServer\XHRCommand;
 
+
 use OCA\DocumentServer\Channel\Session;
-use OCA\DocumentServer\Document\Change;
-use OCA\DocumentServer\Document\ChangeStore;
 use OCA\DocumentServer\Document\Lock;
 use OCA\DocumentServer\Document\LockStore;
 use OCA\DocumentServer\IPC\IIPCChannel;
 
-class SaveChangesCommand implements ICommandHandler {
-	private $changeStore;
+class UnlockDocument implements ICommandHandler {
 	private $lockStore;
 
-	public function __construct(ChangeStore $changeStore, LockStore $lockStore) {
-		$this->changeStore = $changeStore;
+	public function __construct(LockStore $lockStore) {
 		$this->lockStore = $lockStore;
 	}
 
+
 	public function getType(): string {
-		return 'saveChanges';
+		return 'unLockDocument';
 	}
 
 	public function handle(array $command, Session $session, IIPCChannel $sessionChannel, IIPCChannel $documentChannel, CommandDispatcher $commandDispatcher): void {
-		$changes = json_decode($command['changes']);
-
-		foreach ($changes as $change) {
-			$this->changeStore->addChangeForDocument($session->getDocumentId(), $change, $session->getUserId(), $session->getUserOriginal());
-		}
-
-		$documentChannel->pushMessage(json_encode([
-			'type' => 'saveChanges',
-			'changes' => array_map(function (string $changeString) use ($session) {
-				$change = new Change($session->getDocumentId(), time(), $changeString, $session->getUserId(), $session->getUserOriginal());
-				return $change->formatForClient();
-			}, $changes),
-			'changesIndex' => 10,
-			'locks' => [],
-			'excelAdditionalInfo' => '{}',
-		]));
-
 		if ($command["releaseLocks"]) {
-			$released = $this->lockStore->releaseLocks($session->getDocumentId(), $session->getUserId());;
+			$released = $this->lockStore->releaseLocks($session->getDocumentId(), $session->getUserId());
+
 			$locksMessage = json_encode([
 				"type" => "releaseLock",
 				"locks" => array_map(function(Lock $lock) {
@@ -69,11 +51,9 @@ class SaveChangesCommand implements ICommandHandler {
 					return $data;
 				}, $released)
 			]);
-
+			$sessionChannel->pushMessage($locksMessage);
 			$documentChannel->pushMessage($locksMessage);
+			$sessionChannel->pushMessage('{"type":"unSaveLock","index":-1,"time":-1}');
 		}
-
-		$now = time() * 1000;
-		$sessionChannel->pushMessage('{"type":"unSaveLock","index":0,"time":' . $now . '}');
 	}
 }

@@ -24,11 +24,13 @@ namespace OCA\DocumentServer\Controller;
 use OCA\DocumentServer\FileResponse;
 use OCA\DocumentServer\OnlyOffice\URLDecoder;
 use OCA\DocumentServer\XHRCommand\AuthCommand;
+use OCA\DocumentServer\XHRCommand\GetLock;
 use OCA\DocumentServer\XHRCommand\IsSaveLock;
 use OCA\DocumentServer\XHRCommand\SaveChangesCommand;
 use OCA\DocumentServer\Document\DocumentStore;
 use OCA\DocumentServer\Channel\ChannelFactory;
 use OCA\DocumentServer\XHRCommand\SessionDisconnect;
+use OCA\DocumentServer\XHRCommand\UnlockDocument;
 use OCP\AppFramework\Http\DataResponse;
 use OCP\IRequest;
 use OCP\IURLGenerator;
@@ -54,6 +56,8 @@ class DocumentController extends SessionController {
 		AuthCommand::class,
 		IsSaveLock::class,
 		SaveChangesCommand::class,
+		GetLock::class,
+		UnlockDocument::class,
 	];
 
 	const IDLE_HANDLERS = [

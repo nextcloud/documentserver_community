@@ -25,10 +25,7 @@ use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\IDBConnection;
 
 class ChangeStore {
-	private $appData;
 	private $connection;
-	private $documentConverter;
-	private $config;
 	private $timeFactory;
 
 	public function __construct(

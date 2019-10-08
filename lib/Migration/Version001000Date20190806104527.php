@@ -82,6 +82,33 @@ class Version001000Date20190806104527 extends SimpleMigrationStep {
 			$table->addIndex(['document_id', 'last_seen'], 'documentserver_sess_doc_last');
 		}
 
+		if (!$schema->hasTable('documentserver_locks')) {
+			$table = $schema->createTable('documentserver_locks');
+			$table->addColumn('lock_id', 'bigint', [
+				'autoincrement' => true,
+				'notnull' => true,
+				'length' => 6,
+			]);
+			$table->addColumn('document_id', 'bigint', [
+				'notnull' => true,
+				'length' => 6,
+			]);
+			$table->addColumn('user', 'text', [
+				'notnull' => true,
+				'length' => 128,
+			]);
+			$table->addColumn('time', 'bigint', [
+				'notnull' => true,
+				'length' => 6
+			]);
+			$table->addColumn('block', 'text', [
+				'notnull' => true,
+			]);
+			$table->setPrimaryKey(['lock_id']);
+			$table->addIndex(['document_id'], 'documentserver_locks_document');
+			$table->addIndex(['document_id', 'user'], 'documentserver_locks_doc_user');
+		}
+
 		return $schema;
 	}
 }

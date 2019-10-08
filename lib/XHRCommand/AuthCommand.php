@@ -26,6 +26,7 @@ use OCA\DocumentServer\Channel\SessionManager;
 use OCA\DocumentServer\Document\Change;
 use OCA\DocumentServer\Document\ChangeStore;
 use OCA\DocumentServer\Document\DocumentStore;
+use OCA\DocumentServer\Document\LockStore;
 use OCA\DocumentServer\OnlyOffice\URLDecoder;
 use OCA\DocumentServer\IPC\IIPCChannel;
 use OCP\IURLGenerator;
@@ -37,19 +38,22 @@ class AuthCommand implements ICommandHandler {
 	private $sessionManager;
 	private $documentStore;
 	private $urlDecoder;
+	private $lockStore;
 
 	public function __construct(
 		IURLGenerator $urlGenerator,
 		ChangeStore $changeStore,
 		SessionManager $sessionManager,
 		DocumentStore $documentStore,
-		URLDecoder $urlDecoder
+		URLDecoder $urlDecoder,
+		LockStore $lockStore
 	) {
 		$this->urlGenerator = $urlGenerator;
 		$this->changeStore = $changeStore;
 		$this->sessionManager = $sessionManager;
 		$this->documentStore = $documentStore;
 		$this->urlDecoder = $urlDecoder;
+		$this->lockStore = $lockStore;
 	}
 
 	public function getType(): string {
@@ -85,8 +89,8 @@ class AuthCommand implements ICommandHandler {
 				'connectionId' => $session->getSessionId(),
 				'isCloseCoAuthoring' => false,
 			]],
-			'locks' => [],
-			'indexUser' => 1,
+			'locks' => $this->lockStore->getLocksForDocument($session->getDocumentId()),
+			'indexUser' => $session->getUserIndex(),
 			'g_cAscSpellCheckUrl' => '/spellchecker',
 			'buildVersion' => '5.3.2',
 			'buildNumber' => 20,
