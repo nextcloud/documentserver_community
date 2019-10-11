@@ -29,6 +29,7 @@ use OCA\DocumentServer\Document\DocumentStore;
 use OCA\DocumentServer\Document\LockStore;
 use OCA\DocumentServer\OnlyOffice\URLDecoder;
 use OCA\DocumentServer\IPC\IIPCChannel;
+use OCA\DocumentServer\OnlyOffice\WebVersion;
 use OCP\IURLGenerator;
 use function Sabre\HTTP\encodePathSegment;
 
@@ -39,6 +40,7 @@ class AuthCommand implements ICommandHandler {
 	private $documentStore;
 	private $urlDecoder;
 	private $lockStore;
+	private $webVersion;
 
 	public function __construct(
 		IURLGenerator $urlGenerator,
@@ -46,7 +48,8 @@ class AuthCommand implements ICommandHandler {
 		SessionManager $sessionManager,
 		DocumentStore $documentStore,
 		URLDecoder $urlDecoder,
-		LockStore $lockStore
+		LockStore $lockStore,
+		WebVersion $webVersion
 	) {
 		$this->urlGenerator = $urlGenerator;
 		$this->changeStore = $changeStore;
@@ -54,6 +57,7 @@ class AuthCommand implements ICommandHandler {
 		$this->documentStore = $documentStore;
 		$this->urlDecoder = $urlDecoder;
 		$this->lockStore = $lockStore;
+		$this->webVersion = $webVersion;
 	}
 
 	public function getType(): string {
@@ -92,8 +96,8 @@ class AuthCommand implements ICommandHandler {
 			'locks' => $this->lockStore->getLocksForDocument($session->getDocumentId()),
 			'indexUser' => $session->getUserIndex(),
 			'g_cAscSpellCheckUrl' => '/spellchecker',
-			'buildVersion' => '5.3.2',
-			'buildNumber' => 20,
+			'buildVersion' => $this->webVersion->getWebUIVersion(),
+			'buildNumber' => 1,
 			'licenseType' => 7,
 			'settings' => [
 				'spellcheckerUrl' => '/spellchecker',

@@ -23,6 +23,7 @@ namespace OCA\DocumentServer\Controller;
 
 use OCA\DocumentServer\FileResponse;
 use OCA\DocumentServer\OnlyOffice\URLDecoder;
+use OCA\DocumentServer\OnlyOffice\WebVersion;
 use OCA\DocumentServer\XHRCommand\AuthCommand;
 use OCA\DocumentServer\XHRCommand\GetLock;
 use OCA\DocumentServer\XHRCommand\IsSaveLock;
@@ -37,21 +38,6 @@ use OCP\IURLGenerator;
 use OCP\Security\ISecureRandom;
 
 class DocumentController extends SessionController {
-	const INITIAL_RESPONSES = [
-		'type' => 'license',
-		'license' => [
-			'type' => 3,
-			'light' => false,
-			'mode' => 0,
-			'rights' => 1,
-			'buildVersion' => '5.3.2',
-			'buildNumber' => 20,
-			'branding' => false,
-			'customization' => false,
-			'plugins' => false,
-		],
-	];
-
 	const COMMAND_HANDLERS = [
 		AuthCommand::class,
 		IsSaveLock::class,
@@ -71,6 +57,8 @@ class DocumentController extends SessionController {
 
 	private $urlGenerator;
 
+	private $webVersion;
+
 	public function __construct(
 		$appName,
 		IRequest $request,
@@ -78,18 +66,32 @@ class DocumentController extends SessionController {
 		DocumentStore $documentStore,
 		ISecureRandom $random,
 		URLDecoder $urlDecoder,
-		IURLGenerator $urlGenerator
+		IURLGenerator $urlGenerator,
+		WebVersion $webVersion
 	) {
 		parent::__construct($appName, $request, $sessionFactory, $random);
 
 		$this->documentStore = $documentStore;
 		$this->urlDecoder = $urlDecoder;
 		$this->urlGenerator = $urlGenerator;
+		$this->webVersion = $webVersion;
 	}
 
-
 	protected function getInitialResponses(): array {
-		return self::INITIAL_RESPONSES;
+		return [
+			'type' => 'license',
+			'license' => [
+				'type' => 3,
+				'light' => false,
+				'mode' => 0,
+				'rights' => 1,
+				'buildVersion' => $this->webVersion->getWebUIVersion(),
+				'buildNumber' => 20,
+				'branding' => false,
+				'customization' => false,
+				'plugins' => false,
+			],
+		];
 	}
 
 	protected function getCommandHandlerClasses(): array {
