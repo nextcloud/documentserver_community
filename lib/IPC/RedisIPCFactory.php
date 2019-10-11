@@ -22,16 +22,24 @@
 namespace OCA\DocumentServer\IPC;
 
 use OC\RedisFactory;
+use OCP\IConfig;
 
 class RedisIPCFactory implements IIPCBackendFactory {
 	private $redisFactory;
+	private $config;
 
-	public function __construct(RedisFactory $redisFactory) {
+	public function __construct(RedisFactory $redisFactory, IConfig $config) {
 		$this->redisFactory = $redisFactory;
+		$this->config = $config;
 	}
 
 	public function isAvailable(): bool {
-		return $this->redisFactory->isAvailable();
+		$redisConfig = $this->config->getSystemValue('redis', false);
+		$redisClusterConfig = $this->config->getSystemValue('redis.cluster', false);
+		return $this->redisFactory->isAvailable() && (
+				is_array($redisConfig) ||
+				is_array($redisClusterConfig)
+			);
 	}
 
 	public function getPriority(): int {
