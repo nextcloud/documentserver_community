@@ -29,7 +29,7 @@ use OCP\IRequest;
 use OCP\Security\ISecureRandom;
 
 abstract class SessionController extends Controller {
-	private $sessionFactory;
+	protected $sessionFactory;
 	private $random;
 
 	public function __construct(
@@ -78,7 +78,7 @@ abstract class SessionController extends Controller {
 		];
 	}
 
-	private function getCommandDispatcher() {
+	protected function getCommandDispatcher() {
 		$dispatcher = new CommandDispatcher();
 		foreach ($this->getCommandHandlers() as $commandHandler) {
 			$dispatcher->addHandler($commandHandler);

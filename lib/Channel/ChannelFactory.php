@@ -36,7 +36,7 @@ class ChannelFactory {
 		$this->sessionManager = $sessionManager;
 	}
 
-	public function getSession(string $sessionId, string $documentId, CommandDispatcher $commandDispatcher, array $initialResponses = []) {
+	public function getSession(string $sessionId, string $documentId, CommandDispatcher $commandDispatcher, array $initialResponses = []): Channel {
 		$key = "session_$sessionId";
 
 		return new Channel(

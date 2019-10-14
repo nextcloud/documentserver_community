@@ -28,10 +28,12 @@ use OCP\AppFramework\Http\Response;
 
 class FileResponse extends Response implements ICallbackResponse {
 	private $data;
+	private $name;
 
-	public function __construct($data, int $length, int $lastModified, string $mimeType, int $statusCode = Http::STATUS_OK,
-	                            $headers = []) {
+	public function __construct($data, int $length, int $lastModified, string $mimeType, string $name, int $statusCode = Http::STATUS_OK,
+								$headers = []) {
 		$this->data = $data;
+		$this->name = $name;
 		$this->setStatus($statusCode);
 		$this->setHeaders(array_merge($this->getHeaders(), $headers));
 		$this->addHeader('Content-Length', $length);
@@ -54,5 +56,14 @@ class FileResponse extends Response implements ICallbackResponse {
 				print $this->data;
 			}
 		}
+	}
+
+	public function setDownload() {
+
+		$encodedName = rawurlencode(basename($this->name));
+		$this->addHeader(
+			'Content-Disposition',
+			'attachment; filename*=UTF-8\'\'' . $encodedName . '; filepath="' . $encodedName . '"'
+		);
 	}
 }

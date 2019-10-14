@@ -113,8 +113,23 @@ class SessionManager {
 			->from('documentserver_sessions')
 			->where($query->expr()->eq('document_id', $query->createNamedParameter($documentId, \PDO::PARAM_INT)));
 
-		return array_map(function(array $row) {
+		return array_map(function (array $row) {
 			return Session::fromRow($row);
-		},$query->execute()->fetchAll());
+		}, $query->execute()->fetchAll());
+	}
+
+	public function getSessionForUser(string $userId): ?Session {
+		$query = $this->connection->getQueryBuilder();
+
+		$query->select('session_id', 'document_id', 'user', 'user_original', 'last_seen', 'readonly', 'user_index')
+			->from('documentserver_sessions')
+			->where($query->expr()->eq($query->func()->concat('user', 'user_index'), $query->createNamedParameter($userId)));
+
+		$row = $query->execute()->fetch();
+		if ($row) {
+			return Session::fromRow($row);
+		} else {
+			return null;
+		}
 	}
 }

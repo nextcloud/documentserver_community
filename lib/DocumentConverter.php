@@ -32,20 +32,6 @@ class DocumentConverter {
 		$this->tempManager = $tempManager;
 	}
 
-	/**
-	 * @param resource|string $source
-	 * @param string $sourceExtension
-	 * @param string $targetExtension
-	 * @return resource
-	 */
-	public function convert($source, string $sourceExtension, string $targetFile) {
-		$sourceFile = $this->tempManager->getTemporaryFile(".$sourceExtension");
-		file_put_contents($sourceFile, $source);
-
-		$this->convertFiles($sourceFile, $targetFile);
-		return fopen($targetFile, 'r');
-	}
-
 	public function getEditorBinary($source, string $sourceExtension, string $targetFolder) {
 		$sourceFile = $this->tempManager->getTemporaryFile(".$sourceExtension");
 		file_put_contents($sourceFile, $source);
@@ -62,7 +48,7 @@ class DocumentConverter {
 		$changesFolder = $sourceFolder . '/changes';
 		mkdir($changesFolder);
 		foreach ($changes as $key => $change) {
-			file_put_contents($changesFolder . '/' . $key, $change->getChange());
+			file_put_contents($changesFolder . '/' . $key . '.json', '["' . $change->getChange() . '"]');
 		}
 
 		$xml = "<?xml version=\"1.0\" encoding=\"utf-8\"?>
@@ -79,12 +65,12 @@ class DocumentConverter {
 	}
 
 
-	public function convertFiles(string $from, string $to) {
+	public function convertFiles(string $from, string $to, int $targetFormat = 8192) {
 		$xml = "<?xml version=\"1.0\" encoding=\"utf-8\"?>
 <TaskQueueDataConvert xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\">
 	<m_sFileFrom>$from</m_sFileFrom>
 	<m_sFileTo>$to</m_sFileTo>
-	<m_nFormatTo>8192</m_nFormatTo>
+	<m_nFormatTo>$targetFormat</m_nFormatTo>
 </TaskQueueDataConvert>
 ";
 

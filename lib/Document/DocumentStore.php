@@ -170,4 +170,20 @@ class DocumentStore {
 	public function closeDocument(int $documentId) {
 		$this->getDocumentFolder($documentId)->delete();
 	}
+
+	public function convertForDownload(int $documentId, $stream, int $targetFormat, string $title): string {
+		$docFolder = $this->getDocumentFolder($documentId);
+
+		$title = str_replace('/', '-', $title);
+		$title = str_replace('\\', '-', $title);
+		$sourceFile = $docFolder->newFile('save-download.bin');
+		$sourceFile->putContent($stream);
+
+		$localPath = $this->getLocalPath($docFolder);
+
+		$this->documentConverter->convertFiles($localPath . '/save-download.bin', $localPath . '/' . $title, $targetFormat);
+		$sourceFile->delete();
+
+		return $title;
+	}
 }

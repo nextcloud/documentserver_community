@@ -21,7 +21,9 @@
 
 namespace OCA\DocumentServer\Controller;
 
+use OCA\DocumentServer\Channel\SessionManager;
 use OCA\DocumentServer\FileResponse;
+use OCA\DocumentServer\IPC\IIPCFactory;
 use OCA\DocumentServer\OnlyOffice\URLDecoder;
 use OCA\DocumentServer\OnlyOffice\WebVersion;
 use OCA\DocumentServer\XHRCommand\AuthCommand;
@@ -52,12 +54,11 @@ class DocumentController extends SessionController {
 
 	/** @var DocumentStore */
 	private $documentStore;
-
 	private $urlDecoder;
-
 	private $urlGenerator;
-
 	private $webVersion;
+	private $ipcFactory;
+	private $sessionManager;
 
 	public function __construct(
 		$appName,
@@ -67,7 +68,9 @@ class DocumentController extends SessionController {
 		ISecureRandom $random,
 		URLDecoder $urlDecoder,
 		IURLGenerator $urlGenerator,
-		WebVersion $webVersion
+		WebVersion $webVersion,
+		IIPCFactory $ipcFactory,
+		SessionManager $sessionManager
 	) {
 		parent::__construct($appName, $request, $sessionFactory, $random);
 
@@ -75,6 +78,8 @@ class DocumentController extends SessionController {
 		$this->urlDecoder = $urlDecoder;
 		$this->urlGenerator = $urlGenerator;
 		$this->webVersion = $webVersion;
+		$this->ipcFactory = $ipcFactory;
+		$this->sessionManager = $sessionManager;
 	}
 
 	protected function getInitialResponses(): array {
@@ -115,15 +120,21 @@ class DocumentController extends SessionController {
 	 * @NoAdminRequired
 	 * @NoCSRFRequired
 	 */
-	public function documentFile(int $docId, string $path) {
+	public function documentFile(int $docId, string $path, ?bool $download) {
 		$file = $this->documentStore->openDocumentFile($docId, $path);
 
-		return new FileResponse(
+		$response = new FileResponse(
 			$file->fopen('r'),
 			$file->getSize(),
 			$file->getMTime(),
-			$file->getMimeType()
+			$file->getMimeType(),
+			$file->getName()
 		);
+
+		if ($download) {
+			$response->setDownload();
+		}
+		return $response;
 	}
 
 	/**
@@ -144,6 +155,45 @@ class DocumentController extends SessionController {
 					'docId' => $docId,
 				]
 			),
+		]);
+	}
+
+	/**
+	 * @NoAdminRequired
+	 * @NoCSRFRequired
+	 */
+	public function download(int $docId, string $cmd) {
+		$cmd = json_decode($cmd, true);
+		$content = fopen('php://input', 'r');
+		$title = $this->documentStore->convertForDownload($docId, $content, $cmd['outputformat'], $cmd['title']);
+
+		$session = $this->sessionManager->getSessionForUser($cmd['userconnectionid']);
+		if ($session) {
+			$key = $key = "session_" . $session->getSessionId();
+			$sessionChannel = $this->ipcFactory->getChannel($key);
+
+			$url = $this->urlGenerator->linkToRouteAbsolute(
+				'documentserver.Document.documentFile', [
+					'path' => $title,
+					'docId' => $docId,
+					'download' => 1
+				]
+			);
+
+			$sessionChannel->pushMessage(json_encode([
+				'type' => 'documentOpen',
+				'data' => [
+					'type' => 'save',
+					'status' => 'ok',
+					'data' => $url,
+				],
+			]));
+		}
+
+		return new DataResponse([
+			'type' => 'save',
+			'status' => 'ok',
+			'data' => $docId
 		]);
 	}
 }

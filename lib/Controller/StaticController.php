@@ -109,7 +109,8 @@ class StaticController extends Controller {
 			$content,
 			strlen($content),
 			filemtime($path),
-			$mime
+			$mime,
+			basename($path)
 		);
 
 		// we can't cache the html since the nonce might need to get updated
@@ -120,6 +121,7 @@ class StaticController extends Controller {
 		$csp = new ContentSecurityPolicy();
 		$csp->addAllowedScriptDomain('\'strict-dynamic\'');
 		$csp->addAllowedScriptDomain('\'unsafe-eval\'');
+		$csp->addAllowedFrameDomain($this->request->getServerHost());
 		$response->setContentSecurityPolicy($csp);
 
 		return $response;
