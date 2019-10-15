@@ -171,7 +171,8 @@ class DocumentStore {
 		$this->getDocumentFolder($documentId)->delete();
 	}
 
-	public function convertForDownload(int $documentId, $stream, int $targetFormat, string $title): string {
+	public function convertForDownload(int $documentId, $stream, array $cmd): string {
+		$title = $cmd["title"];
 		$docFolder = $this->getDocumentFolder($documentId);
 
 		$title = str_replace('/', '-', $title);
@@ -181,7 +182,15 @@ class DocumentStore {
 
 		$localPath = $this->getLocalPath($docFolder);
 
-		$this->documentConverter->convertFiles($localPath . '/save-download.bin', $localPath . '/' . $title, $targetFormat);
+		$command = new ConvertCommand($localPath . '/save-download.bin', $localPath . '/' . $title);
+		$command->setTargetFormat($cmd["outputformat"]);
+		$command->setNoBase64($cmd["nobase64"]);
+		$command->setFontDir(realpath(__DIR__ . "/../../3rdparty/onlyoffice/documentserver/core-fonts"));
+		$command->setThemeDir(realpath(__DIR__ . "/../../3rdparty/onlyoffice/documentserver/sdkjs/slide/themes"));
+
+		$docFolder->newFile("download.xml")->putContent($command->serialize());
+		$this->documentConverter->runCommand($command);
+
 		$sourceFile->delete();
 
 		return $title;

@@ -69,7 +69,7 @@ class DocumentConverter {
 		$this->runCommand($command);
 	}
 
-	private function runCommand(ConvertCommand $command) {
+	public function runCommand(ConvertCommand $command) {
 		$xmlFile = $this->tempManager->getTemporaryFile('.xml');
 		$xmlWriter = new Writer();
 		$xmlWriter->namespaceMap["http://www.w3.org/2001/XMLSchema-instance"] = "xsi";

@@ -165,7 +165,7 @@ class DocumentController extends SessionController {
 	public function download(int $docId, string $cmd) {
 		$cmd = json_decode($cmd, true);
 		$content = fopen('php://input', 'r');
-		$title = $this->documentStore->convertForDownload($docId, $content, $cmd['outputformat'], $cmd['title']);
+		$title = $this->documentStore->convertForDownload($docId, $content, $cmd);
 
 		$session = $this->sessionManager->getSessionForUser($cmd['userconnectionid']);
 		if ($session) {
