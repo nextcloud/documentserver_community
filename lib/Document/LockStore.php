@@ -38,7 +38,7 @@ class LockStore {
 		$this->timeFactory = $timeFactory;
 	}
 
-	public function storeLock(int $document, string $user, array $block) {
+	public function storeLock(int $document, string $user, $block) {
 		$query = $this->connection->getQueryBuilder();
 		$query->insert("documentserver_locks")
 			->values([

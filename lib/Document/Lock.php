@@ -29,7 +29,7 @@ class Lock implements \JsonSerializable {
 	private $time;
 	private $block;
 
-	public function __construct(int $lockId, int $documentId, string $user, \DateTime $time, array $block) {
+	public function __construct(int $lockId, int $documentId, string $user, \DateTime $time, $block) {
 		$this->lockId = $lockId;
 		$this->documentId = $documentId;
 		$this->user = $user;
@@ -53,7 +53,7 @@ class Lock implements \JsonSerializable {
 		return $this->time;
 	}
 
-	public function getBlock(): array {
+	public function getBlock() {
 		return $this->block;
 	}
 
