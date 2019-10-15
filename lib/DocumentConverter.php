@@ -22,8 +22,10 @@
 namespace OCA\DocumentServer;
 
 use OCA\DocumentServer\Document\Change;
+use OCA\DocumentServer\Document\ConvertCommand;
 use OCA\DocumentServer\Document\ConverterBinary;
 use OCP\ITempManager;
+use Sabre\Xml\Writer;
 
 class DocumentConverter {
 	private $tempManager;
@@ -51,35 +53,30 @@ class DocumentConverter {
 			file_put_contents($changesFolder . '/' . $key . '.json', '["' . $change->getChange() . '"]');
 		}
 
-		$xml = "<?xml version=\"1.0\" encoding=\"utf-8\"?>
-<TaskQueueDataConvert xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\">
-	<m_sFileFrom>$sourceFolder/Editor.bin</m_sFileFrom>
-	<m_sFileTo>$target</m_sFileTo>
-	<m_bFromChanges>true</m_bFromChanges>
-</TaskQueueDataConvert>
-";
+		$command = new ConvertCommand("$sourceFolder/Editor.bin", $target);
+		$command->setFromChanges(true);
 
-		$this->runXml($xml);
+		$this->runCommand($command);
 
 		\OC_Helper::rmdirr($changesFolder);
 	}
 
 
 	public function convertFiles(string $from, string $to, int $targetFormat = 8192) {
-		$xml = "<?xml version=\"1.0\" encoding=\"utf-8\"?>
-<TaskQueueDataConvert xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\">
-	<m_sFileFrom>$from</m_sFileFrom>
-	<m_sFileTo>$to</m_sFileTo>
-	<m_nFormatTo>$targetFormat</m_nFormatTo>
-</TaskQueueDataConvert>
-";
+		$command = new ConvertCommand($from, $to);
+		$command->setTargetFormat($targetFormat);
 
-		$this->runXml($xml);
+		$this->runCommand($command);
 	}
 
-	private function runXml(string $xml) {
+	private function runCommand(ConvertCommand $command) {
 		$xmlFile = $this->tempManager->getTemporaryFile('.xml');
-		file_put_contents($xmlFile, $xml);
+		$xmlWriter = new Writer();
+		$xmlWriter->namespaceMap["http://www.w3.org/2001/XMLSchema-instance"] = "xsi";
+		$xmlWriter->namespaceMap["http://www.w3.org/2001/XMLSchema"] = "xsd";
+		$xmlWriter->openUri($xmlFile);
+		$xmlWriter->writeElement("TaskQueueDataConvert", $command);
+		$xmlWriter->flush();
 
 		$converter = new ConverterBinary();
 		$converter->run($xmlFile);
