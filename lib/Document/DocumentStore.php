@@ -179,6 +179,11 @@ class DocumentStore {
 		$title = str_replace('\\', '-', $title);
 		$sourceFile = $docFolder->newFile('save-download.bin');
 		$sourceFile->putContent($stream);
+		try {
+			$docFolder->getFile($title)->delete();
+		} catch (\Exception $e) {
+
+		}
 
 		$localPath = $this->getLocalPath($docFolder);
 
@@ -188,7 +193,6 @@ class DocumentStore {
 		$command->setFontDir(realpath(__DIR__ . "/../../3rdparty/onlyoffice/documentserver/core-fonts"));
 		$command->setThemeDir(realpath(__DIR__ . "/../../3rdparty/onlyoffice/documentserver/sdkjs/slide/themes"));
 
-		$docFolder->newFile("download.xml")->putContent($command->serialize());
 		$this->documentConverter->runCommand($command);
 
 		$sourceFile->delete();
