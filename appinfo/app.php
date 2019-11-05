@@ -1,2 +1,4 @@
 <?php
-(new \OCA\DocumentServer\AppInfo\Application())->register();
+use OCA\DocumentServer\AppInfo\Application;
+
+(\OC::$server->query(Application::class))->register();
