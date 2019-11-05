@@ -58,10 +58,20 @@ class LockStore {
 		$query = $this->connection->getQueryBuilder();
 		$query->select("lock_id", "document_id", "user", "time", "block")
 			->from("documentserver_locks")
-			->where($query->expr()->eq("document_id", $query->createNamedParameter($document, IQueryBuilder::PARAM_INT)));
+			->where($query->expr()->eq("document_id",
+				$query->createNamedParameter($document, IQueryBuilder::PARAM_INT)));
 		$rows = $query->execute()->fetchAll();
 
-		return array_map([Lock::class, "fromRow"], $rows);
+		$locks = array_map([Lock::class, "fromRow"], $rows);
+		$keys = array_map(function (Lock $lock, $key) {
+			if (is_numeric($lock->getBlock())) {
+				return $lock->getBlock();
+			} else {
+				return $key;
+			}
+		}, $locks, array_keys($locks));
+
+		return array_combine($keys, $locks);
 	}
 
 	/**
@@ -73,19 +83,21 @@ class LockStore {
 		$query = $this->connection->getQueryBuilder();
 		$query->select("lock_id", "document_id", "user", "time", "block")
 			->from("documentserver_locks")
-			->where($query->expr()->eq("document_id", $query->createNamedParameter($document, IQueryBuilder::PARAM_INT)))
+			->where($query->expr()->eq("document_id",
+				$query->createNamedParameter($document, IQueryBuilder::PARAM_INT)))
 			->andWhere($query->expr()->eq("user", $query->createNamedParameter($user)));
 		$rows = $query->execute()->fetchAll();
 
 		$released = array_map([Lock::class, "fromRow"], $rows);
 
-		$lockIds = array_map(function(Lock $lock) {
+		$lockIds = array_map(function (Lock $lock) {
 			return $lock->getLockId();
 		}, $released);
 
 		$query = $this->connection->getQueryBuilder();
 		$query->delete("documentserver_locks")
-			->where($query->expr()->in("lock_id", $query->createNamedParameter($lockIds, IQueryBuilder::PARAM_INT_ARRAY)));
+			->where($query->expr()->in("lock_id",
+				$query->createNamedParameter($lockIds, IQueryBuilder::PARAM_INT_ARRAY)));
 		$query->execute();
 
 		return $released;
