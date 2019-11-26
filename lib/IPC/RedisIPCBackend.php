@@ -35,9 +35,15 @@ class RedisIPCBackend implements IIPCBackend {
 		$this->redis->rPush('ipc_' . $channel, $message);
 	}
 
-	public function popMessage(string $channel): ?string {
-		$message = $this->redis->lPop('ipc_' . $channel);
-		if ($message) {
+	public function popMessage(string $channel, int $timeout): ?string {
+		$response = $this->redis->blPop('ipc_' . $channel, $timeout);
+
+		if (count($response) < 2) {
+			return null;
+		}
+
+		list(, $message) = $response;
+		if (is_string($message)) {
 			return $message;
 		} else {
 			return null;

@@ -41,7 +41,8 @@ interface IIPCBackend {
 	 * Get a message from the channel if one is available
 	 *
 	 * @param string $channel
+	 * @param int $timeout
 	 * @return string|null
 	 */
-	public function popMessage(string $channel): ?string;
+	public function popMessage(string $channel, int $timeout): ?string;
 }

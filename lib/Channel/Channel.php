@@ -69,15 +69,14 @@ class Channel {
 				$this->state->set('state', 2);
 				return [self::TYPE_ARRAY, $this->initialResponses];
 			default:
-				$slept = 0;
-				while ($slept < self::TIMEOUT) {
-					$message = $this->sessionChannel->popMessage();
+				$start = time();
+				while ((time() - $start) < self::TIMEOUT) {
+					$message = $this->sessionChannel->popMessage(self::TIMEOUT);
 					if ($message) {
 						return [self::TYPE_ARRAY, json_decode($message, true)];
 					}
 
 					usleep(100 * 1000);
-					$slept += 0.1;
 				}
 
 				$session = $this->sessionManager->getSession($sessionId);

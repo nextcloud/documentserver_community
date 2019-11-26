@@ -55,7 +55,7 @@ class IPCMulticast implements IIPCChannel {
 		}
 	}
 
-	public function popMessage(): ?string {
+	public function popMessage(int $timeout): ?string {
 		return null;
 	}
 }

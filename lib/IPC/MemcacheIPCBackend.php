@@ -43,7 +43,7 @@ class MemcacheIPCBackend implements IIPCBackend {
 		$this->memcache->set("$channel::message_$key", $message);
 	}
 
-	public function popMessage(string $channel): ?string {
+	public function popMessage(string $channel, int $timeout): ?string {
 		$writeKey = $this->memcache->get("$channel::write_key");
 		$readKey = $this->memcache->inc("$channel::read_key");
 

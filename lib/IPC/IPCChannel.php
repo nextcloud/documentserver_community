@@ -39,7 +39,7 @@ class IPCChannel implements IIPCChannel {
 		$this->backend->pushMessage($this->channel, $message);
 	}
 
-	public function popMessage(): ?string {
-		return $this->backend->popMessage($this->channel);
+	public function popMessage(int $timeout): ?string {
+		return $this->backend->popMessage($this->channel, $timeout);
 	}
 }

@@ -39,7 +39,8 @@ interface IIPCChannel {
 	/**
 	 * Get a message from the channel if one is available
 	 *
+	 * @param int $timeout
 	 * @return string|null
 	 */
-	public function popMessage(): ?string;
+	public function popMessage(int $timeout): ?string;
 }
