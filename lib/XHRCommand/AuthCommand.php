@@ -34,6 +34,8 @@ use OCP\IURLGenerator;
 use function Sabre\HTTP\encodePathSegment;
 
 class AuthCommand implements ICommandHandler {
+	const MAX_CONNECTIONS = 20;
+
 	private $urlGenerator;
 	private $changeStore;
 	private $sessionManager;
@@ -79,6 +81,17 @@ class AuthCommand implements ICommandHandler {
 
 		$session = $this->sessionManager->newSession($session->getSessionId(), $session->getDocumentId(), $user['id'], $user['id'], $readOnly);
 
+		$participants = $this->sessionManager->getSessionsForDocument($session->getDocumentId());
+
+		if (count($participants) > self::MAX_CONNECTIONS) {
+			$sessionChannel->pushMessage(json_encode([
+				'type' => 'auth',
+				'result' => 0,
+			]));
+
+			return;
+		}
+
 		$sessionChannel->pushMessage(json_encode([
 			'type' => 'auth',
 			'result' => 1,
@@ -95,12 +108,10 @@ class AuthCommand implements ICommandHandler {
 			]],
 			'locks' => $this->lockStore->getLocksForDocument($session->getDocumentId()),
 			'indexUser' => $session->getUserIndex(),
-			'g_cAscSpellCheckUrl' => '/spellchecker',
 			'buildVersion' => $this->webVersion->getWebUIVersion(),
 			'buildNumber' => 1,
 			'licenseType' => 7,
 			'settings' => [
-				'spellcheckerUrl' => '/spellchecker',
 				'reconnection' => [
 					'attempts' => 50,
 					'delay' => 2000,
@@ -108,7 +119,6 @@ class AuthCommand implements ICommandHandler {
 			],
 		]));
 
-		$participants = $this->sessionManager->getSessionsForDocument($session->getDocumentId());
 		$message = json_encode([
 			'type' => 'connectState',
 			'participantsTimestamp' => time() * 1000,
