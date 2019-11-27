@@ -27,6 +27,7 @@ use OCA\DocumentServer\IPC\IIPCFactory;
 use OCA\DocumentServer\OnlyOffice\URLDecoder;
 use OCA\DocumentServer\OnlyOffice\WebVersion;
 use OCA\DocumentServer\XHRCommand\AuthCommand;
+use OCA\DocumentServer\XHRCommand\CursorCommand;
 use OCA\DocumentServer\XHRCommand\GetLock;
 use OCA\DocumentServer\XHRCommand\IsSaveLock;
 use OCA\DocumentServer\XHRCommand\SaveChangesCommand;
@@ -46,6 +47,7 @@ class DocumentController extends SessionController {
 		SaveChangesCommand::class,
 		GetLock::class,
 		UnlockDocument::class,
+		CursorCommand::class,
 	];
 
 	const IDLE_HANDLERS = [
@@ -176,7 +178,7 @@ class DocumentController extends SessionController {
 				'documentserver.Document.documentFile', [
 					'path' => $title,
 					'docId' => $docId,
-					'download' => 1
+					'download' => 1,
 				]
 			);
 
@@ -193,7 +195,7 @@ class DocumentController extends SessionController {
 		return new DataResponse([
 			'type' => 'save',
 			'status' => 'ok',
-			'data' => $docId
+			'data' => $docId,
 		]);
 	}
 }
