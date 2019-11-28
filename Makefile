@@ -1,4 +1,4 @@
-all: 3rdparty/onlyoffice/documentserver
+all: 3rdparty/onlyoffice/documentserver version
 
 clean:
 	rm -r 3rdparty/onlyoffice
@@ -16,3 +16,7 @@ clean:
 		--allfonts="AllFonts.js" \
 		--images="../../../sdkjs/common/Images" \
 		--selection="font_selection.bin"
+
+version:
+	VERSION=$$(grep -ozP "DocsAPI\.DocEditor\.version\s*=\s*function\(\) *\{\n\s+return\s\'\K(\d+.\d+.\d+)" 3rdparty/onlyoffice/documentserver/web-apps/apps/api/documents/api.js) ;\
+		sed -i "s/return '[0-9.]*'/return '$$VERSION'/" lib/OnlyOffice/WebVersion.php

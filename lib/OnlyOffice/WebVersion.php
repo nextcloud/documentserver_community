@@ -21,29 +21,8 @@
 
 namespace OCA\DocumentServer\OnlyOffice;
 
-use OCP\ICacheFactory;
-
 class WebVersion {
-	private $cache;
-
-	public function __construct(ICacheFactory $cacheFactory) {
-		$this->cache = $cacheFactory->createLocal('documentserver_');
-	}
-
 	public function getWebUIVersion(): string {
-		$cached = $this->cache->get('webversion');
-		if ($cached) {
-			return $cached;
-		}
-
-		$path = __DIR__ . '/../../3rdparty/onlyoffice/documentserver/web-apps/apps/api/documents/api.js';
-		$apiJS = file_get_contents($path);
-		if ($apiJS && preg_match("|DocsAPI\.DocEditor\.version\s*=\s*function\(\) *\{\n\s+return\s'(\d+.\d+.\d+)';\n\s+}|", $apiJS, $matches)) {
-			$version = $matches[1];
-			$this->cache->set('webversion', $version);
-			return $version;
-		} else {
-			return '0.0.0';
-		}
+		return '5.4.2';
 	}
 }
