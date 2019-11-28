@@ -25,11 +25,13 @@ use OCA\DocumentServer\IPC\IIPCFactory;
 use OCA\DocumentServer\IPC\IPCFactory;
 use OCA\DocumentServer\IPC\MemcacheIPCFactory;
 use OCA\DocumentServer\IPC\RedisIPCFactory;
+use OCA\DocumentServer\JSSettingsHelper;
 use OCA\DocumentServer\OnlyOffice\URLDecoder;
 use OCA\Onlyoffice\AppConfig;
 use OCA\Onlyoffice\Crypt;
 use OCP\AppFramework\App;
 use OCP\AppFramework\IAppContainer;
+use OCP\Util;
 
 class Application extends App {
 	public function __construct(array $urlParams = []) {
@@ -60,6 +62,9 @@ class Application extends App {
 	}
 
 	public function register() {
+		$server = $this->getContainer()->getServer();
 
+		$jsSettingsHelper = new JSSettingsHelper($server->getURLGenerator());
+		Util::connectHook('\OCP\Config', 'js', $jsSettingsHelper, 'extend');
 	}
 }

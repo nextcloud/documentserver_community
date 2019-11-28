@@ -18,11 +18,11 @@ return [
 
 		['name' => 'Convert#convert', 'url' => '/ConvertService.ashx', 'verb' => 'POST'],
 
-		['name' => 'Static#webApps', 'url' => '/{version}/web-apps/{path}', 'verb' => 'GET', 'requirements' => ['path' => '.+']],
 		['name' => 'Static#webApps', 'url' => '/web-apps/{path}', 'verb' => 'GET', 'requirements' => ['path' => '.+']],
-		['name' => 'Static#sdkJS', 'url' => '/{version}/sdkjs/{path}', 'verb' => 'GET', 'requirements' => ['path' => '.+']],
 		['name' => 'Static#sdkJS', 'url' => '/sdkjs/{path}', 'verb' => 'GET', 'requirements' => ['path' => '.+']],
 		['name' => 'Static#font', 'url' => '/fonts/{fontId}', 'verb' => 'GET'],
 		['name' => 'Static#pluginsJSON', 'url' => '/plugins.json', 'verb' => 'GET'],
+		['name' => 'Static#pluginsJSON', 'url' => '/3rdparty/onlyoffice/documentserver/plugins.json', 'verb' => 'GET'],
+		['name' => 'Static#thirdparty', 'url' => '/3rdparty/onlyoffice/documentserver/{path}', 'verb' => 'GET', 'requirements' => ['path' => '.+']],
 	]
 ];

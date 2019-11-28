@@ -46,12 +46,25 @@ class StaticController extends Controller {
 		$this->nonceManager = $nonceManager;
 	}
 
+	/**
+	 * @NoCSRFRequired
+	 * @NoAdminRequired
+	 */
+	public function thirdparty(string $path) {
+		if (strpos($path, '..') !== false) {
+			throw new ForbiddenException();
+		}
+
+		$localPath = __DIR__ . '/../../3rdparty/onlyoffice/documentserver/' . $path;
+
+		return $this->createFileResponse($localPath);
+	}
 
 	/**
 	 * @NoCSRFRequired
 	 * @NoAdminRequired
 	 */
-	public function webApps(?string $version, string $path) {
+	public function webApps(string $path) {
 		if (strpos($path, '..') !== false) {
 			throw new ForbiddenException();
 		}
@@ -65,7 +78,7 @@ class StaticController extends Controller {
 	 * @NoCSRFRequired
 	 * @NoAdminRequired
 	 */
-	public function sdkJS(?string $version, string $path) {
+	public function sdkJS(string $path) {
 		if (strpos($path, '..') !== false) {
 			throw new ForbiddenException();
 		}
@@ -79,7 +92,7 @@ class StaticController extends Controller {
 	 * @NoCSRFRequired
 	 * @NoAdminRequired
 	 */
-	public function font(?string $version, string $fontId) {
+	public function font(string $fontId) {
 		if (strpos($fontId, '..') !== false) {
 			throw new ForbiddenException();
 		}
