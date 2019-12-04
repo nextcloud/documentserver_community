@@ -21,27 +21,27 @@
 
 namespace OCA\DocumentServer\IPC;
 
-use OCP\ICacheFactory;
-use OCP\IMemcache;
+use OCP\AppFramework\Utility\ITimeFactory;
+use OCP\IDBConnection;
 
-class MemcacheIPCFactory implements IIPCBackendFactory {
-	private $memcacheFactory;
+class DatabaseIPCFactory implements IIPCBackendFactory {
+	private $connection;
+	private $timeFactory;
 
-	public function __construct(ICacheFactory $memcacheFactory) {
-		$this->memcacheFactory = $memcacheFactory;
+	public function __construct(IDBConnection $connection, ITimeFactory $timeFactory) {
+		$this->connection = $connection;
+		$this->timeFactory = $timeFactory;
 	}
 
 	public function isAvailable(): bool {
-		return $this->memcacheFactory->isAvailable() && (
-				$this->memcacheFactory->createDistributed() instanceof IMemcache
-			);
+		return true;
 	}
 
 	public function getPriority(): int {
-		return 20;
+		return 100;
 	}
 
 	public function getInstance(): IIPCBackend {
-		return new MemcacheIPCBackend($this->memcacheFactory->createDistributed('ipc'));
+		return new DatabaseIPCBackend($this->connection, $this->timeFactory);
 	}
 }

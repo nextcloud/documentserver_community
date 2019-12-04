@@ -25,7 +25,7 @@ use OCA\DocumentServer\IPC\IIPCBackend;
 use Test\TestCase;
 
 abstract class BackendTest extends TestCase {
-	protected function setUp() {
+	protected function setUp(): void {
 		parent::setUp();
 
 		$this->setupBackend();
@@ -43,23 +43,23 @@ abstract class BackendTest extends TestCase {
 		$backend2 = $this->getBackend();
 
 		$backend1->pushMessage("ch1", "foo");
-		$this->assertEquals("foo", $backend2->popMessage("ch1"));
+		$this->assertEquals("foo", $backend2->popMessage("ch1", 1));
 	}
 
 	public function testPopEmpty() {
 		$backend = $this->getBackend();
 
-		$this->assertEquals(null, $backend->popMessage("ch1"));
+		$this->assertEquals(null, $backend->popMessage("ch1", 1));
 	}
 
 	public function testPushPopAfterEmpty() {
 		$backend1 = $this->getBackend();
 		$backend2 = $this->getBackend();
 
-		$this->assertEquals(null, $backend2->popMessage("ch1"));
+		$this->assertEquals(null, $backend2->popMessage("ch1", 1));
 
 		$backend1->pushMessage("ch1", "foo");
-		$this->assertEquals("foo", $backend2->popMessage("ch1"));
+		$this->assertEquals("foo", $backend2->popMessage("ch1", 1));
 	}
 
 	public function testPushPopMultiple() {
@@ -69,10 +69,10 @@ abstract class BackendTest extends TestCase {
 		$backend1->pushMessage("ch1", "foo");
 		$backend1->pushMessage("ch1", "bar");
 		$backend1->pushMessage("ch1", "asd");
-		$this->assertEquals("foo", $backend2->popMessage("ch1"));
-		$this->assertEquals("bar", $backend2->popMessage("ch1"));
-		$this->assertEquals("asd", $backend2->popMessage("ch1"));
-		$this->assertEquals(null, $backend2->popMessage("ch1"));
+		$this->assertEquals("foo", $backend2->popMessage("ch1", 1));
+		$this->assertEquals("bar", $backend2->popMessage("ch1", 1));
+		$this->assertEquals("asd", $backend2->popMessage("ch1", 1));
+		$this->assertEquals(null, $backend2->popMessage("ch1", 1));
 	}
 
 	public function testPushPopSeparateChannels() {
@@ -81,9 +81,9 @@ abstract class BackendTest extends TestCase {
 
 		$backend1->pushMessage("ch1", "foo");
 		$backend1->pushMessage("ch2", "bar");
-		$this->assertEquals("foo", $backend2->popMessage("ch1"));
-		$this->assertEquals(null, $backend2->popMessage("ch1"));
-		$this->assertEquals("bar", $backend2->popMessage("ch2"));
-		$this->assertEquals(null, $backend2->popMessage("ch2"));
+		$this->assertEquals("foo", $backend2->popMessage("ch1", 1));
+		$this->assertEquals(null, $backend2->popMessage("ch1", 1));
+		$this->assertEquals("bar", $backend2->popMessage("ch2", 1));
+		$this->assertEquals(null, $backend2->popMessage("ch2", 1));
 	}
 }

@@ -19,29 +19,31 @@
  *
  */
 
-namespace OCA\DocumentServer\IPC;
+namespace OCA\DocumentServer\Tests\IPC;
 
-use OCP\ICacheFactory;
-use OCP\IMemcache;
 
-class MemcacheIPCFactory implements IIPCBackendFactory {
-	private $memcacheFactory;
+use OCA\DocumentServer\IPC\IIPCBackend;
+use OCA\DocumentServer\IPC\DatabaseIPCBackend;
+use OCP\AppFramework\Utility\ITimeFactory;
+use OCP\IDBConnection;
 
-	public function __construct(ICacheFactory $memcacheFactory) {
-		$this->memcacheFactory = $memcacheFactory;
+/**
+ * @group DB
+ */
+class DatabaseIPCBackendTest extends BackendTest {
+	/** @var IDBConnection */
+	private $connection;
+	/** @var ITimeFactory */
+	private $timeFactory;
+
+	protected function setupBackend() {
+		$this->connection = \OC::$server->getDatabaseConnection();
+		$this->timeFactory = $this->createMock(ITimeFactory::class);
+		$this->timeFactory->method('getTime')
+			->willReturn(100);
 	}
 
-	public function isAvailable(): bool {
-		return $this->memcacheFactory->isAvailable() && (
-				$this->memcacheFactory->createDistributed() instanceof IMemcache
-			);
-	}
-
-	public function getPriority(): int {
-		return 20;
-	}
-
-	public function getInstance(): IIPCBackend {
-		return new MemcacheIPCBackend($this->memcacheFactory->createDistributed('ipc'));
+	protected function getBackend(): IIPCBackend {
+		return new DatabaseIPCBackend($this->connection, $this->timeFactory);
 	}
 }

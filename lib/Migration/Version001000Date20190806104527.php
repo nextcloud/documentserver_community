@@ -109,6 +109,29 @@ class Version001000Date20190806104527 extends SimpleMigrationStep {
 			$table->addIndex(['document_id', 'user'], 'documentserver_locks_doc_user');
 		}
 
+		if (!$schema->hasTable('documentserver_ipc')) {
+			$table = $schema->createTable('documentserver_ipc');
+			$table->addColumn('message_id', 'bigint', [
+				'autoincrement' => true,
+				'notnull' => true,
+				'length' => 6,
+			]);
+			$table->addColumn('session_id', 'text', [
+				'notnull' => true,
+				'length' => 32,
+			]);
+			$table->addColumn('time', 'bigint', [
+				'notnull' => true,
+				'length' => 6
+			]);
+			$table->addColumn('message', 'text', [
+				'notnull' => true,
+			]);
+			$table->setPrimaryKey(['message_id']);
+			$table->addIndex(['session_id', 'message_id'], 'documentserver_ipc_session');
+			$table->addIndex(['time'], 'documentserver_ipc_time');
+		}
+
 		return $schema;
 	}
 }
