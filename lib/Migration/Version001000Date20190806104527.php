@@ -33,11 +33,13 @@ class Version001000Date20190806104527 extends SimpleMigrationStep {
 				'notnull' => true,
 				'length' => 6
 			]);
-			$table->addColumn('user', 'text', [
+			$table->addColumn('user', 'string', [
 				'notnull' => true,
+				'length' => 64,
 			]);
-			$table->addColumn('user_original', 'text', [
+			$table->addColumn('user_original', 'string', [
 				'notnull' => true,
+				'length' => 64,
 			]);
 			$table->addColumn('processing', 'boolean', [
 				'notnull' => true,
@@ -51,19 +53,21 @@ class Version001000Date20190806104527 extends SimpleMigrationStep {
 
 		if (!$schema->hasTable('documentserver_sessions')) {
 			$table = $schema->createTable('documentserver_sessions');
-			$table->addColumn('session_id', 'text', [
+			$table->addColumn('session_id', 'string', [
 				'notnull' => true,
 				'length' => 16,
 			]);
-			$table->addColumn('document_id', 'bigint', [
+			$table->addColumn('document_id', 'string', [
 				'notnull' => true,
 				'length' => 6,
 			]);
-			$table->addColumn('user', 'text', [
+			$table->addColumn('user', 'string', [
 				'notnull' => true,
+				'length' => 64,
 			]);
-			$table->addColumn('user_original', 'text', [
+			$table->addColumn('user_original', 'string', [
 				'notnull' => true,
+				'length' => 64,
 			]);
 			$table->addColumn('last_seen', 'bigint', [
 				'notnull' => true,
@@ -93,9 +97,9 @@ class Version001000Date20190806104527 extends SimpleMigrationStep {
 				'notnull' => true,
 				'length' => 6,
 			]);
-			$table->addColumn('user', 'text', [
+			$table->addColumn('user', 'string', [
 				'notnull' => true,
-				'length' => 128,
+				'length' => 64,
 			]);
 			$table->addColumn('time', 'bigint', [
 				'notnull' => true,
@@ -116,9 +120,9 @@ class Version001000Date20190806104527 extends SimpleMigrationStep {
 				'notnull' => true,
 				'length' => 6,
 			]);
-			$table->addColumn('session_id', 'text', [
+			$table->addColumn('session_id', 'string', [
 				'notnull' => true,
-				'length' => 32,
+				'length' => 16,
 			]);
 			$table->addColumn('time', 'bigint', [
 				'notnull' => true,
