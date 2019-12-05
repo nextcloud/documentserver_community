@@ -58,7 +58,7 @@ class SessionManager {
 		return $query->execute()->fetchColumn() + 1;
 	}
 
-	public function newSession(string $sessionId, int $documentId, string $user, string $userOriginal, bool $readOnly): Session {
+	public function newSession(string $sessionId, int $documentId) {
 		$userId = $this->getNextUserIndex($documentId);
 
 		$query = $this->connection->getQueryBuilder();
@@ -69,14 +69,35 @@ class SessionManager {
 				'session_id' => $query->createNamedParameter($sessionId),
 				'document_id' => $query->createNamedParameter($documentId, \PDO::PARAM_INT),
 				'last_seen' => $query->createNamedParameter($now, \PDO::PARAM_INT),
-				'user' => $query->createNamedParameter($user),
-				'user_original' => $query->createNamedParameter($userOriginal),
-				'readonly' => $query->createNamedParameter($readOnly, \PDO::PARAM_INT),
+				'user' => $query->createNamedParameter(""),
+				'user_original' => $query->createNamedParameter(""),
+				'readonly' => $query->createNamedParameter(1, \PDO::PARAM_INT),
 				'user_index' => $query->createNamedParameter($userId, \PDO::PARAM_INT),
 			]);
 		$query->execute();
+	}
 
-		return new Session($sessionId, $documentId, $user, $userOriginal, $now, $readOnly, $userId);
+	public function authenticate(Session $session, string $user, string $userOriginal, bool $readOnly): Session {
+		$query = $this->connection->getQueryBuilder();
+		$now = $this->timeFactory->getTime();
+
+		$query->update('documentserver_sessions')
+			->set('last_seen', $query->createNamedParameter($now, \PDO::PARAM_INT))
+			->set('user', $query->createNamedParameter($user))
+			->set('user_original', $query->createNamedParameter($userOriginal))
+			->set('readonly', $query->createNamedParameter($readOnly, \PDO::PARAM_INT))
+			->where($query->expr()->eq('session_id', $query->createNamedParameter($session->getSessionId(), \PDO::PARAM_INT)));
+		$query->execute();
+
+		return new Session(
+			$session->getSessionId(),
+			$session->getDocumentId(),
+			$user,
+			$userOriginal,
+			$now,
+			$readOnly,
+			$session->getUserIndex()
+		);
 	}
 
 	public function markAsSeen(string $sessionId) {

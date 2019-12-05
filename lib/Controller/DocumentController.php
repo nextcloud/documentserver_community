@@ -85,7 +85,7 @@ class DocumentController extends SessionController {
 	}
 
 	protected function getInitialResponses(): array {
-		return [
+		return [[
 			'type' => 'license',
 			'license' => [
 				'type' => 3,
@@ -98,7 +98,7 @@ class DocumentController extends SessionController {
 				'customization' => false,
 				'plugins' => false,
 			],
-		];
+		]];
 	}
 
 	protected function getCommandHandlerClasses(): array {

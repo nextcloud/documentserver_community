@@ -79,7 +79,7 @@ class AuthCommand implements ICommandHandler {
 		$user = $command['user'];
 		$readOnly = $command['view'];
 
-		$session = $this->sessionManager->newSession($session->getSessionId(), $session->getDocumentId(), $user['id'], $user['id'], $readOnly);
+		$session = $this->sessionManager->authenticate($session, $user['id'], $user['id'], $readOnly);
 
 		$participants = $this->sessionManager->getSessionsForDocument($session->getDocumentId());
 

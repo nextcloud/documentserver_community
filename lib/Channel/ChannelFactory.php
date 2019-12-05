@@ -27,12 +27,10 @@ use OCA\DocumentServer\IPC\IIPCFactory;
 
 class ChannelFactory {
 	private $ipcFactory;
-	private $memcacheFactory;
 	private $sessionManager;
 
-	public function __construct(IIPCFactory $ipcFactory, ICacheFactory $memcacheFactory, SessionManager $sessionManager) {
+	public function __construct(IIPCFactory $ipcFactory, SessionManager $sessionManager) {
 		$this->ipcFactory = $ipcFactory;
-		$this->memcacheFactory = $memcacheFactory;
 		$this->sessionManager = $sessionManager;
 	}
 
@@ -40,9 +38,10 @@ class ChannelFactory {
 		$key = "session_$sessionId";
 
 		return new Channel(
+			$sessionId,
+			(int)$documentId,
 			$this->ipcFactory->getChannel($key),
 			new IPCMulticast($this->ipcFactory, $this->sessionManager, (int)$documentId, $sessionId),
-			$this->memcacheFactory->createLocal($key),
 			$commandDispatcher,
 			$this->sessionManager,
 			$initialResponses

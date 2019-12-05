@@ -22,6 +22,7 @@
 namespace OCA\DocumentServer\Channel;
 
 use OCA\DocumentServer\XHRCommand\CommandDispatcher;
+use OCP\Files\NotFoundException;
 use OCP\IMemcache;
 use OCA\DocumentServer\IPC\IIPCChannel;
 
@@ -33,6 +34,8 @@ class Channel {
 
 	const TIMEOUT = 25;
 
+	private $sessionId;
+	private $documentId;
 	private $sessionChannel;
 	private $documentChannel;
 	private $state;
@@ -41,62 +44,63 @@ class Channel {
 	private $initialResponses = [];
 
 	public function __construct(
+		string $sessionId,
+		int $documentId,
 		IIPCChannel $sessionChannel,
 		IIPCChannel $documentChannel,
-		IMemcache $state,
 		CommandDispatcher $commandDispatcher,
 		SessionManager $sessionManager,
 		array $initialResponses = []
 	) {
+		$this->sessionId = $sessionId;
+		$this->documentId = $documentId;
 		$this->sessionChannel = $sessionChannel;
 		$this->documentChannel = $documentChannel;
-		$this->state = $state;
 		$this->commandDispatcher = $commandDispatcher;
 		$this->initialResponses = $initialResponses;
 		$this->sessionManager = $sessionManager;
 	}
 
-	public function getResponse($sessionId) {
-		$stateId = (int)($this->state->get('state') ?? 0);
+	public function getResponse() {
+		$session = $this->sessionManager->getSession($this->sessionId);
 
-		$this->sessionManager->markAsSeen($sessionId);
+		$this->sessionManager->markAsSeen($this->sessionId);
 
-		switch ($stateId) {
-			case 0:
-				$this->state->set('state', count($this->initialResponses) ? 1 : 2);
-				return [self::TYPE_OPEN, null];
-			case 1:
-				$this->state->set('state', 2);
-				return [self::TYPE_ARRAY, $this->initialResponses];
-			default:
-				$start = time();
-				while ((time() - $start) < self::TIMEOUT) {
-					$message = $this->sessionChannel->popMessage(self::TIMEOUT);
-					if ($message) {
-						return [self::TYPE_ARRAY, json_decode($message, true)];
-					}
+		if (!$session) {
+			$this->sessionManager->newSession($this->sessionId, $this->documentId);
+			foreach ($this->initialResponses as $initialResponse) {
+				$this->sessionChannel->pushMessage(json_encode($initialResponse));
+			}
 
-					usleep(100 * 1000);
+			return [self::TYPE_OPEN, null];
+		} else {
+			$start = time();
+			while ((time() - $start) < self::TIMEOUT) {
+				$message = $this->sessionChannel->popMessage(self::TIMEOUT);
+				if ($message) {
+					return [self::TYPE_ARRAY, json_decode($message, true)];
 				}
 
-				$session = $this->sessionManager->getSession($sessionId);
+				usleep(100 * 1000);
+			}
 
-				if ($session) {
-					$this->commandDispatcher->idleWork($session, $this->sessionChannel, $this->documentChannel);
-				}
+			$session = $this->sessionManager->getSession($this->sessionId);
 
-				return [self::TYPE_HEARTBEAT, null];
+			if ($session) {
+				$this->commandDispatcher->idleWork($session, $this->sessionChannel, $this->documentChannel);
+			}
+
+			return [self::TYPE_HEARTBEAT, null];
 		}
 	}
 
-	public function handleCommand(array $command, int $documentId, string $sessionId) {
-		$session = $this->sessionManager->getSession($sessionId);
+	public function handleCommand(array $command) {
+		$session = $this->sessionManager->getSession($this->sessionId);
 
 		if ($session) {
 			$this->sessionManager->markAsSeen($session->getSessionId());
 		} else {
-			// create a fake session so we have document id and session id during the auth command handling
-			$session = new Session($sessionId, $documentId, '', '', time(), false, 0);
+			throw new NotFoundException("session not found");
 		}
 
 		$this->commandDispatcher->handle($command, $session, $this->sessionChannel, $this->documentChannel);
