@@ -74,34 +74,6 @@ class StaticController extends Controller {
 		return $this->createFileResponse($localPath);
 	}
 
-	/**
-	 * @NoCSRFRequired
-	 * @NoAdminRequired
-	 */
-	public function sdkJS(string $path) {
-		if (strpos($path, '..') !== false) {
-			throw new ForbiddenException();
-		}
-
-		$localPath = __DIR__ . '/../../3rdparty/onlyoffice/documentserver/sdkjs/' . $path;
-
-		return $this->createFileResponse($localPath);
-	}
-
-	/**
-	 * @NoCSRFRequired
-	 * @NoAdminRequired
-	 */
-	public function font(string $fontId) {
-		if (strpos($fontId, '..') !== false) {
-			throw new ForbiddenException();
-		}
-
-		$localPath = __DIR__ . '/../../3rdparty/onlyoffice/documentserver/fonts/' . $fontId;
-
-		return $this->createFileResponse($localPath);
-	}
-
 	private function createFileResponse($path) {
 
 		if (!file_exists($path)) {

@@ -21,19 +21,23 @@
 
 namespace OCA\DocumentServer;
 
+use OCP\IConfig;
 use OCP\IURLGenerator;
 
 class JSSettingsHelper {
-	/** @var IURLGenerator */
 	private $urlGenerator;
+	private $config;
 
-	public function __construct(IURLGenerator $urlGenerator) {
+	public function __construct(IURLGenerator $urlGenerator, IConfig $config) {
 		$this->urlGenerator = $urlGenerator;
+		$this->config = $config;
 	}
 
 	public function extend(array $settings) {
-		$settings['array']['extensionParams'] = json_encode([
-			'url' => $this->urlGenerator->linkTo('documentserver', '3rdparty/onlyoffice/documentserver/web-apps/')
-		]);
+		if (strpos($this->config->getAppValue('onlyoffice', 'DocumentServerUrl'), 'apps/documentserver')) {
+			$settings['array']['extensionParams'] = json_encode([
+				'url' => $this->urlGenerator->linkTo('documentserver', '3rdparty/onlyoffice/documentserver/web-apps/')
+			]);
+		}
 	}
 }

@@ -63,10 +63,13 @@ class Application extends App {
 		});
 	}
 
+	private function getJSSettingsHelper(): JSSettingsHelper {
+		return $this->getContainer()->query(JSSettingsHelper::class);
+	}
+
 	public function register() {
 		$server = $this->getContainer()->getServer();
 
-		$jsSettingsHelper = new JSSettingsHelper($server->getURLGenerator());
-		Util::connectHook('\OCP\Config', 'js', $jsSettingsHelper, 'extend');
+		Util::connectHook('\OCP\Config', 'js', $this->getJSSettingsHelper(), 'extend');
 	}
 }

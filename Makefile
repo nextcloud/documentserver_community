@@ -16,7 +16,6 @@ clean:
 		--allfonts="AllFonts.js" \
 		--images="../../../sdkjs/common/Images" \
 		--selection="font_selection.bin"
-	sed -i 's#../../../../doc/#../../../../../../../doc/#g' 3rdparty/onlyoffice/documentserver/sdkjs/{cell,word,slide}/sdk-all-min.js
 
 version:
 	VERSION=$$(grep -ozP "DocsAPI\.DocEditor\.version\s*=\s*function\(\) *\{\n\s+return\s\'\K(\d+.\d+.\d+)" 3rdparty/onlyoffice/documentserver/web-apps/apps/api/documents/api.js) ;\

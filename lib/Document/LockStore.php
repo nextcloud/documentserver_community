@@ -64,7 +64,7 @@ class LockStore {
 
 		$locks = array_map([Lock::class, "fromRow"], $rows);
 		$keys = array_map(function (Lock $lock, $key) {
-			if (is_numeric($lock->getBlock())) {
+			if (is_string($lock->getBlock())) {
 				return $lock->getBlock();
 			} else {
 				return $key;
