@@ -28,6 +28,7 @@ class XMLResponse extends Response {
 
 	/**
 	 * response data
+	 *
 	 * @var array|object
 	 */
 	protected $data;
@@ -42,17 +43,18 @@ class XMLResponse extends Response {
 
 	public function render() {
 		$xml = new \SimpleXMLElement('<root/>');
-		array_walk_recursive(array_flip($this->data), [$xml, 'addChild']);
+		$data = array_flip($this->data);
+		array_walk_recursive($data, [$xml, 'addChild']);
 		return $xml->asXML();
 	}
 
-	public function setData($data){
+	public function setData($data) {
 		$this->data = $data;
 
 		return $this;
 	}
 
-	public function getData(){
+	public function getData() {
 		return $this->data;
 	}
 
