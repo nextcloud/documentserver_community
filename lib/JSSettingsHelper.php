@@ -25,18 +25,18 @@ use OCP\IConfig;
 use OCP\IURLGenerator;
 
 class JSSettingsHelper {
-	private $urlGenerator;
 	private $config;
 
 	public function __construct(IURLGenerator $urlGenerator, IConfig $config) {
-		$this->urlGenerator = $urlGenerator;
 		$this->config = $config;
 	}
 
 	public function extend(array $settings) {
-		if (strpos($this->config->getAppValue('onlyoffice', 'DocumentServerUrl'), 'apps/documentserver')) {
+		$documentServerUrl = $this->config->getAppValue('onlyoffice', 'DocumentServerUrl');
+		if (strpos($documentServerUrl, 'apps/documentserver')) {
+			$url = rtrim($documentServerUrl, '/') . '/3rdparty/onlyoffice/documentserver/web-apps/';
 			$settings['array']['extensionParams'] = json_encode([
-				'url' => $this->urlGenerator->linkTo('documentserver', '3rdparty/onlyoffice/documentserver/web-apps/')
+				'url' => $url
 			]);
 		}
 	}
