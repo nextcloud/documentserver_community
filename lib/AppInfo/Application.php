@@ -21,6 +21,8 @@
 
 namespace OCA\DocumentServer\AppInfo;
 
+use OC\AppFramework\Middleware\MiddlewareDispatcher;
+use OCA\DocumentServer\CSPMiddleware;
 use OCA\DocumentServer\IPC\DatabaseIPCFactory;
 use OCA\DocumentServer\IPC\IIPCFactory;
 use OCA\DocumentServer\IPC\IPCFactory;
@@ -67,9 +69,20 @@ class Application extends App {
 		return $this->getContainer()->query(JSSettingsHelper::class);
 	}
 
-	public function register() {
+	private function preFillOnlyOfficeConfig() {
 		$server = $this->getContainer()->getServer();
 
+		$config = $server->getConfig();
+		if ($config->getAppValue('onlyoffice', 'DocumentServerUrl') === '') {
+			$urlGenerator = $server->getURLGenerator();
+
+			$url = $urlGenerator->linkTo('documentserver', '');
+			$config->setAppValue('onlyoffice', 'DocumentServerUrl', $urlGenerator->getAbsoluteURL($url));
+		}
+	}
+
+	public function register() {
+		$this->preFillOnlyOfficeConfig();
 		Util::connectHook('\OCP\Config', 'js', $this->getJSSettingsHelper(), 'extend');
 	}
 }
