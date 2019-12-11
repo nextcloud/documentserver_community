@@ -22,12 +22,11 @@
 namespace OCA\DocumentServer;
 
 use OCP\IConfig;
-use OCP\IURLGenerator;
 
 class JSSettingsHelper {
 	private $config;
 
-	public function __construct(IURLGenerator $urlGenerator, IConfig $config) {
+	public function __construct(IConfig $config) {
 		$this->config = $config;
 	}
 
