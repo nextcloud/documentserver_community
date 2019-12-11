@@ -76,8 +76,8 @@ class Application extends App {
 		if ($config->getAppValue('onlyoffice', 'DocumentServerUrl') === '') {
 			$urlGenerator = $server->getURLGenerator();
 
-			$url = $urlGenerator->linkTo('documentserver', '');
-			$config->setAppValue('onlyoffice', 'DocumentServerUrl', $urlGenerator->getAbsoluteURL($url));
+			$url = substr($urlGenerator->linkToRouteAbsolute('documentserver.Static.webApps', ['path' => '_']), 0, -strlen('/web-apps/_'));
+			$config->setAppValue('onlyoffice', 'DocumentServerUrl', $url);
 		}
 	}
 
