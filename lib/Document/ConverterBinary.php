@@ -21,8 +21,16 @@
 
 namespace OCA\DocumentServer\Document;
 
+use OCP\ILogger;
+
 class ConverterBinary {
 	const BINARY_DIRECTORY = __DIR__ . '/../../3rdparty/onlyoffice/documentserver/server/FileConverter/bin';
+
+	private $logger;
+
+	public function __construct(ILogger $logger) {
+		$this->logger = $logger;
+	}
 
 	public function run(string $param): string {
 		$descriptorSpec = [
@@ -32,7 +40,7 @@ class ConverterBinary {
 		];
 
 		$pipes = [];
-		$process = proc_open('./x2t ' . $param, $descriptorSpec, $pipes, self::BINARY_DIRECTORY, []);
+		$process = proc_open('./x2t ' . escapeshellarg($param), $descriptorSpec, $pipes, self::BINARY_DIRECTORY, []);
 
 		fclose($pipes[0]);
 		$output = stream_get_contents($pipes[1]);
@@ -45,5 +53,25 @@ class ConverterBinary {
 		} else {
 			return $output;
 		}
+	}
+
+	public function test(): bool {
+		try {
+			$output = $this->run('');
+			return strpos($output, 'OOX/binary file converter') !== false;
+		} catch (\Exception $e) {
+			if (trim($e->getMessage()) === 'Empty sFileFrom or sFileTo') {
+				return true;
+			}
+			$this->logger->logException($e, [
+				'app' => 'documentserver',
+				'Message' => 'Error while testing x2t binary',
+			]);
+			return false;
+		}
+	}
+
+	public function exists(): bool {
+		return file_exists(self::BINARY_DIRECTORY . '/x2t');
 	}
 }

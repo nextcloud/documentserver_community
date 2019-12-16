@@ -2,8 +2,8 @@
 <info>
 	<id>documentserver</id>
 	<name>Document Server</name>
-	<summary>Document editor</summary>
-	<description><![CDATA[Document editor]]>
+	<summary>Document server for OnlyOffice</summary>
+	<description><![CDATA[Document server for OnlyOffice]]>
 	</description>
 	<licence>AGPL</licence>
 	<author>Robin Appelman</author>

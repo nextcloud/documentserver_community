@@ -29,9 +29,11 @@ use Sabre\Xml\Writer;
 
 class DocumentConverter {
 	private $tempManager;
+	private $converter;
 
-	public function __construct(ITempManager $tempManager) {
+	public function __construct(ITempManager $tempManager, ConverterBinary $converterBinary) {
 		$this->tempManager = $tempManager;
+		$this->converter = $converterBinary;
 	}
 
 	public function getEditorBinary($source, string $sourceExtension, string $targetFolder) {
@@ -78,7 +80,6 @@ class DocumentConverter {
 		$xmlWriter->writeElement("TaskQueueDataConvert", $command);
 		$xmlWriter->flush();
 
-		$converter = new ConverterBinary();
-		$converter->run($xmlFile);
+		$this->converter->run($xmlFile);
 	}
 }

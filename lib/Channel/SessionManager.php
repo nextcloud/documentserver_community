@@ -33,6 +33,14 @@ class SessionManager {
 		$this->timeFactory = $timeFactory;
 	}
 
+	public function getSessionCount(): int {
+		$query = $this->connection->getQueryBuilder();
+
+		$query->select($query->func()->count())
+			->from('documentserver_sessions');
+		return $query->execute()->fetchColumn();
+	}
+
 	public function getSession(string $sessionId): ?Session {
 		$query = $this->connection->getQueryBuilder();
 

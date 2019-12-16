@@ -24,6 +24,8 @@ namespace OCA\DocumentServer\Controller;
 use OC\ForbiddenException;
 use OC\Security\CSP\ContentSecurityPolicy;
 use OC\Security\CSP\ContentSecurityPolicyNonceManager;
+use OCA\DocumentServer\Channel\SessionManager;
+use OCA\DocumentServer\Document\ConverterBinary;
 use OCA\DocumentServer\FileResponse;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\NotFoundResponse;
@@ -33,17 +35,23 @@ use OCP\IRequest;
 class StaticController extends Controller {
 	private $mimeTypeHelper;
 	private $nonceManager;
+	private $converterBinary;
+	private $sessionManager;
 
 	public function __construct(
 		$appName,
 		IRequest $request,
 		IMimeTypeDetector $mimeTypeHelper,
-		ContentSecurityPolicyNonceManager $nonceManager
+		ContentSecurityPolicyNonceManager $nonceManager,
+		ConverterBinary $converterBinary,
+		SessionManager $sessionManager
 	) {
 		parent::__construct($appName, $request);
 
 		$this->mimeTypeHelper = $mimeTypeHelper;
 		$this->nonceManager = $nonceManager;
+		$this->converterBinary = $converterBinary;
+		$this->sessionManager = $sessionManager;
 	}
 
 	/**
@@ -70,6 +78,19 @@ class StaticController extends Controller {
 		}
 
 		$localPath = __DIR__ . '/../../3rdparty/onlyoffice/documentserver/web-apps/' . $path;
+
+		// onlyoffice will load this js file first
+		// we use this as an opportunity to do some checks and present error messages
+		// by serving a custom js file instead
+		if ($path === 'apps/api/documents/api.js') {
+			if (!file_exists($localPath)) {
+				$localPath = __DIR__ . '/../../js/notbuild.js';
+			} else if (!$this->converterBinary->test()) {
+				$localPath = __DIR__ . '/../../js/binaryerror.js';
+			} else if ($this->sessionManager->getSessionCount() >= 20) {
+				$localPath = __DIR__ . '/../../js/sessionlimit.js';
+			}
+		}
 
 		return $this->createFileResponse($localPath);
 	}
