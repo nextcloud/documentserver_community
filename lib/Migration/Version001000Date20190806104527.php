@@ -57,7 +57,7 @@ class Version001000Date20190806104527 extends SimpleMigrationStep {
 				'notnull' => true,
 				'length' => 16,
 			]);
-			$table->addColumn('document_id', 'string', [
+			$table->addColumn('document_id', 'bigint', [
 				'notnull' => true,
 				'length' => 6,
 			]);
