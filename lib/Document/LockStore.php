@@ -27,6 +27,8 @@ use OCP\DB\QueryBuilder\IQueryBuilder;
 use OCP\IDBConnection;
 
 class LockStore {
+	const TIMEOUT = 60;
+
 	private $connection;
 	private $timeFactory;
 
@@ -101,5 +103,13 @@ class LockStore {
 		$query->execute();
 
 		return $released;
+	}
+
+	public function expireLocks() {
+		$query = $this->connection->getQueryBuilder();
+		$query->delete("documentserver_locks")
+			->where($query->expr()->lt("time",
+				$query->createNamedParameter($this->timeFactory->getTime() - self::TIMEOUT, IQueryBuilder::PARAM_INT)));
+		$query->execute();
 	}
 }

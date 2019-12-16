@@ -23,29 +23,39 @@ namespace OCA\DocumentServer\BackgroundJob;
 
 use OCA\DocumentServer\Channel\SessionManager;
 use OCA\DocumentServer\Document\DocumentStore;
+use OCA\DocumentServer\Document\LockStore;
 use OCA\DocumentServer\Document\SaveHandler;
+use OCA\DocumentServer\IPC\DatabaseIPCBackend;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\Job;
 
-class CleanSessions extends Job {
+class Cleanup extends Job {
 	private $sessionManager;
 	private $documentStore;
 	private $saveHandler;
+	private $lockStore;
+	private $databaseIPCBackend;
 
 	public function __construct(
 		ITimeFactory $time,
 		SessionManager $sessionManager,
 		DocumentStore $documentStore,
-		SaveHandler $saveHandler
+		SaveHandler $saveHandler,
+		LockStore $lockStore,
+		DatabaseIPCBackend $databaseIPCBackend
 	) {
 		parent::__construct($time);
 
 		$this->sessionManager = $sessionManager;
 		$this->documentStore = $documentStore;
 		$this->saveHandler = $saveHandler;
+		$this->lockStore = $lockStore;
+		$this->databaseIPCBackend = $databaseIPCBackend;
 	}
 
 	protected function run($argument) {
+		$this->lockStore->expireLocks();
+		$this->databaseIPCBackend->expireMessages();
 		$this->sessionManager->cleanSessions();
 
 		$documents = $this->documentStore->getOpenDocuments();

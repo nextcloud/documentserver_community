@@ -15,7 +15,7 @@
 	</dependencies>
 
 	<background-jobs>
-		<job>OCA\DocumentServer\BackgroundJob\CleanSessions</job>
+		<job>OCA\DocumentServer\BackgroundJob\Cleanup</job>
 	</background-jobs>
 
 	<commands>
