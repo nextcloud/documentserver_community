@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <info>
-	<id>documentserver</id>
+	<id>documentserver_community</id>
 	<name>Document Server</name>
 	<summary>Document server for OnlyOffice</summary>
 	<description><![CDATA[Document server for OnlyOffice]]>
@@ -11,10 +11,10 @@
 	<namespace>DocumentServer</namespace>
 
 	<category>office</category>
-	<website>https://github.com/nextcloud/documentserver</website>
-	<bugs>https://github.com/nextcloud/documentserver/issues</bugs>
+	<website>https://github.com/nextcloud/documentserver_community</website>
+	<bugs>https://github.com/nextcloud/documentserver_community/issues</bugs>
 	<repository type="git">
-		https://github.com/nextcloud/documentserver.git
+		https://github.com/nextcloud/documentserver_community.git
 	</repository>
 
 	<dependencies>

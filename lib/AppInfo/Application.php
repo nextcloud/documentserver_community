@@ -38,7 +38,7 @@ use OCP\Util;
 
 class Application extends App {
 	public function __construct(array $urlParams = []) {
-		parent::__construct('documentserver', $urlParams);
+		parent::__construct('documentserver_community', $urlParams);
 
 		$container = $this->getContainer();
 
@@ -76,7 +76,7 @@ class Application extends App {
 		if ($config->getAppValue('onlyoffice', 'DocumentServerUrl') === '') {
 			$urlGenerator = $server->getURLGenerator();
 
-			$url = substr($urlGenerator->linkToRouteAbsolute('documentserver.Static.webApps', ['path' => '_']), 0, -strlen('/web-apps/_'));
+			$url = substr($urlGenerator->linkToRouteAbsolute('documentserver_community.Static.webApps', ['path' => '_']), 0, -strlen('/web-apps/_'));
 			$config->setAppValue('onlyoffice', 'DocumentServerUrl', $url);
 		}
 	}

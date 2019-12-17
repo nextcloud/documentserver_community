@@ -64,7 +64,7 @@ class ConverterBinary {
 				return true;
 			}
 			$this->logger->logException($e, [
-				'app' => 'documentserver',
+				'app' => 'documentserver_community',
 				'Message' => 'Error while testing x2t binary',
 			]);
 			return false;

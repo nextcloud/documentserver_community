@@ -143,7 +143,7 @@ class AuthCommand implements ICommandHandler {
 			$files = array_merge(['Editor.bin'], $this->documentStore->getEmbeddedFiles($docId));
 			$urls = array_map(function (string $file) use ($docId) {
 				return $this->urlGenerator->linkToRouteAbsolute(
-					'documentserver.Document.documentFile', [
+					'documentserver_community.Document.documentFile', [
 						'path' => $file,
 						'docId' => $docId,
 					]

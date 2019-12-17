@@ -152,7 +152,7 @@ class DocumentController extends SessionController {
 
 		return new DataResponse([
 			$path => $this->urlGenerator->linkToRouteAbsolute(
-				'documentserver.Document.documentFile', [
+				'documentserver_community.Document.documentFile', [
 					'path' => $path,
 					'docId' => $docId,
 				]
@@ -175,7 +175,7 @@ class DocumentController extends SessionController {
 			$sessionChannel = $this->ipcFactory->getChannel($key);
 
 			$url = $this->urlGenerator->linkToRouteAbsolute(
-				'documentserver.Document.documentFile', [
+				'documentserver_community.Document.documentFile', [
 					'path' => $title,
 					'docId' => $docId,
 					'download' => 1,

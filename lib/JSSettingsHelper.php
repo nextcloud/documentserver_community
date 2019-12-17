@@ -32,7 +32,7 @@ class JSSettingsHelper {
 
 	public function extend(array $settings) {
 		$documentServerUrl = $this->config->getAppValue('onlyoffice', 'DocumentServerUrl');
-		if (strpos($documentServerUrl, 'apps/documentserver')) {
+		if (strpos($documentServerUrl, 'apps/documentserver_community')) {
 			$url = rtrim($documentServerUrl, '/') . '/3rdparty/onlyoffice/documentserver/web-apps/';
 			$settings['array']['extensionParams'] = json_encode([
 				'url' => $url
