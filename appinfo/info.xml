@@ -5,10 +5,17 @@
 	<summary>Document server for OnlyOffice</summary>
 	<description><![CDATA[Document server for OnlyOffice]]>
 	</description>
-	<licence>AGPL</licence>
+	<version>0.1.1</version>
+	<licence>agpl</licence>
 	<author>Robin Appelman</author>
 	<namespace>DocumentServer</namespace>
-	<version>0.1.0</version>
+
+	<category>office</category>
+	<website>https://github.com/nextcloud/documentserver</website>
+	<bugs>https://github.com/nextcloud/documentserver/issues</bugs>
+	<repository type="git">
+		https://github.com/nextcloud/documentserver.git
+	</repository>
 
 	<dependencies>
 		<nextcloud min-version="18" max-version="18"/>
@@ -21,11 +28,4 @@
 	<commands>
 		<command>OCA\DocumentServer\Command\FlushChanges</command>
 	</commands>
-
-	<category>office</category>
-	<website>https://github.com/nextcloud/documentserver</website>
-	<bugs>https://github.com/nextcloud/documentserver/issues</bugs>
-	<repository type="git">
-		https://github.com/nextcloud/documentserver.git
-	</repository>
 </info>

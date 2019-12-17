@@ -37,7 +37,7 @@ class SessionManager {
 		$query = $this->connection->getQueryBuilder();
 
 		$query->select($query->func()->count())
-			->from('documentserver_sessions');
+			->from('documentserver_sess');
 		return $query->execute()->fetchColumn();
 	}
 
@@ -45,7 +45,7 @@ class SessionManager {
 		$query = $this->connection->getQueryBuilder();
 
 		$query->select('session_id', 'document_id', 'user', 'user_original', 'last_seen', 'readonly', 'user_index')
-			->from('documentserver_sessions')
+			->from('documentserver_sess')
 			->where($query->expr()->eq('session_id', $query->createNamedParameter($sessionId)));
 
 		$row = $query->execute()->fetch();
@@ -60,7 +60,7 @@ class SessionManager {
 		$query = $this->connection->getQueryBuilder();
 
 		$query->select($query->createFunction('MAX(' . $query->getColumnName('user_index') . ')'))
-			->from('documentserver_sessions')
+			->from('documentserver_sess')
 			->where($query->expr()->eq('document_id', $query->createNamedParameter($documentId, \PDO::PARAM_INT)));
 
 		return $query->execute()->fetchColumn() + 1;
@@ -72,7 +72,7 @@ class SessionManager {
 		$query = $this->connection->getQueryBuilder();
 		$now = $this->timeFactory->getTime();
 
-		$query->insert('documentserver_sessions')
+		$query->insert('documentserver_sess')
 			->values([
 				'session_id' => $query->createNamedParameter($sessionId),
 				'document_id' => $query->createNamedParameter($documentId, \PDO::PARAM_INT),
@@ -89,7 +89,7 @@ class SessionManager {
 		$query = $this->connection->getQueryBuilder();
 		$now = $this->timeFactory->getTime();
 
-		$query->update('documentserver_sessions')
+		$query->update('documentserver_sess')
 			->set('last_seen', $query->createNamedParameter($now, \PDO::PARAM_INT))
 			->set('user', $query->createNamedParameter($user))
 			->set('user_original', $query->createNamedParameter($userOriginal))
@@ -111,7 +111,7 @@ class SessionManager {
 	public function markAsSeen(string $sessionId) {
 		$query = $this->connection->getQueryBuilder();
 
-		$query->update('documentserver_sessions')
+		$query->update('documentserver_sess')
 			->set('last_seen', $query->createNamedParameter($this->timeFactory->getTime(), \PDO::PARAM_INT))
 			->where($query->expr()->eq('session_id', $query->createNamedParameter($sessionId)));
 		$query->execute();
@@ -122,7 +122,7 @@ class SessionManager {
 
 		$cutoffTime = $this->timeFactory->getTime() - (Channel::TIMEOUT * 4);
 
-		$query->delete('documentserver_sessions')
+		$query->delete('documentserver_sess')
 			->where($query->expr()->lt('last_seen', $query->createNamedParameter($cutoffTime, \PDO::PARAM_INT)));
 		return $query->execute();
 	}
@@ -139,7 +139,7 @@ class SessionManager {
 		$query = $this->connection->getQueryBuilder();
 
 		$query->select('session_id', 'document_id', 'user', 'user_original', 'last_seen', 'readonly', 'user_index')
-			->from('documentserver_sessions')
+			->from('documentserver_sess')
 			->where($query->expr()->eq('document_id', $query->createNamedParameter($documentId, \PDO::PARAM_INT)));
 
 		return array_map(function (array $row) {
@@ -151,7 +151,7 @@ class SessionManager {
 		$query = $this->connection->getQueryBuilder();
 
 		$query->select('session_id', 'document_id', 'user', 'user_original', 'last_seen', 'readonly', 'user_index')
-			->from('documentserver_sessions')
+			->from('documentserver_sess')
 			->where($query->expr()->eq($query->func()->concat('user', 'user_index'), $query->createNamedParameter($userId)));
 
 		$row = $query->execute()->fetch();
