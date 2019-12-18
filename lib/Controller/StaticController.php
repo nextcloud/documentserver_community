@@ -57,6 +57,7 @@ class StaticController extends Controller {
 	/**
 	 * @NoCSRFRequired
 	 * @NoAdminRequired
+	 * @PublicPage
 	 */
 	public function thirdparty(string $path) {
 		if (strpos($path, '..') !== false) {
@@ -71,6 +72,7 @@ class StaticController extends Controller {
 	/**
 	 * @NoCSRFRequired
 	 * @NoAdminRequired
+	 * @PublicPage
 	 */
 	public function webApps(string $path) {
 		if (strpos($path, '..') !== false) {
@@ -140,6 +142,7 @@ class StaticController extends Controller {
 	/**
 	 * @NoCSRFRequired
 	 * @NoAdminRequired
+	 * @PublicPage
 	 */
 	public function pluginsJSON() {
 		return "[]";

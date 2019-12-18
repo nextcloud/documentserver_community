@@ -79,7 +79,7 @@ class URLDecoder {
 		if ($this->userSession->isLoggedIn()) {
 			$userId = $this->userSession->getUser()->getUID();
 		} else {
-			$userId = $hashData->userId;
+			$userId = $hashData->ownerId;
 		}
 
 		if(isset($hashData->token)) {

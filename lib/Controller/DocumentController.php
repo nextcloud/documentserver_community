@@ -121,6 +121,7 @@ class DocumentController extends SessionController {
 	/**
 	 * @NoAdminRequired
 	 * @NoCSRFRequired
+	 * @PublicPage
 	 */
 	public function documentFile(int $docId, string $path, ?bool $download) {
 		$file = $this->documentStore->openDocumentFile($docId, $path);
@@ -142,6 +143,7 @@ class DocumentController extends SessionController {
 	/**
 	 * @NoAdminRequired
 	 * @NoCSRFRequired
+	 * @PublicPage
 	 */
 	public function upload(int $docId, string $index) {
 		$content = fopen('php://input', 'r');
@@ -163,6 +165,7 @@ class DocumentController extends SessionController {
 	/**
 	 * @NoAdminRequired
 	 * @NoCSRFRequired
+	 * @PublicPage
 	 */
 	public function download(int $docId, string $cmd) {
 		$cmd = json_decode($cmd, true);
