@@ -76,18 +76,7 @@ class LockStore {
 		return array_combine($keys, $locks);
 	}
 
-	/**
-	 * @param int $document
-	 * @param string $user
-	 * @return Lock[]
-	 */
-	public function releaseLocks(int $document, string $user): array {
-		$query = $this->connection->getQueryBuilder();
-		$query->select("lock_id", "document_id", "user", "time", "block")
-			->from("documentserver_locks")
-			->where($query->expr()->eq("document_id",
-				$query->createNamedParameter($document, IQueryBuilder::PARAM_INT)))
-			->andWhere($query->expr()->eq("user", $query->createNamedParameter($user)));
+	private function releaseLocksByQuery(IQueryBuilder $query): array {
 		$rows = $query->execute()->fetchAll();
 
 		$released = array_map([Lock::class, "fromRow"], $rows);
@@ -103,6 +92,34 @@ class LockStore {
 		$query->execute();
 
 		return $released;
+	}
+
+	/**
+	 * @param int $document
+	 * @param string $user
+	 * @return Lock[]
+	 */
+	public function releaseLocks(int $document, string $user): array {
+		$query = $this->connection->getQueryBuilder();
+		$query->select("lock_id", "document_id", "user", "time", "block")
+			->from("documentserver_locks")
+			->where($query->expr()->eq("document_id",
+				$query->createNamedParameter($document, IQueryBuilder::PARAM_INT)))
+			->andWhere($query->expr()->eq("user", $query->createNamedParameter($user)));
+
+		return $this->releaseLocksByQuery($query);
+	}
+
+	public function expireLocksForDocument(int $document) {
+		$query = $this->connection->getQueryBuilder();
+		$query->select("lock_id", "document_id", "user", "time", "block")
+			->from("documentserver_locks")
+			->where($query->expr()->eq("document_id",
+				$query->createNamedParameter($document, IQueryBuilder::PARAM_INT)))
+			->andWhere($query->expr()->lt("time",
+				$query->createNamedParameter($this->timeFactory->getTime() - self::TIMEOUT, IQueryBuilder::PARAM_INT)));
+
+		return $this->releaseLocksByQuery($query);
 	}
 
 	public function expireLocks() {

@@ -30,6 +30,7 @@ use OCA\DocumentServer\XHRCommand\AuthCommand;
 use OCA\DocumentServer\XHRCommand\CursorCommand;
 use OCA\DocumentServer\XHRCommand\GetLock;
 use OCA\DocumentServer\XHRCommand\IsSaveLock;
+use OCA\DocumentServer\XHRCommand\LockExpire;
 use OCA\DocumentServer\XHRCommand\SaveChangesCommand;
 use OCA\DocumentServer\Document\DocumentStore;
 use OCA\DocumentServer\Channel\ChannelFactory;
@@ -52,6 +53,7 @@ class DocumentController extends SessionController {
 
 	const IDLE_HANDLERS = [
 		SessionDisconnect::class,
+		LockExpire::class,
 	];
 
 	/** @var DocumentStore */
@@ -148,7 +150,7 @@ class DocumentController extends SessionController {
 	public function upload(int $docId, string $index) {
 		$content = fopen('php://input', 'r');
 		$mime = $this->request->getHeader('Content-Type');
-		list(, $extension) = explode('/', $mime);
+		[, $extension] = explode('/', $mime);
 		$path = "media/$index.$extension";
 		$this->documentStore->saveDocumentFile($docId, $path, $content);
 

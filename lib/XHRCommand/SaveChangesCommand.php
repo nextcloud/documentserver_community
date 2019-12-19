@@ -60,7 +60,7 @@ class SaveChangesCommand implements ICommandHandler {
 		]));
 
 		if ($command["releaseLocks"]) {
-			$released = $this->lockStore->releaseLocks($session->getDocumentId(), $session->getUserId());;
+			$released = $this->lockStore->releaseLocks($session->getDocumentId(), $session->getUserId());
 			$locksMessage = json_encode([
 				"type" => "releaseLock",
 				"locks" => array_map(function(Lock $lock) {
