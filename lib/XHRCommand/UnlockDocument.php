@@ -21,7 +21,6 @@
 
 namespace OCA\DocumentServer\XHRCommand;
 
-
 use OCA\DocumentServer\Channel\Session;
 use OCA\DocumentServer\Document\Lock;
 use OCA\DocumentServer\Document\LockStore;
@@ -34,22 +33,21 @@ class UnlockDocument implements ICommandHandler {
 		$this->lockStore = $lockStore;
 	}
 
-
 	public function getType(): string {
 		return 'unLockDocument';
 	}
 
 	public function handle(array $command, Session $session, IIPCChannel $sessionChannel, IIPCChannel $documentChannel, CommandDispatcher $commandDispatcher): void {
-		if ($command["releaseLocks"]) {
+		if (isset($command["releaseLocks"])) {
 			$released = $this->lockStore->releaseLocks($session->getDocumentId(), $session->getUserId());
 
 			$locksMessage = json_encode([
 				"type" => "releaseLock",
-				"locks" => array_map(function(Lock $lock) {
+				"locks" => array_map(function (Lock $lock) {
 					$data = $lock->jsonSerialize();
 					$data['changes'] = null;
 					return $data;
-				}, $released)
+				}, $released),
 			]);
 			$sessionChannel->pushMessage($locksMessage);
 			$documentChannel->pushMessage($locksMessage);
