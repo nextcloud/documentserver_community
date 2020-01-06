@@ -25,7 +25,10 @@ use OCA\DocumentServer\Document\Change;
 use OCA\DocumentServer\Document\ConvertCommand;
 use OCA\DocumentServer\Document\ConverterBinary;
 use OCP\ITempManager;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
 use Sabre\Xml\Writer;
+use SplFileInfo;
 
 class DocumentConverter {
 	private $tempManager;
@@ -60,7 +63,26 @@ class DocumentConverter {
 
 		$this->runCommand($command);
 
-		\OC_Helper::rmdirr($changesFolder);
+		self::rmdirr($changesFolder);
+	}
+
+	private function rmdirr($path) {
+		$files = new RecursiveIteratorIterator(
+			new RecursiveDirectoryIterator($path, RecursiveDirectoryIterator::SKIP_DOTS),
+			RecursiveIteratorIterator::CHILD_FIRST
+		);
+
+		foreach ($files as $fileInfo) {
+			/** @var SplFileInfo $fileInfo */
+			if ($fileInfo->isLink()) {
+				unlink($fileInfo->getPathname());
+			} else if ($fileInfo->isDir()) {
+				rmdir($fileInfo->getRealPath());
+			} else {
+				unlink($fileInfo->getRealPath());
+			}
+		}
+		rmdir($path);
 	}
 
 
