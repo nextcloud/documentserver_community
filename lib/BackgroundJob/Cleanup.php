@@ -28,6 +28,7 @@ use OCA\DocumentServer\Document\SaveHandler;
 use OCA\DocumentServer\IPC\DatabaseIPCBackend;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\Job;
+use OCP\ILogger;
 
 class Cleanup extends Job {
 	private $sessionManager;
@@ -35,6 +36,7 @@ class Cleanup extends Job {
 	private $saveHandler;
 	private $lockStore;
 	private $databaseIPCBackend;
+	private $logger;
 
 	public function __construct(
 		ITimeFactory $time,
@@ -42,7 +44,8 @@ class Cleanup extends Job {
 		DocumentStore $documentStore,
 		SaveHandler $saveHandler,
 		LockStore $lockStore,
-		DatabaseIPCBackend $databaseIPCBackend
+		DatabaseIPCBackend $databaseIPCBackend,
+		ILogger $logger
 	) {
 		parent::__construct($time);
 
@@ -51,6 +54,7 @@ class Cleanup extends Job {
 		$this->saveHandler = $saveHandler;
 		$this->lockStore = $lockStore;
 		$this->databaseIPCBackend = $databaseIPCBackend;
+		$this->logger = $logger;
 	}
 
 	protected function run($argument) {
@@ -61,7 +65,11 @@ class Cleanup extends Job {
 		$documents = $this->documentStore->getOpenDocuments();
 		foreach ($documents as $documentId) {
 			if (!$this->sessionManager->isDocumentActive($documentId)) {
-				$this->saveHandler->flushChanges($documentId);
+				try {
+					$this->saveHandler->flushChanges($documentId);
+				} catch (\Exception $e) {
+					$this->logger->logException($e, ['app' => 'documentserver_community', 'message' => 'Error while applying changes for document ' . $documentId]);
+				}
 			}
 		}
 	}
