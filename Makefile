@@ -9,8 +9,8 @@ cert_dir=$(HOME)/.nextcloud/certificates
 all: 3rdparty/onlyoffice/documentserver version
 
 clean:
-	rm -r 3rdparty/onlyoffice
-	rm -r build
+	rm -rf 3rdparty/onlyoffice
+	rm -rf build
 
 3rdparty/onlyoffice/documentserver:
 	mkdir -p 3rdparty/onlyoffice
@@ -26,6 +26,7 @@ clean:
 		--allfonts="AllFonts.js" \
 		--images="../../../sdkjs/common/Images" \
 		--selection="font_selection.bin"
+	sed -i 's/if(yb===d\[a\].ka)/if(d[a]\&\&yb===d[a].ka)/' 3rdparty/onlyoffice/documentserver/sdkjs/*/sdk-all.js
 
 version:
 	VERSION=$$(grep -ozP "DocsAPI\.DocEditor\.version\s*=\s*function\(\) *\{\n\s+return\s\'\K(\d+.\d+.\d+)" 3rdparty/onlyoffice/documentserver/web-apps/apps/api/documents/api.js) ;\
