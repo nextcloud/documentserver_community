@@ -1,9 +1,16 @@
 <?xml version="1.0"?>
 <info>
 	<id>documentserver_community</id>
-	<name>Document Server</name>
-	<summary>Document server for OnlyOffice</summary>
-	<description><![CDATA[Document server for OnlyOffice]]>
+	<name>Community Document Server</name>
+	<summary>Document server for OnlyOffice, community edition</summary>
+	<description><![CDATA[Document server for OnlyOffice, community edition.
+
+The community document server is designed to make it easy to get OnlyOffice running in a Nextcloud instance without the need to setup an external document server,
+the community document server does not support all features of the official OnlyOffice document server and does not provide the same performance and scalability.
+
+If you are setting up a larger instance of require the additional performance, please see https://onlyoffice.com for options for getting the official document server.
+
+Additionally, the community document server only supports running on x86-64 Linux servers.]]>
 	</description>
 	<version>0.1.1</version>
 	<licence>agpl</licence>
