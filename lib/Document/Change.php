@@ -56,6 +56,10 @@ class Change {
 		return $this->userOriginal;
 	}
 
+	public function getChangeIndex(): int {
+		return $this->changeIndex;
+	}
+
 	public function formatForClient(): array {
 		return [
 			'docid' => (string)$this->getDocumentId(),

@@ -44,17 +44,28 @@ class SaveChangesCommand implements ICommandHandler {
 	public function handle(array $command, Session $session, IIPCChannel $sessionChannel, IIPCChannel $documentChannel, CommandDispatcher $commandDispatcher): void {
 		$changes = json_decode($command['changes']);
 
+		if ($command['deleteIndex']) {
+			$this->changeStore->deleteChangesByIndex($session->getDocumentId(), (int)$command['deleteIndex']);
+		}
+
+		$startIndex = $this->changeStore->getMaxChangeIndexForDocument($session->getDocumentId());
+
 		foreach ($changes as $change) {
 			$this->changeStore->addChangeForDocument($session->getDocumentId(), $change, $session->getUserId(), $session->getUserOriginal());
 		}
 
+		$changeIndex = $this->changeStore->getMaxChangeIndexForDocument($session->getDocumentId());;
+
 		$documentChannel->pushMessage(json_encode([
 			'type' => 'saveChanges',
+			'docId' => $session->getDocumentId(),
+			'userId' => $session->getUserId(),
 			'changes' => array_map(function (string $changeString) use ($session) {
 				$change = new Change($session->getDocumentId(), time(), $changeString, $session->getUserId(), $session->getUserOriginal());
 				return $change->formatForClient();
 			}, $changes),
-			'changesIndex' => 10,
+			'startIndex' => $startIndex,
+			'changesIndex' => $changeIndex,
 			'locks' => [],
 			'excelAdditionalInfo' => '{}',
 		]));
@@ -63,17 +74,17 @@ class SaveChangesCommand implements ICommandHandler {
 			$released = $this->lockStore->releaseLocks($session->getDocumentId(), $session->getUserId());
 			$locksMessage = json_encode([
 				"type" => "releaseLock",
-				"locks" => array_map(function(Lock $lock) {
+				"locks" => array_map(function (Lock $lock) {
 					$data = $lock->jsonSerialize();
 					$data['changes'] = null;
 					return $data;
-				}, $released)
+				}, $released),
 			]);
 
 			$documentChannel->pushMessage($locksMessage);
 		}
 
 		$now = time() * 1000;
-		$sessionChannel->pushMessage('{"type":"unSaveLock","index":0,"time":' . $now . '}');
+		$sessionChannel->pushMessage('{"type":"unSaveLock","index":' . $changeIndex . ',"time":' . $now . '}');
 	}
 }
