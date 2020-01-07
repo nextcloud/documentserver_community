@@ -36,6 +36,7 @@ use OCA\DocumentServer\Document\DocumentStore;
 use OCA\DocumentServer\Channel\ChannelFactory;
 use OCA\DocumentServer\XHRCommand\SessionDisconnect;
 use OCA\DocumentServer\XHRCommand\UnlockDocument;
+use OCA\DocumentServer\XHRCommand\OpenDocument;
 use OCP\AppFramework\Http\DataResponse;
 use OCP\IRequest;
 use OCP\IURLGenerator;
@@ -49,6 +50,7 @@ class DocumentController extends SessionController {
 		GetLock::class,
 		UnlockDocument::class,
 		CursorCommand::class,
+		OpenDocument::class,
 	];
 
 	const IDLE_HANDLERS = [
@@ -154,13 +156,15 @@ class DocumentController extends SessionController {
 		$path = "media/$index.$extension";
 		$this->documentStore->saveDocumentFile($docId, $path, $content);
 
+		$path = $this->urlGenerator->linkToRouteAbsolute(
+			'documentserver_community.Document.documentFile', [
+				'path' => $path,
+				'docId' => $docId,
+			]
+		);
+
 		return new DataResponse([
-			$path => $this->urlGenerator->linkToRouteAbsolute(
-				'documentserver_community.Document.documentFile', [
-					'path' => $path,
-					'docId' => $docId,
-				]
-			),
+			$path => $path,
 		]);
 	}
 
