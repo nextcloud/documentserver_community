@@ -52,18 +52,20 @@ class DocumentConverter {
 	 * @param string $target
 	 */
 	public function saveChanges(string $sourceFolder, array $changes, string $target) {
-		$changesFolder = $sourceFolder . '/changes';
-		mkdir($changesFolder);
-		foreach ($changes as $key => $change) {
-			file_put_contents($changesFolder . '/' . $key . '.json', '["' . $change->getChange() . '"]');
+		try {
+			$changesFolder = $sourceFolder . '/changes';
+			mkdir($changesFolder);
+			foreach ($changes as $key => $change) {
+				file_put_contents($changesFolder . '/' . $key . '.json', '["' . $change->getChange() . '"]');
+			}
+
+			$command = new ConvertCommand("$sourceFolder/Editor.bin", $target);
+			$command->setFromChanges(true);
+
+			$this->runCommand($command);
+		} finally {
+			self::rmdirr($changesFolder);
 		}
-
-		$command = new ConvertCommand("$sourceFolder/Editor.bin", $target);
-		$command->setFromChanges(true);
-
-		$this->runCommand($command);
-
-		self::rmdirr($changesFolder);
 	}
 
 	private function rmdirr($path) {
