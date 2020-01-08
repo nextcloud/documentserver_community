@@ -18,7 +18,6 @@ class Version001000Date20200107143228 extends SimpleMigrationStep {
 		if ($schema->hasTable('documentserver_changes')) {
 			$table = $schema->getTable('documentserver_changes');
 			$table->addColumn('change_index', 'bigint', [
-				'autoincrement' => true,
 				'notnull' => true,
 				'length' => 6,
 			]);
