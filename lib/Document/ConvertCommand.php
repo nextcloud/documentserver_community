@@ -50,6 +50,9 @@ class ConvertCommand implements XmlSerializable {
 		$this->fileFrom = $fileFrom;
 		$this->fileTo = $fileTo;
 		$this->timeStamp = new \DateTime();
+
+		$this->fontDir = realpath(__DIR__ . "/../../3rdparty/onlyoffice/documentserver/core-fonts");
+		$this->fontDir = realpath(__DIR__ . "/../../3rdparty/onlyoffice/documentserver/sdkjs/slide/themes");
 	}
 
 	public function setIsPDFA(bool $isPDFA): void {

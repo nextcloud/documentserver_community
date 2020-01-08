@@ -190,8 +190,6 @@ class DocumentStore {
 		$command = new ConvertCommand($localPath . '/save-download.bin', $localPath . '/' . $title);
 		$command->setTargetFormat($cmd["outputformat"]);
 		$command->setNoBase64($cmd["nobase64"]);
-		$command->setFontDir(realpath(__DIR__ . "/../../3rdparty/onlyoffice/documentserver/core-fonts"));
-		$command->setThemeDir(realpath(__DIR__ . "/../../3rdparty/onlyoffice/documentserver/sdkjs/slide/themes"));
 
 		$this->documentConverter->runCommand($command);
 
