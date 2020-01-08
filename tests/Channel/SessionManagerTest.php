@@ -40,7 +40,7 @@ class SessionManagerTest extends TestCase {
 
 	private $time = 1;
 
-	protected function setUp() {
+	protected function setUp(): void {
 		parent::setUp();
 
 		$this->connection = \OC::$server->getDatabaseConnection();
@@ -58,10 +58,19 @@ class SessionManagerTest extends TestCase {
 
 		$this->assertNull($this->manager->getSession('foo'));
 
-		$this->manager->newSession('foo', 5, 'user', 'original', false);
+		$this->manager->newSession('foo', 5);
 
 		$session = $this->manager->getSession('foo');
 		$this->assertNotNull($session);
+
+		$this->assertEquals('foo', $session->getSessionId());
+		$this->assertEquals(5, $session->getDocumentId());
+		$this->assertEquals('', $session->getUser());
+		$this->assertEquals('', $session->getUserOriginal());
+		$this->assertEquals(10, $session->getLastSeen());
+
+		$this->manager->authenticate($session, 'user', 'original', false);
+		$session = $this->manager->getSession('foo');
 
 		$this->assertEquals('foo', $session->getSessionId());
 		$this->assertEquals(5, $session->getDocumentId());
@@ -70,11 +79,11 @@ class SessionManagerTest extends TestCase {
 		$this->assertEquals(10, $session->getLastSeen());
 	}
 
-	protected function tearDown() {
+	protected function tearDown(): void {
 		$query = $this->connection->getQueryBuilder();
-		$query->delete('documentserver_sessions')->execute();
+		$query->delete('documentserver_sess')->execute();
 
-		return parent::tearDown();
+		parent::tearDown();
 	}
 
 	public function testLastSeen() {
@@ -84,7 +93,7 @@ class SessionManagerTest extends TestCase {
 
 		$this->time = 11;
 
-		$this->manager->newSession('foo', 5, 'user', 'original', false);
+		$this->manager->newSession('foo', 5);
 
 		$session = $this->manager->getSession('foo');
 
@@ -101,10 +110,10 @@ class SessionManagerTest extends TestCase {
 
 	public function testCleanSessions() {
 		$this->time = 10;
-		$this->manager->newSession('foo', 5, 'user', 'original', false);
+		$this->manager->newSession('foo', 5);
 
 		$this->time = 50;
-		$this->manager->newSession('bar', 5, 'user', 'original', false);
+		$this->manager->newSession('bar', 5);
 
 		$this->assertNotNull($this->manager->getSession('foo'));
 		$this->assertNotNull($this->manager->getSession('bar'));
@@ -116,15 +125,25 @@ class SessionManagerTest extends TestCase {
 		$this->assertNotNull($this->manager->getSession('bar'));
 	}
 
-	public function isDocumentActive() {
+	public function testIsDocumentActive() {
 		$this->time = 10;
 
 		$this->assertFalse($this->manager->isDocumentActive(5));
 		$this->assertFalse($this->manager->isDocumentActive(6));
 
-		$this->manager->newSession('foo', 5, 'user', 'original', false);
+		$this->manager->newSession('foo', 5);
 
 		$this->assertTrue($this->manager->isDocumentActive(5));
 		$this->assertFalse($this->manager->isDocumentActive(6));
+	}
+
+	public function testGetSessionCount() {
+		$this->time = 10;
+
+		$this->assertEquals(0, $this->manager->getSessionCount());
+
+		$this->manager->newSession('foo', 5);
+
+		$this->assertEquals(1, $this->manager->getSessionCount());
 	}
 }

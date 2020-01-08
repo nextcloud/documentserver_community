@@ -94,7 +94,7 @@ class SessionManager {
 			->set('user', $query->createNamedParameter($user))
 			->set('user_original', $query->createNamedParameter($userOriginal))
 			->set('readonly', $query->createNamedParameter($readOnly, \PDO::PARAM_INT))
-			->where($query->expr()->eq('session_id', $query->createNamedParameter($session->getSessionId(), \PDO::PARAM_INT)));
+			->where($query->expr()->eq('session_id', $query->createNamedParameter($session->getSessionId())));
 		$query->execute();
 
 		return new Session(
