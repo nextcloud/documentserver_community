@@ -27,14 +27,17 @@ use OCA\DocumentServer\Document\ChangeStore;
 use OCA\DocumentServer\Document\Lock;
 use OCA\DocumentServer\Document\LockStore;
 use OCA\DocumentServer\IPC\IIPCChannel;
+use OCP\AppFramework\Utility\ITimeFactory;
 
 class SaveChangesCommand implements ICommandHandler {
 	private $changeStore;
 	private $lockStore;
+	private $timeFactory;
 
-	public function __construct(ChangeStore $changeStore, LockStore $lockStore) {
+	public function __construct(ChangeStore $changeStore, LockStore $lockStore, ITimeFactory $timeFactory) {
 		$this->changeStore = $changeStore;
 		$this->lockStore = $lockStore;
+		$this->timeFactory = $timeFactory;
 	}
 
 	public function getType(): string {
@@ -50,9 +53,7 @@ class SaveChangesCommand implements ICommandHandler {
 
 		$startIndex = $this->changeStore->getMaxChangeIndexForDocument($session->getDocumentId());
 
-		foreach ($changes as $change) {
-			$this->changeStore->addChangeForDocument($session->getDocumentId(), $change, $session->getUserId(), $session->getUserOriginal());
-		}
+		$this->changeStore->addChangesForDocument($session->getDocumentId(), $changes, $session->getUserId(), $session->getUserOriginal());
 
 		$changeIndex = $this->changeStore->getMaxChangeIndexForDocument($session->getDocumentId());;
 

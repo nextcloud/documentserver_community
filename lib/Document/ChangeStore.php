@@ -36,10 +36,21 @@ class ChangeStore {
 		$this->timeFactory = $timeFactory;
 	}
 
-
-	public function addChangeForDocument(int $documentId, string $change, string $user, string $userOriginal) {
+	public function addChangesForDocument(int $documentId, array $changes, string $user, string $userOriginal) {
+		$time = $this->timeFactory->getTime();
 		$changeIndex = $this->getMaxChangeIndexForDocument($documentId) + 1;
 
+		$this->connection->beginTransaction();
+
+		foreach ($changes as $change) {
+			$this->addChangeForDocument($documentId, $change, $user, $userOriginal, $time, $changeIndex);
+			$changeIndex++;
+		}
+
+		$this->connection->commit();
+	}
+
+	private function addChangeForDocument(int $documentId, string $change, string $user, string $userOriginal, int $time, int $changeIndex) {
 		$query = $this->connection->getQueryBuilder();
 
 		$query->insert('documentserver_changes')
@@ -47,7 +58,7 @@ class ChangeStore {
 				'document_id' => $query->createNamedParameter($documentId, \PDO::PARAM_INT),
 				'change' => $query->createNamedParameter($change),
 				'change_index' => $query->createNamedParameter($changeIndex, \PDO::PARAM_INT),
-				'time' => $query->createNamedParameter($this->timeFactory->getTime(), \PDO::PARAM_INT),
+				'time' => $query->createNamedParameter($time, \PDO::PARAM_INT),
 				'user' => $query->createNamedParameter($user),
 				'user_original' => $query->createNamedParameter($userOriginal),
 			]);

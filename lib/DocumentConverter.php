@@ -55,8 +55,18 @@ class DocumentConverter {
 		try {
 			$changesFolder = $sourceFolder . '/changes';
 			mkdir($changesFolder);
-			foreach ($changes as $key => $change) {
-				file_put_contents($changesFolder . '/' . $key . '.json', '["' . $change->getChange() . '"]');
+
+			$groupedChanges = [];
+			foreach($changes as $change) {
+				if (!isset($groupedChanges[$change->getTime()])) {
+					$groupedChanges[$change->getTime()] = [];
+				}
+
+				$groupedChanges[$change->getTime()][] = $change->getChange();
+			}
+
+			foreach ($groupedChanges as $time => $changes) {
+				file_put_contents($changesFolder . '/' . $time . '.json', json_encode($changes));
 			}
 
 			$command = new ConvertCommand("$sourceFolder/Editor.bin", $target);
@@ -69,6 +79,9 @@ class DocumentConverter {
 	}
 
 	private function rmdirr($path) {
+		if (!is_dir($path)) {
+			return;
+		}
 		$files = new RecursiveIteratorIterator(
 			new RecursiveDirectoryIterator($path, RecursiveDirectoryIterator::SKIP_DOTS),
 			RecursiveIteratorIterator::CHILD_FIRST
