@@ -38,7 +38,7 @@ class SessionManager {
 
 		$query->select($query->func()->count())
 			->from('documentserver_sess');
-		return $query->execute()->fetchColumn();
+		return (int)$query->execute()->fetchColumn();
 	}
 
 	public function getSession(string $sessionId): ?Session {
