@@ -37,10 +37,10 @@ class ConvertCommand implements XmlSerializable {
 	private $fileFrom;
 	/** @var string */
 	private $fileTo;
-	/** @var string|null */
-	private $fontDir = null;
-	/** @var string|null */
-	private $themeDir = null;
+	/** @var string */
+	private $fontDir;
+	/** @var string */
+	private $themeDir;
 	/** @var bool|null */
 	private $noBase64 = null;
 	/** @var \DateTime */
@@ -52,7 +52,7 @@ class ConvertCommand implements XmlSerializable {
 		$this->timeStamp = new \DateTime();
 
 		$this->fontDir = realpath(__DIR__ . "/../../3rdparty/onlyoffice/documentserver/core-fonts");
-		$this->fontDir = realpath(__DIR__ . "/../../3rdparty/onlyoffice/documentserver/sdkjs/slide/themes");
+		$this->themeDir = realpath(__DIR__ . "/../../3rdparty/onlyoffice/documentserver/sdkjs/slide/themes");
 	}
 
 	public function setIsPDFA(bool $isPDFA): void {
