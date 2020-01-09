@@ -29,8 +29,6 @@ class ConvertCommand implements XmlSerializable {
 	private $isPDFA = null;
 	/** @var bool|null */
 	private $fromChanges = null;
-	/** @var bool|null */
-	private $isNoBase64 = null;
 	/** @var int|null */
 	private $formatTo = null;
 	/** @var string */
@@ -61,10 +59,6 @@ class ConvertCommand implements XmlSerializable {
 
 	public function setFromChanges(bool $fromChanges): void {
 		$this->fromChanges = $fromChanges;
-	}
-
-	public function setIsNoBase64(bool $isNoBase64): void {
-		$this->isNoBase64 = $isNoBase64;
 	}
 
 	public function setTargetFormat(int $formatTo): void {

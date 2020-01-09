@@ -21,6 +21,7 @@
 
 namespace OCA\DocumentServer\Controller;
 
+use OCA\DocumentServer\OnlyOffice\WebVersion;
 use OCP\AppFramework\Controller;
 
 class CoAuthoringController extends Controller {
@@ -32,9 +33,11 @@ class CoAuthoringController extends Controller {
 	public function command(string $c) {
 		switch ($c) {
 			case 'version':
-				return ['version' => 5.0];
+				$webVersion = new WebVersion();
+
+				return ['version' => $webVersion->getWebUIVersion(), 'error' => 0];
 			default:
-				return [];
+				return ['error' => 5];
 		}
 	}
 }
