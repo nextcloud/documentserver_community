@@ -143,7 +143,7 @@ class DocumentStore {
 		$localPath = $this->getLocalPath($docFolder);
 
 		$target = $localPath . '/saved.' . $targetExtension;
-		$this->documentConverter->saveChanges($localPath, $changes, $target);
+		$this->documentConverter->saveChanges($localPath, $changes, $target, $targetExtension);
 		$savedContent = fopen($target, 'r');
 
 		$sourceFile->putContent(stream_get_contents($savedContent));

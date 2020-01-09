@@ -24,6 +24,7 @@ namespace OCA\DocumentServer;
 use OCA\DocumentServer\Document\Change;
 use OCA\DocumentServer\Document\ConvertCommand;
 use OCA\DocumentServer\Document\ConverterBinary;
+use OCA\DocumentServer\Document\DocumentFormat;
 use OCP\ITempManager;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
@@ -50,8 +51,9 @@ class DocumentConverter {
 	 * @param string $sourceFolder
 	 * @param Change[] $changes
 	 * @param string $target
+	 * @param string $extension
 	 */
-	public function saveChanges(string $sourceFolder, array $changes, string $target) {
+	public function saveChanges(string $sourceFolder, array $changes, string $target, string $extension) {
 		try {
 			$changesFolder = $sourceFolder . '/changes';
 			mkdir($changesFolder);
@@ -71,6 +73,7 @@ class DocumentConverter {
 
 			$command = new ConvertCommand("$sourceFolder/Editor.bin", $target);
 			$command->setFromChanges(true);
+			$command->setTargetFormat(DocumentFormat::getFormatFromExtension($extension));
 
 			$this->runCommand($command);
 		} finally {
