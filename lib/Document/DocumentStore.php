@@ -153,7 +153,8 @@ class DocumentStore {
 			// fallback to slow search if the original opener no longer has access to the file
 			$sourceFile = $this->searchForFileById($sourceFileId);
 			if (!$sourceFile) {
-				throw new NotFoundException('Source file not found');
+				// file no longer exists, return without saving or throwing an error since we no longer care about the changes
+				return;
 			}
 		}
 
