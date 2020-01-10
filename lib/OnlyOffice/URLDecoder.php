@@ -32,16 +32,9 @@ use OCP\Share\IManager;
 use function Sabre\HTTP\decodePathSegment;
 
 class URLDecoder {
-	/** @var Crypt */
 	private $crypt;
-
-	/** @var IUserSession */
 	private $userSession;
-
-	/** @var IManager */
 	private $shareManager;
-
-	/** @var IRootFolder */
 	private $rootFolder;
 
 	public function __construct(
@@ -68,7 +61,7 @@ class URLDecoder {
 
 
 	public function getFileForToken(string $token): ?File {
-		list ($hashData, $error) = $this->crypt->ReadHash($token);
+		[$hashData, $error] = $this->crypt->ReadHash($token);
 
 		if ($error) {
 			return null;
@@ -76,14 +69,8 @@ class URLDecoder {
 
 		$fileId = $hashData->fileId;
 
-		if ($this->userSession->isLoggedIn()) {
-			$userId = $this->userSession->getUser()->getUID();
-		} else {
-			$userId = $hashData->ownerId;
-		}
-
-		if(isset($hashData->token)) {
-			$share = $this->shareManager->getShareByToken($hashData->token);
+		if(isset($hashData->shareToken)) {
+			$share = $this->shareManager->getShareByToken($hashData->shareToken);
 
 			$node = $share->getNode();
 
@@ -98,6 +85,14 @@ class URLDecoder {
 				return $node;
 			}
 		} else {
+			if ($this->userSession->isLoggedIn()) {
+				$userId = $this->userSession->getUser()->getUID();
+			} else if (isset($hashData->ownerId)) {
+				$userId = $hashData->ownerId;
+			} else {
+				throw new \Exception("Can't get owner id from document url");
+			}
+
 			$userFolder = $this->rootFolder->getUserFolder($userId);
 			$files = $userFolder->getById($fileId);
 			if (count($files)) {
