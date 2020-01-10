@@ -30,23 +30,28 @@ use OCP\Files\NotFoundException;
 use OCP\Files\SimpleFS\ISimpleFile;
 use OCP\Files\SimpleFS\ISimpleFolder;
 use OCP\IConfig;
+use OCP\IUser;
+use OCP\IUserManager;
 
 class DocumentStore {
 	private $appData;
 	private $documentConverter;
 	private $config;
 	private $rootFolder;
+	private $userManager;
 
 	public function __construct(
 		IAppData $appData,
 		DocumentConverter $documentConverter,
 		IConfig $config,
-		IRootFolder $rootFolder
+		IRootFolder $rootFolder,
+		IUserManager $userManager
 	) {
 		$this->appData = $appData;
 		$this->documentConverter = $documentConverter;
 		$this->config = $config;
 		$this->rootFolder = $rootFolder;
+		$this->userManager = $userManager;
 	}
 
 	/**
@@ -145,7 +150,11 @@ class DocumentStore {
 			/** @var File $sourceFile */
 			$sourceFile = current($sourceFiles);
 		} else {
-			throw new NotFoundException('Source file not found');
+			// fallback to slow search if the original opener no longer has access to the file
+			$sourceFile = $this->searchForFileById($sourceFileId);
+			if (!$sourceFile) {
+				throw new NotFoundException('Source file not found');
+			}
 		}
 
 		$targetExtension = $sourceFile->getExtension();
@@ -157,6 +166,27 @@ class DocumentStore {
 		$savedContent = fopen($target, 'r');
 
 		$sourceFile->putContent(stream_get_contents($savedContent));
+	}
+
+	/**
+	 * Find a file by fileid when we don't know the owner id
+	 */
+	private function searchForFileById(int $fileId): ?File {
+		$file = null;
+
+		$this->userManager->callForSeenUsers(function(IUser $user) use ($fileId, &$file) {
+			$sourceFiles = $this->rootFolder->getUserFolder($user->getUID())->getById($fileId);
+			if (count($sourceFiles)) {
+				/** @var File $sourceFile */
+				$file = current($sourceFiles);
+				// stop iterating trough users
+				return false;
+			} else {
+				return true;
+			}
+		});
+
+		return $file;
 	}
 
 	/**
