@@ -82,6 +82,16 @@ class DocumentStore {
 		try {
 			return $docFolder->getFile('Editor.bin');
 		} catch (NotFoundException $e) {
+			if ($sourceFile->getOwner() !== null) {
+				$ownerId = $sourceFile->getOwner()->getUID();
+			} else {
+				// if the file does not have an owner set (groupfolders/external storage)
+				// we get the userid from the path instead, since the only thing we need to make sure
+				// is that we have a userid that has access
+				$path = $sourceFile->getPath();
+				[, $ownerId] = explode('/', $path);
+			}
+
 			$source = $sourceFile->fopen('r');
 
 			if (!$source) {
@@ -93,7 +103,7 @@ class DocumentStore {
 
 			// maybe save in a new db table
 			$docFolder->newFile('fileid')->putContent((string)$sourceFile->getId());
-			$docFolder->newFile('owner')->putContent((string)$sourceFile->getOwner()->getUID());
+			$docFolder->newFile('owner')->putContent((string)$ownerId);
 
 			return $docFolder->getFile('Editor.bin');
 		}
