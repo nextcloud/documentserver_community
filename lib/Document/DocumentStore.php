@@ -21,6 +21,7 @@
 
 namespace OCA\DocumentServer\Document;
 
+use OC\Files\Filesystem;
 use OCP\Files\File;
 use OCA\DocumentServer\DocumentConverter;
 use OCP\Files\Folder;
@@ -159,12 +160,21 @@ class DocumentStore {
 		}
 
 		$targetExtension = $sourceFile->getExtension();
+		$storage = $sourceFile->getStorage();
 
 		$localPath = $this->getLocalPath($docFolder);
 
 		$target = $localPath . '/saved.' . $targetExtension;
 		$this->documentConverter->saveChanges($localPath, $changes, $target, $targetExtension);
 		$savedContent = fopen($target, 'r');
+
+		if (!Filesystem::$loaded) {
+			// the filesystem needs to be initialized for a user in order for hooks to trigger
+			// just the `getUserFolder` is not enough for this
+			[, $user] = explode('/', $sourceFile->getPath());
+			$userDir = '/' . $user . '/files';
+			Filesystem::init($user, $userDir);
+		}
 
 		$sourceFile->putContent(stream_get_contents($savedContent));
 	}
