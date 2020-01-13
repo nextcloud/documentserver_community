@@ -10,6 +10,8 @@ the community document server does not support all features of the official Only
 
 If you are setting up a larger instance of require the additional performance, please see https://onlyoffice.com for options for getting the official document server.
 
+The community document server will automatically be configured if no other document server is configured for OnlyOffice.
+
 Additionally, the community document server only supports running on x86-64 Linux servers.]]>
 	</description>
 	<version>0.1.1</version>
