@@ -21,6 +21,7 @@
 
 namespace OCA\DocumentServer\IPC;
 
+use OCA\DocumentServer\Channel\Channel;
 use OCP\IMemcache;
 
 /**
@@ -38,9 +39,14 @@ class MemcacheIPCBackend implements IIPCBackend {
 		$this->memcache->add("$channel::read_key", 0);
 	}
 
+	public function cleanupChannel(string $channel) {
+		$this->memcache->remove("$channel::write_key");
+		$this->memcache->remove("$channel::read_key");
+	}
+
 	public function pushMessage(string $channel, string $message) {
 		$key = $this->memcache->inc("$channel::write_key");
-		$this->memcache->set("$channel::message_$key", $message);
+		$this->memcache->set("$channel::message_$key", $message, Channel::TIMEOUT * 4);
 	}
 
 	public function popMessage(string $channel, int $timeout): ?string {

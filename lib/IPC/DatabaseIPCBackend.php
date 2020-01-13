@@ -40,6 +40,13 @@ class DatabaseIPCBackend implements IIPCBackend {
 		// noop
 	}
 
+	public function cleanupChannel(string $channel) {
+		$query = $this->connection->getQueryBuilder();
+		$query->delete('documentserver_ipc')
+			->where($query->expr()->eq('session_id', $query->createNamedParameter($channel)));
+		$query->execute();
+	}
+
 	public function pushMessage(string $channel, string $message) {
 		$query = $this->connection->getQueryBuilder();
 		$query->insert('documentserver_ipc')

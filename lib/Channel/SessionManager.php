@@ -21,16 +21,20 @@
 
 namespace OCA\DocumentServer\Channel;
 
+use OCA\DocumentServer\IPC\IIPCFactory;
 use OCP\AppFramework\Utility\ITimeFactory;
+use OCP\DB\QueryBuilder\IQueryBuilder;
 use OCP\IDBConnection;
 
 class SessionManager {
 	private $connection;
 	private $timeFactory;
+	private $ipcFactory;
 
-	public function __construct(IDBConnection $connection, ITimeFactory $timeFactory) {
+	public function __construct(IDBConnection $connection, ITimeFactory $timeFactory, IIPCFactory $ipcFactory) {
 		$this->connection = $connection;
 		$this->timeFactory = $timeFactory;
+		$this->ipcFactory = $ipcFactory;
 	}
 
 	public function getSessionCount(): int {
@@ -117,13 +121,28 @@ class SessionManager {
 		$query->execute();
 	}
 
-	public function cleanSessions(): int {
+	private function getExpiredSessions(): array {
 		$query = $this->connection->getQueryBuilder();
 
 		$cutoffTime = $this->timeFactory->getTime() - (Channel::TIMEOUT * 4);
 
-		$query->delete('documentserver_sess')
+		$query->select('session_id')
+			->from('documentserver_sess')
 			->where($query->expr()->lt('last_seen', $query->createNamedParameter($cutoffTime, \PDO::PARAM_INT)));
+		return $query->execute()->fetchAll(\PDO::FETCH_COLUMN);
+	}
+
+	public function cleanSessions(): int {
+		$expiredSessions = $this->getExpiredSessions();
+
+		foreach ($expiredSessions as $expiredSession) {
+			$this->ipcFactory->cleanupChannel("session_$expiredSession");
+		}
+
+		$query = $this->connection->getQueryBuilder();
+
+		$query->delete('documentserver_sess')
+			->where($query->expr()->in('session_id', $query->createNamedParameter($expiredSessions, IQueryBuilder::PARAM_STR_ARRAY)));
 		return $query->execute();
 	}
 

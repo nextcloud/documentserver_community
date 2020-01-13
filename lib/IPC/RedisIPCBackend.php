@@ -31,6 +31,10 @@ class RedisIPCBackend implements IIPCBackend {
 	public function initChannel(string $channel) {
 	}
 
+	public function cleanupChannel(string $channel) {
+		$this->redis->del('ipc_' . $channel);
+	}
+
 	public function pushMessage(string $channel, string $message) {
 		$this->redis->rPush('ipc_' . $channel, $message);
 	}

@@ -60,4 +60,18 @@ class IPCFactory implements IIPCFactory {
 		$backend->initChannel($name);
 		return new IPCChannel($name, $backend);
 	}
+
+	/**
+	 * Cleanup an ipc channel
+	 *
+	 * @param string $channel
+	 */
+	public function cleanupChannel(string $channel) {
+		try {
+			$backend = $this->getBackend();
+			$backend->cleanupChannel($channel);
+		} catch (\Exception $e) {
+			return;
+		}
+	}
 }

@@ -30,6 +30,13 @@ interface IIPCBackend {
 	public function initChannel(string $channel);
 
 	/**
+	 * Cleanup an ipc channel
+	 *
+	 * @param string $channel
+	 */
+	public function cleanupChannel(string $channel);
+
+	/**
 	 * Push a new message in the channel
 	 *
 	 * @param string $channel

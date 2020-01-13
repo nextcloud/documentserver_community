@@ -86,4 +86,15 @@ abstract class BackendTest extends TestCase {
 		$this->assertEquals("bar", $backend2->popMessage("ch2", 1));
 		$this->assertEquals(null, $backend2->popMessage("ch2", 1));
 	}
+
+	public function testCleanup() {
+		$backend1 = $this->getBackend();
+
+		$backend1->pushMessage("ch1", "foo");
+		$backend1->pushMessage("ch1", "bar");
+		$backend1->pushMessage("ch1", "asd");
+		$this->assertEquals("foo", $backend1->popMessage("ch1", 1));
+		$backend1->cleanupChannel("ch1");
+		$this->assertEquals(null, $backend1->popMessage("ch1", 1));
+	}
 }

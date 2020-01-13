@@ -30,4 +30,11 @@ interface IIPCFactory {
 	 * @throws \Exception if no ipc backend is available
 	 */
 	public function getChannel(string $name): IIPCChannel;
+
+	/**
+	 * Cleanup an ipc channel
+	 *
+	 * @param string $channel
+	 */
+	public function cleanupChannel(string $channel);
 }
