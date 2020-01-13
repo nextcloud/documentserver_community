@@ -29,6 +29,7 @@ use OCA\DocumentServer\IPC\IPCFactory;
 use OCA\DocumentServer\IPC\MemcacheIPCFactory;
 use OCA\DocumentServer\IPC\RedisIPCFactory;
 use OCA\DocumentServer\JSSettingsHelper;
+use OCA\DocumentServer\OnlyOffice\AutoConfig;
 use OCA\DocumentServer\OnlyOffice\URLDecoder;
 use OCA\Onlyoffice\AppConfig;
 use OCA\Onlyoffice\Crypt;
@@ -63,26 +64,28 @@ class Application extends App {
 				$server->getRootFolder()
 			);
 		});
+
+		$container->registerService(AutoConfig::class, function (IAppContainer $container) {
+			$server = $container->getServer();
+			$appConfig = new AppConfig('onlyoffice');
+
+			return new AutoConfig(
+				$server->getURLGenerator(),
+				$appConfig
+			);
+		});
 	}
 
 	private function getJSSettingsHelper(): JSSettingsHelper {
 		return $this->getContainer()->query(JSSettingsHelper::class);
 	}
 
-	private function preFillOnlyOfficeConfig() {
-		$server = $this->getContainer()->getServer();
-
-		$config = $server->getConfig();
-		if ($config->getAppValue('onlyoffice', 'DocumentServerUrl') === '') {
-			$urlGenerator = $server->getURLGenerator();
-
-			$url = substr($urlGenerator->linkToRouteAbsolute('documentserver_community.Static.webApps', ['path' => '_']), 0, -strlen('/web-apps/_'));
-			$config->setAppValue('onlyoffice', 'DocumentServerUrl', $url);
-		}
+	private function getAutoConfig(): AutoConfig {
+		return $this->getContainer()->query(AutoConfig::class);
 	}
 
 	public function register() {
-		$this->preFillOnlyOfficeConfig();
+		$this->getAutoConfig()->autoConfigIfNeeded();
 		Util::connectHook('\OCP\Config', 'js', $this->getJSSettingsHelper(), 'extend');
 	}
 }
