@@ -79,5 +79,6 @@ class AutoConfig {
 
 		$this->appConfig->SetDefaultFormats($defaultFormats);
 		$this->appConfig->SetEditableFormats($editFormats);
+		$this->appConfig->SetSameTab(true);
 	}
 }

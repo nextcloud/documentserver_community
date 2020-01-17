@@ -89,6 +89,8 @@ class URLDecoder {
 				$userId = $this->userSession->getUser()->getUID();
 			} else if (isset($hashData->ownerId)) {
 				$userId = $hashData->ownerId;
+			} else if (isset($hashData->userId)) {
+				$userId = $hashData->userId;
 			} else {
 				throw new \Exception("Can't get owner id from document url");
 			}
