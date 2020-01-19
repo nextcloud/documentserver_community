@@ -33,6 +33,10 @@ class ConverterBinary {
 	}
 
 	public function run(string $param): string {
+		if (!is_executable(self::BINARY_DIRECTORY . '/x2t')) {
+			@chmod(self::BINARY_DIRECTORY . '/x2t', 0755);
+		}
+
 		$descriptorSpec = [
 			0 => ["pipe", "r"],// stdin
 			1 => ["pipe", "w"],// stdout
