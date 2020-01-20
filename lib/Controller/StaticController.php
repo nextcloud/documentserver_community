@@ -27,6 +27,7 @@ use OC\Security\CSP\ContentSecurityPolicyNonceManager;
 use OCA\DocumentServer\Channel\SessionManager;
 use OCA\DocumentServer\Document\ConverterBinary;
 use OCA\DocumentServer\FileResponse;
+use OCA\DocumentServer\SetupCheck;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\NotFoundResponse;
 use OCP\Files\IMimeTypeDetector;
@@ -35,7 +36,7 @@ use OCP\IRequest;
 class StaticController extends Controller {
 	private $mimeTypeHelper;
 	private $nonceManager;
-	private $converterBinary;
+	private $setupCheck;
 	private $sessionManager;
 
 	public function __construct(
@@ -43,14 +44,14 @@ class StaticController extends Controller {
 		IRequest $request,
 		IMimeTypeDetector $mimeTypeHelper,
 		ContentSecurityPolicyNonceManager $nonceManager,
-		ConverterBinary $converterBinary,
+		SetupCheck $setupCheck,
 		SessionManager $sessionManager
 	) {
 		parent::__construct($appName, $request);
 
 		$this->mimeTypeHelper = $mimeTypeHelper;
 		$this->nonceManager = $nonceManager;
-		$this->converterBinary = $converterBinary;
+		$this->setupCheck = $setupCheck;
 		$this->sessionManager = $sessionManager;
 	}
 
@@ -87,8 +88,12 @@ class StaticController extends Controller {
 		if ($path === 'apps/api/documents/api.js') {
 			if (!file_exists($localPath)) {
 				$localPath = __DIR__ . '/../../js/notbuild.js';
-			} else if (!$this->converterBinary->test()) {
+			} else if (!$this->setupCheck->check()) {
+				$hint = $this->setupCheck->getHint();
 				$localPath = __DIR__ . '/../../js/binaryerror.js';
+				$rawContent = file_get_contents($localPath);
+				$content = str_replace('__HINT__', $hint, $rawContent);
+				return $this->createFileResponseWithContent($localPath, $content, false);
 			} else if ($this->sessionManager->getSessionCount() >= 20) {
 				$localPath = __DIR__ . '/../../js/sessionlimit.js';
 			}
@@ -103,6 +108,10 @@ class StaticController extends Controller {
 			return new NotFoundResponse();
 		}
 		$content = file_get_contents($path);
+		return $this->createFileResponseWithContent($path, $content);
+	}
+
+	private function createFileResponseWithContent(string $path, string $content, $cache = true) {
 		$isHTML = pathinfo($path, PATHINFO_EXTENSION) === 'html';
 		if ($isHTML) {
 			$content = $this->addScriptNonce($content, $this->nonceManager->getNonce());
@@ -122,7 +131,7 @@ class StaticController extends Controller {
 		);
 
 		// we can't cache the html since the nonce might need to get updated
-		if (!$isHTML) {
+		if ($cache && !$isHTML) {
 			$response->cacheFor(3600);
 		}
 
