@@ -85,7 +85,9 @@ class Application extends App {
 	}
 
 	public function register() {
-		$this->getAutoConfig()->autoConfigIfNeeded();
-		Util::connectHook('\OCP\Config', 'js', $this->getJSSettingsHelper(), 'extend');
+		if ($this->getContainer()->getServer()->getAppManager()->isEnabledForUser('onlyoffice')) {
+			$this->getAutoConfig()->autoConfigIfNeeded();
+			Util::connectHook('\OCP\Config', 'js', $this->getJSSettingsHelper(), 'extend');
+		}
 	}
 }
