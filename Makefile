@@ -25,6 +25,7 @@ clean:
 		--allfonts-web="../../../sdkjs/common/AllFonts.js" \
 		--allfonts="AllFonts.js" \
 		--images="../../../sdkjs/common/Images" \
+		--output-web="../../../fonts" \
 		--selection="font_selection.bin"
 	sed -i 's/if(yb===d\[a\].ka)/if(d[a]\&\&yb===d[a].ka)/' 3rdparty/onlyoffice/documentserver/sdkjs/*/sdk-all.js
 

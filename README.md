@@ -11,6 +11,14 @@ When installing from git `make` and `docker` are required.
 The community documentserver will automatically configure itself if no other document server is configured in the onlyoffice settings ("Document Editing Service address" is empty).
 All other "Server settings" should be left empty.
 
+## Adding fonts
+
+You can add custom fonts to the document server using the following occ commands
+
+- Add font by path `occ documentserver:fonts --add /usr/share/fonts/myfont.ttf`
+- List added fonts `occ documentserver:fonts`
+- Remove an dded font `occ documentserver:fonts --remove myfont.ttf`
+
 ## Setup from git
 
 - clone the repo into the Nextcloud app directory 

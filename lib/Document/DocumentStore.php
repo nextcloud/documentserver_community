@@ -61,7 +61,7 @@ class DocumentStore {
 	 * @param ISimpleFolder $folder
 	 * @return string
 	 */
-	private function getLocalPath(ISimpleFolder $folder): string {
+	public function getLocalPath(ISimpleFolder $folder): string {
 		$fullFolder = $this->upgradeFolder($folder);
 		$path = $fullFolder->getPath();
 		return $this->config->getSystemValueString('datadirectory') . $path;

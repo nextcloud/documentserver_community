@@ -36,5 +36,6 @@ Additionally, the community document server only supports running on x86-64 Linu
 
 	<commands>
 		<command>OCA\DocumentServer\Command\FlushChanges</command>
+		<command>OCA\DocumentServer\Command\Fonts</command>
 	</commands>
 </info>
