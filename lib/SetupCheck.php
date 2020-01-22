@@ -21,7 +21,6 @@
 
 namespace OCA\DocumentServer;
 
-
 use OCA\DocumentServer\Document\ConverterBinary;
 
 class SetupCheck {
@@ -49,7 +48,29 @@ class SetupCheck {
 		if (!is_executable(ConverterBinary::BINARY_DIRECTORY . '/x2t')) {
 			return "can't execute x2t binary, ensure php can execute binaries in the app folder";
 		}
+		$ldError = $this->lddError();
+		if (strpos($ldError, 'ld-linux') !== false) {
+			return "using a musl libc based distribution is not supported";
+		} else if ($ldError) {
+			return "one or more dependencies are missing";
+		}
 
 		return '';
+	}
+
+	private function lddError(): string {
+		$descriptorSpec = [
+			0 => ["pipe", "r"],// stdin
+			1 => ["pipe", "w"],// stdout
+			2 => ["pipe", "w"] // stderr
+		];
+
+		$pipes = [];
+		proc_open('ldd x2t', $descriptorSpec, $pipes, ConverterBinary::BINARY_DIRECTORY, []);
+
+		fclose($pipes[0]);
+		$error = stream_get_contents($pipes[2]);
+
+		return trim($error);
 	}
 }

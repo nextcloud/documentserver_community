@@ -86,9 +86,7 @@ class StaticController extends Controller {
 		// we use this as an opportunity to do some checks and present error messages
 		// by serving a custom js file instead
 		if ($path === 'apps/api/documents/api.js') {
-			if (!file_exists($localPath)) {
-				$localPath = __DIR__ . '/../../js/notbuild.js';
-			} else if (!$this->setupCheck->check()) {
+			if (!$this->setupCheck->check()) {
 				$hint = $this->setupCheck->getHint();
 				$localPath = __DIR__ . '/../../js/binaryerror.js';
 				$rawContent = file_get_contents($localPath);
