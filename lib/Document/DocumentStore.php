@@ -22,6 +22,7 @@
 namespace OCA\DocumentServer\Document;
 
 use OC\Files\Filesystem;
+use OCA\DocumentServer\LocalAppData;
 use OCP\Files\File;
 use OCA\DocumentServer\DocumentConverter;
 use OCP\Files\Folder;
@@ -40,39 +41,22 @@ class DocumentStore {
 	private $config;
 	private $rootFolder;
 	private $userManager;
+	private $localAppData;
 
 	public function __construct(
 		IAppData $appData,
 		DocumentConverter $documentConverter,
 		IConfig $config,
 		IRootFolder $rootFolder,
-		IUserManager $userManager
+		IUserManager $userManager,
+		LocalAppData $localAppData
 	) {
 		$this->appData = $appData;
 		$this->documentConverter = $documentConverter;
 		$this->config = $config;
 		$this->rootFolder = $rootFolder;
 		$this->userManager = $userManager;
-	}
-
-	/**
-	 * Hackish way to get local path for appdata folder
-	 *
-	 * @param ISimpleFolder $folder
-	 * @return string
-	 */
-	public function getLocalPath(ISimpleFolder $folder): string {
-		$fullFolder = $this->upgradeFolder($folder);
-		$path = $fullFolder->getPath();
-		return $this->config->getSystemValueString('datadirectory') . $path;
-	}
-
-	private function upgradeFolder(ISimpleFolder $folder): Folder {
-		$class = new \ReflectionClass($folder);
-		$prop = $class->getProperty('folder');
-		$prop->setAccessible(true);
-		/** @var Folder $fullFolder */
-		return $prop->getValue($folder);
+		$this->localAppData = $localAppData;
 	}
 
 	private function getDocumentFolder(int $documentId): ISimpleFolder {
@@ -104,8 +88,9 @@ class DocumentStore {
 				throw new NotFoundException();
 			}
 
-			$localPath = $this->getLocalPath($docFolder);
-			$this->documentConverter->getEditorBinary($source, $sourceFormat, $localPath);
+			$this->localAppData->getReadWriteLocalPath($docFolder, function (string $localPath) use ($source, $sourceFormat) {
+				$this->documentConverter->getEditorBinary($source, $sourceFormat, $localPath);
+			});
 
 			// maybe save in a new db table
 			$docFolder->newFile('fileid')->putContent((string)$sourceFile->getId());
@@ -116,7 +101,7 @@ class DocumentStore {
 	}
 
 	public function getEmbeddedFiles(int $documentId): array {
-		$docFolder = $this->upgradeFolder($this->getDocumentFolder($documentId));
+		$docFolder = $this->localAppData->upgradeFolder($this->getDocumentFolder($documentId));
 		$files = [];
 		try {
 			/** @var Folder $mediaFolder */
@@ -132,12 +117,12 @@ class DocumentStore {
 	}
 
 	public function openDocumentFile(int $documentId, string $path): File {
-		$docFolder = $this->upgradeFolder($this->getDocumentFolder($documentId));
+		$docFolder = $this->localAppData->upgradeFolder($this->getDocumentFolder($documentId));
 		return $docFolder->get($path);
 	}
 
 	public function saveDocumentFile(int $documentId, string $path, $data) {
-		$docFolder = $this->upgradeFolder($this->getDocumentFolder($documentId));
+		$docFolder = $this->localAppData->upgradeFolder($this->getDocumentFolder($documentId));
 		$docFolder->newFile($path)->putContent($data);
 	}
 
@@ -160,23 +145,23 @@ class DocumentStore {
 		}
 
 		$targetExtension = $sourceFile->getExtension();
-		$storage = $sourceFile->getStorage();
 
-		$localPath = $this->getLocalPath($docFolder);
+		$this->localAppData->getReadWriteLocalPath($docFolder, function (string $localPath) use ($changes, $targetExtension, $sourceFile) {
+			$target = $localPath . '/saved.' . $targetExtension;
+			$this->documentConverter->saveChanges($localPath, $changes, $target, $targetExtension);
 
-		$target = $localPath . '/saved.' . $targetExtension;
-		$this->documentConverter->saveChanges($localPath, $changes, $target, $targetExtension);
-		$savedContent = fopen($target, 'r');
+			$savedContent = fopen($target, 'r');
 
-		if (!Filesystem::$loaded) {
-			// the filesystem needs to be initialized for a user in order for hooks to trigger
-			// just the `getUserFolder` is not enough for this
-			[, $user] = explode('/', $sourceFile->getPath());
-			$userDir = '/' . $user . '/files';
-			Filesystem::init($user, $userDir);
-		}
+			if (!Filesystem::$loaded) {
+				// the filesystem needs to be initialized for a user in order for hooks to trigger
+				// just the `getUserFolder` is not enough for this
+				[, $user] = explode('/', $sourceFile->getPath());
+				$userDir = '/' . $user . '/files';
+				Filesystem::init($user, $userDir);
+			}
 
-		$sourceFile->putContent(stream_get_contents($savedContent));
+			$sourceFile->putContent(stream_get_contents($savedContent));
+		});
 	}
 
 	/**
@@ -185,7 +170,7 @@ class DocumentStore {
 	private function searchForFileById(int $fileId): ?File {
 		$file = null;
 
-		$this->userManager->callForSeenUsers(function(IUser $user) use ($fileId, &$file) {
+		$this->userManager->callForSeenUsers(function (IUser $user) use ($fileId, &$file) {
 			$sourceFiles = $this->rootFolder->getUserFolder($user->getUID())->getById($fileId);
 			if (count($sourceFiles)) {
 				/** @var File $sourceFile */
@@ -236,15 +221,15 @@ class DocumentStore {
 
 		}
 
-		$localPath = $this->getLocalPath($docFolder);
+		$this->localAppData->getReadWriteLocalPath($docFolder, function (string $localPath) use ($title, $cmd, $sourceFile) {
+			$command = new ConvertCommand($localPath . '/save-download.bin', $localPath . '/' . $title);
+			$command->setTargetFormat($cmd["outputformat"]);
+			$command->setNoBase64($cmd["nobase64"]);
 
-		$command = new ConvertCommand($localPath . '/save-download.bin', $localPath . '/' . $title);
-		$command->setTargetFormat($cmd["outputformat"]);
-		$command->setNoBase64($cmd["nobase64"]);
+			$this->documentConverter->runCommand($command);
 
-		$this->documentConverter->runCommand($command);
-
-		$sourceFile->delete();
+			$sourceFile->delete();
+		});
 
 		return $title;
 	}

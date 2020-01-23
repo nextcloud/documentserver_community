@@ -21,6 +21,7 @@
 
 namespace OCA\DocumentServer\Document;
 
+use OCA\DocumentServer\LocalAppData;
 use OCP\Files\IAppData;
 use OCP\Files\NotFoundException;
 use OCP\Files\SimpleFS\ISimpleFile;
@@ -28,42 +29,43 @@ use OCP\Files\SimpleFS\ISimpleFolder;
 
 class FontManager {
 	private $appData;
-	private $documentStore;
+	private $localAppData;
 
 	public function __construct(
 		IAppData $appData,
-		DocumentStore $documentStore
+		LocalAppData $localAppData
 	) {
 		$this->appData = $appData;
-		$this->documentStore = $documentStore;
+		$this->localAppData = $localAppData;
 	}
 
 	public function rebuildFonts() {
-		$fontsDir = $this->documentStore->getLocalPath($this->getFontDir());
-		$cmd = '../../tools/allfontsgen \
-		--input="../../../core-fonts" \
-		--input="' . $fontsDir . '" \
-		--allfonts-web="../../../sdkjs/common/AllFonts.js" \
-		--allfonts="AllFonts.js" \
-		--images="../../../sdkjs/common/Images" \
-		--output-web="../../../fonts" \
-		--selection="font_selection.bin"';
+		$this->localAppData->getReadLocalPath($this->getFontDir(), function (string $fontsDir) {
+			$cmd = '../../tools/allfontsgen \
+				--input="../../../core-fonts" \
+				--input="' . $fontsDir . '" \
+				--allfonts-web="../../../sdkjs/common/AllFonts.js" \
+				--allfonts="AllFonts.js" \
+				--images="../../../sdkjs/common/Images" \
+				--output-web="../../../fonts" \
+				--selection="font_selection.bin"';
 
-		$descriptorSpec = [
-			0 => ["pipe", "r"],// stdin
-			1 => ["pipe", "w"],// stdout
-			2 => ["pipe", "w"] // stderr
-		];
+			$descriptorSpec = [
+				0 => ["pipe", "r"],// stdin
+				1 => ["pipe", "w"],// stdout
+				2 => ["pipe", "w"] // stderr
+			];
 
-		$pipes = [];
-		proc_open($cmd, $descriptorSpec, $pipes, ConverterBinary::BINARY_DIRECTORY, []);
+			$pipes = [];
+			proc_open($cmd, $descriptorSpec, $pipes, ConverterBinary::BINARY_DIRECTORY, []);
 
-		fclose($pipes[0]);
-		$error = stream_get_contents($pipes[2]);
+			fclose($pipes[0]);
+			$error = stream_get_contents($pipes[2]);
 
-		if ($error) {
-			throw new \Exception($error);
-		}
+			if ($error) {
+				throw new \Exception($error);
+			}
+		});
 	}
 
 	private function getFontDir(): ISimpleFolder {
