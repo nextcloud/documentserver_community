@@ -42,6 +42,8 @@ class SetupCheck {
 			return "'proc_close' needs to be enabled";
 		} else if (!file_exists($x2t)) {
 			return "x2t binary missing, please try removing and re-installing the app";
+		} if (PHP_INT_SIZE === 4) {
+			return "32 bit setups are not supported";
 		}
 
 		@chmod($x2t, 0755);
