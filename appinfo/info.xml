@@ -25,7 +25,8 @@ Additionally, the community document server only supports running on x86-64 Linu
 	<repository type="git">
 		https://github.com/nextcloud/documentserver_community.git
 	</repository>
-
+	<screenshot>https://raw.githubusercontent.com/nextcloud/documentserver_community/master/screenshots/main.png</screenshot>
+	<screenshot>https://raw.githubusercontent.com/nextcloud/documentserver_community/master/screenshots/new.png</screenshot>
 	<dependencies>
 		<nextcloud min-version="18" max-version="18"/>
 	</dependencies>
