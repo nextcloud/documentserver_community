@@ -14,8 +14,7 @@ clean:
 
 3rdparty/onlyoffice/documentserver:
 	mkdir -p 3rdparty/onlyoffice
-	docker pull onlyoffice/documentserver
-	docker create --name oo-extract onlyoffice/documentserver
+	docker create --name oo-extract onlyoffice/documentserver:5.4.2.46
 	docker cp oo-extract:/var/www/onlyoffice/documentserver 3rdparty/onlyoffice
 	docker rm oo-extract
 	rm -r 3rdparty/onlyoffice/documentserver/server/{SpellChecker,Common,DocService}
@@ -47,6 +46,7 @@ appstore: clean 3rdparty/onlyoffice/documentserver version
 	--exclude=/CONTRIBUTING.md \
 	--exclude=/issue_template.md \
 	--exclude=/README.md \
+	--exclude=/screenshots \
 	--exclude=/node_modules \
 	--exclude=/.gitattributes \
 	--exclude=/.gitignore \
