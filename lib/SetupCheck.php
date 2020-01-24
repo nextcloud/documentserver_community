@@ -42,7 +42,7 @@ class SetupCheck {
 			return "'proc_close' needs to be enabled";
 		} else if (!file_exists($x2t)) {
 			return "x2t binary missing, please try removing and re-installing the app";
-		} if (PHP_INT_SIZE === 4) {
+		} else if (PHP_INT_SIZE === 4) {
 			return "32 bit setups are not supported";
 		}
 
@@ -53,8 +53,10 @@ class SetupCheck {
 		$ldError = $this->lddError();
 		if (strpos($ldError, 'ld-linux') !== false) {
 			return "using a musl libc based distribution is not supported";
+		} else if (strpos($ldError, 'version `GLIBC_') !== false) {
+			return "glibc version 2.17 or higher is required";
 		} else if ($ldError) {
-			return "one or more dependencies are missing";
+			return "one or more dependencies are missing or outdated";
 		}
 
 		return '';
