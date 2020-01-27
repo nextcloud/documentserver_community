@@ -41,33 +41,40 @@ class Fonts extends Base {
 	protected function configure() {
 		$this
 			->setName('documentserver:fonts')
-			->addOption('add', 'a', InputOption::VALUE_REQUIRED, 'Add a font from local file')
-			->addOption('remove', 'r', InputOption::VALUE_REQUIRED, 'Remove a font by name')
+			->addOption('add', 'a', InputOption::VALUE_IS_ARRAY + InputOption::VALUE_REQUIRED, 'Add a font from local file')
+			->addOption('remove', 'r', InputOption::VALUE_IS_ARRAY + InputOption::VALUE_REQUIRED, 'Remove a font by name')
+			->addOption('rebuild', null, InputOption::VALUE_NONE, 'Rebuild the onlyoffice fonts from added fonts')
 			->setDescription('Manage custom fonts');
 		parent::configure();
 	}
 
 	protected function execute(InputInterface $input, OutputInterface $output) {
-		if ($add = $input->getOption('add')) {
-			try {
-				$this->fontManager->addFont($add);
+		$add = $input->getOption('add');
+		$remove = $input->getOption('remove');
+		$rebuild = $input->getOption('rebuild');
+		try {
+			foreach ($add as $font) {
+				$this->fontManager->addFont($font);
+			}
+			foreach ($remove as $font) {
+				$this->fontManager->removeFont($font);
+			}
+			if ($add || $remove || $rebuild) {
+				$output->writeln("<info>rebuilding</info>");
 				$this->fontManager->rebuildFonts();
-			} catch (\Exception $e) {
-				$error = $e->getMessage();
-				$output->writeln("<error>$error</error>");
-			}
-		} else if ($remove = $input->getOption('remove')) {
-			$this->fontManager->removeFont($remove);
-			$this->fontManager->rebuildFonts();
-		} else {
-			$fonts = $this->fontManager->listFonts();
-			if ($fonts) {
-				foreach ($fonts as $font) {
-					$output->writeln($font);
-				}
 			} else {
-				$output->writeln("<info>No fonts added</info>");
+				$fonts = $this->fontManager->listFonts();
+				if ($fonts) {
+					foreach ($fonts as $font) {
+						$output->writeln($font);
+					}
+				} else {
+					$output->writeln("<info>No fonts added</info>");
+				}
 			}
+		} catch (\Exception $e) {
+			$error = $e->getMessage();
+			$output->writeln("<error>$error</error>");
 		}
 	}
 }
