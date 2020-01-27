@@ -40,6 +40,10 @@ class FontManager {
 	}
 
 	public function rebuildFonts() {
+		if (!is_executable(ConverterBinary::BINARY_DIRECTORY . '/../../tools/allfontsgen')) {
+			@chmod(ConverterBinary::BINARY_DIRECTORY . '/../../tools/allfontsgen', 0755);
+		}
+
 		$this->localAppData->getReadLocalPath($this->getFontDir(), function (string $fontsDir) {
 			$cmd = '../../tools/allfontsgen \
 				--input="../../../core-fonts" \
