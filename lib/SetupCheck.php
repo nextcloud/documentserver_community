@@ -72,8 +72,8 @@ class SetupCheck {
 		$pipes = [];
 		proc_open('ldd x2t', $descriptorSpec, $pipes, ConverterBinary::BINARY_DIRECTORY, []);
 
-		fclose($pipes[0]);
-		$error = stream_get_contents($pipes[2]);
+		@fclose($pipes[0]);
+		$error = @stream_get_contents($pipes[2]);
 
 		return trim($error);
 	}
