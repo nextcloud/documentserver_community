@@ -44,6 +44,8 @@ class SetupCheck {
 			return "x2t binary missing, please try removing and re-installing the app";
 		} else if (PHP_INT_SIZE === 4) {
 			return "32 bit setups are not supported";
+		} else if (PHP_OS_FAMILY  !== "Linux") {
+			return "only linux based servers are supported";
 		}
 
 		@chmod($x2t, 0755);
