@@ -19,6 +19,12 @@ You can add custom fonts to the document server using the following occ commands
 - List added fonts `occ documentserver:fonts`
 - Remove an dded font `occ documentserver:fonts --remove myfont.ttf`
 
+## Self signed certificates
+
+If your nextcloud is using a self signed certificate for https, you'll need to import the certificate into nextcloud's certificate store to make the documentserver work.
+
+    occ security:certificates:import /path/to/certificate.crt
+
 ## Setup from git
 
 - clone the repo into the Nextcloud app directory 
