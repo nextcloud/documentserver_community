@@ -90,7 +90,7 @@ class StaticController extends Controller {
 				$hint = $this->setupCheck->getHint();
 				$localPath = __DIR__ . '/../../js/binaryerror.js';
 				$rawContent = file_get_contents($localPath);
-				$content = str_replace('__HINT__', $hint, $rawContent);
+				$content = str_replace('__HINT__', addcslashes($hint, "'"), $rawContent);
 				return $this->createFileResponseWithContent($localPath, $content, false);
 			} else if ($this->sessionManager->getSessionCount() >= 20) {
 				$localPath = __DIR__ . '/../../js/sessionlimit.js';
