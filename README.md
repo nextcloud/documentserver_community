@@ -2,9 +2,7 @@
 
 ## Requirements
 
-The community document server only supports running on x86-64 Linux servers.
-
-When installing from git `make` and `docker` are required.
+The community document server only supports running on x86-64 Linux servers using glibc based distributions.
 
 ## Configuring OnlyOffice
 
@@ -26,6 +24,8 @@ If your nextcloud is using a self signed certificate for https, you'll need to i
     occ security:certificates:import /path/to/certificate.crt
 
 ## Setup from git
+
+When installing from git `make` and `docker` are required.
 
 - clone the repo into the Nextcloud app directory 
 - run `make` in the app folder to download the 3rdparty components
