@@ -29,8 +29,9 @@ class Session {
 	private $lastSeen;
 	private $readOnly;
 	private $userId;
+	private $userName;
 
-	public function __construct(string $sessionId, int $documentId, string $user, string $userOriginal, int $lastSeen, bool $readOnly, int $userId) {
+	public function __construct(string $sessionId, int $documentId, string $user, string $userOriginal, string $userName, int $lastSeen, bool $readOnly, int $userId) {
 		$this->documentId = $documentId;
 		$this->sessionId = $sessionId;
 		$this->user = $user;
@@ -38,6 +39,7 @@ class Session {
 		$this->lastSeen = $lastSeen;
 		$this->readOnly = $readOnly;
 		$this->userId = $userId;
+		$this->userName = $userName;
 	}
 
 	public function getDocumentId(): int {
@@ -50,6 +52,10 @@ class Session {
 
 	public function getUser(): string {
 		return $this->user;
+	}
+
+	public function getUserName(): string {
+		return $this->userName;
 	}
 
 	public function getUserOriginal(): string {
@@ -76,7 +82,7 @@ class Session {
 		return [
 			"id" => $this->getUserId(),
 			"idOriginal" => $this->getUserOriginal(),
-			"username" => $this->getUserOriginal(),
+			"username" => $this->getUserName(),
 			"indexUser" => $this->getUserIndex(),
 			"view" => $this->isReadOnly(),
 			"connectionId" => $this->getSessionId(),
@@ -90,6 +96,7 @@ class Session {
 			(int)$row['document_id'],
 			$row['user'],
 			$row['user_original'],
+			$row['username'] ?? $row['user'],
 			(int)$row['last_seen'],
 			(bool)$row['readonly'],
 			(int)$row['user_index']

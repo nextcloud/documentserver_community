@@ -48,7 +48,7 @@ class SessionManager {
 	public function getSession(string $sessionId): ?Session {
 		$query = $this->connection->getQueryBuilder();
 
-		$query->select('session_id', 'document_id', 'user', 'user_original', 'last_seen', 'readonly', 'user_index')
+		$query->select('session_id', 'document_id', 'user', 'user_original', 'last_seen', 'readonly', 'user_index', 'username')
 			->from('documentserver_sess')
 			->where($query->expr()->eq('session_id', $query->createNamedParameter($sessionId)));
 
@@ -83,13 +83,14 @@ class SessionManager {
 				'last_seen' => $query->createNamedParameter($now, \PDO::PARAM_INT),
 				'user' => $query->createNamedParameter(""),
 				'user_original' => $query->createNamedParameter(""),
+				'username' => $query->createNamedParameter(""),
 				'readonly' => $query->createNamedParameter(1, \PDO::PARAM_INT),
 				'user_index' => $query->createNamedParameter($userId, \PDO::PARAM_INT),
 			]);
 		$query->execute();
 	}
 
-	public function authenticate(Session $session, string $user, string $userOriginal, bool $readOnly): Session {
+	public function authenticate(Session $session, string $user, string $userOriginal, string $userName, bool $readOnly): Session {
 		$query = $this->connection->getQueryBuilder();
 		$now = $this->timeFactory->getTime();
 
@@ -97,6 +98,7 @@ class SessionManager {
 			->set('last_seen', $query->createNamedParameter($now, \PDO::PARAM_INT))
 			->set('user', $query->createNamedParameter($user))
 			->set('user_original', $query->createNamedParameter($userOriginal))
+			->set('username', $query->createNamedParameter($userName))
 			->set('readonly', $query->createNamedParameter($readOnly, \PDO::PARAM_INT))
 			->where($query->expr()->eq('session_id', $query->createNamedParameter($session->getSessionId())));
 		$query->execute();
@@ -106,6 +108,7 @@ class SessionManager {
 			$session->getDocumentId(),
 			$user,
 			$userOriginal,
+			$userName,
 			$now,
 			$readOnly,
 			$session->getUserIndex()
@@ -157,7 +160,7 @@ class SessionManager {
 	public function getSessionsForDocument(int $documentId): array {
 		$query = $this->connection->getQueryBuilder();
 
-		$query->select('session_id', 'document_id', 'user', 'user_original', 'last_seen', 'readonly', 'user_index')
+		$query->select('session_id', 'document_id', 'user', 'user_original', 'last_seen', 'readonly', 'user_index', 'username')
 			->from('documentserver_sess')
 			->where($query->expr()->eq('document_id', $query->createNamedParameter($documentId, \PDO::PARAM_INT)));
 
@@ -169,7 +172,7 @@ class SessionManager {
 	public function getSessionForUser(string $userId): ?Session {
 		$query = $this->connection->getQueryBuilder();
 
-		$query->select('session_id', 'document_id', 'user', 'user_original', 'last_seen', 'readonly', 'user_index')
+		$query->select('session_id', 'document_id', 'user', 'user_original', 'last_seen', 'readonly', 'user_index', 'username')
 			->from('documentserver_sess')
 			->where($query->expr()->eq($query->func()->concat('user', 'user_index'), $query->createNamedParameter($userId)));
 

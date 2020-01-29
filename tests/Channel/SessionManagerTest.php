@@ -69,12 +69,13 @@ class SessionManagerTest extends TestCase {
 		$this->assertEquals('', $session->getUserOriginal());
 		$this->assertEquals(10, $session->getLastSeen());
 
-		$this->manager->authenticate($session, 'user', 'original', false);
+		$this->manager->authenticate($session, 'user', 'original', 'name', false);
 		$session = $this->manager->getSession('foo');
 
 		$this->assertEquals('foo', $session->getSessionId());
 		$this->assertEquals(5, $session->getDocumentId());
 		$this->assertEquals('user', $session->getUser());
+		$this->assertEquals('name', $session->getUser());
 		$this->assertEquals('original', $session->getUserOriginal());
 		$this->assertEquals(10, $session->getLastSeen());
 	}
