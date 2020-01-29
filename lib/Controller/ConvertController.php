@@ -21,11 +21,25 @@
 
 namespace OCA\DocumentServer\Controller;
 
+use OCA\DocumentServer\Document\DocumentStore;
+use OCA\DocumentServer\OnlyOffice\URLDecoder;
 use OCA\DocumentServer\XMLResponse;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\DataResponse;
+use OCP\IURLGenerator;
 
 class ConvertController extends Controller {
+	private $documentStore;
+	private $urlDecoder;
+	private $urlGenerator;
+
+	public function __construct(DocumentStore $documentStore, URLDecoder $urlDecoder, IURLGenerator $urlGenerator) {
+		$this->documentStore = $documentStore;
+		$this->urlDecoder = $urlDecoder;
+		$this->urlGenerator = $urlGenerator;
+	}
+
+
 	/**
 	 * @NoAdminRequired
 	 * @NoCSRFRequired
@@ -36,10 +50,26 @@ class ConvertController extends Controller {
 			return new XMLResponse([
 				'FileUrl' => $url,
 				'Percent' => "100",
-				'EndConvert' => "True"
+				'EndConvert' => "True",
+			]);
+		} else {
+			$documentId = (int)$key;
+			$documentFile = $this->urlDecoder->getFileForUrl($url);
+			$this->documentStore->getDocumentForEditor($documentId, $documentFile, $filetype);
+			$this->documentStore->convert($documentId, $outputtype);
+
+			$url = $this->urlGenerator->linkToRouteAbsolute(
+				'documentserver_community.Document.documentFile', [
+					'path' => '/convert.' . $outputtype,
+					'docId' => $documentId,
+				]
+			);
+
+			return new XMLResponse([
+				'FileUrl' => $url,
+				'Percent' => "100",
+				'EndConvert' => "True",
 			]);
 		}
-
-		return false;
 	}
 }

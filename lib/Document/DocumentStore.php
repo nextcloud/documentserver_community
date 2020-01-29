@@ -233,4 +233,17 @@ class DocumentStore {
 
 		return $title;
 	}
+
+	public function convert(int $documentId, string $targetFormat): string {
+		$docFolder = $this->getDocumentFolder($documentId);
+
+		$this->localAppData->getReadWriteLocalPath($docFolder, function (string $localPath) use ($targetFormat) {
+			$command = new ConvertCommand($localPath . '/Editor.bin', $localPath . '/convert.' . $targetFormat);
+			$command->setTargetFormat(DocumentFormat::getFormatFromExtension($targetFormat));
+
+			$this->documentConverter->runCommand($command);
+		});
+
+		return '/convert.' . $targetFormat;
+	}
 }
