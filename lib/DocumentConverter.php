@@ -59,7 +59,7 @@ class DocumentConverter {
 			mkdir($changesFolder);
 
 			$groupedChanges = [];
-			foreach($changes as $change) {
+			foreach ($changes as $change) {
 				if (!isset($groupedChanges[$change->getTime()])) {
 					$groupedChanges[$change->getTime()] = [];
 				}
