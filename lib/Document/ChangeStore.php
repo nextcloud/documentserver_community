@@ -81,7 +81,8 @@ class ChangeStore {
 
 		$query->select('change', 'time', 'document_id', 'user', 'user_original', 'change_index')
 			->from('documentserver_changes')
-			->where($query->expr()->eq('document_id', $query->createNamedParameter($documentId, \PDO::PARAM_INT)));
+			->where($query->expr()->eq('document_id', $query->createNamedParameter($documentId, \PDO::PARAM_INT)))
+			->orderBy('change_id', 'ASC');
 		$rows = $query->execute()->fetchAll();
 		return array_map([Change::class, 'fromRow'], $rows);
 	}
