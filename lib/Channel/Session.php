@@ -76,7 +76,7 @@ class Session {
 		return [
 			"id" => $this->getUserId(),
 			"idOriginal" => $this->getUserOriginal(),
-			"username" => $this->getUser(),
+			"username" => $this->getUserOriginal(),
 			"indexUser" => $this->getUserIndex(),
 			"view" => $this->isReadOnly(),
 			"connectionId" => $this->getSessionId(),
