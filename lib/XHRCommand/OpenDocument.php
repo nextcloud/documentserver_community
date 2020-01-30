@@ -23,14 +23,29 @@ namespace OCA\DocumentServer\XHRCommand;
 
 
 use OCA\DocumentServer\Channel\Session;
+use OCA\DocumentServer\Document\DocumentStore;
+use OCA\DocumentServer\Document\PasswordRequiredException;
 use OCA\DocumentServer\IPC\IIPCChannel;
+use OCA\DocumentServer\OnlyOffice\URLDecoder;
+use OCP\ISession;
 use OCP\IURLGenerator;
 
 class OpenDocument implements ICommandHandler {
 	private $urlGenerator;
+	private $documentStore;
+	private $urlDecoder;
+	private $session;
 
-	public function __construct(IURLGenerator $urlGenerator) {
+	public function __construct(
+		IURLGenerator $urlGenerator,
+		DocumentStore $documentStore,
+		URLDecoder $urlDecoder,
+		ISession $session
+	) {
 		$this->urlGenerator = $urlGenerator;
+		$this->documentStore = $documentStore;
+		$this->urlDecoder = $urlDecoder;
+		$this->session = $session;
 	}
 
 	public function getType(): string {
@@ -38,26 +53,80 @@ class OpenDocument implements ICommandHandler {
 	}
 
 	public function handle(array $command, Session $session, IIPCChannel $sessionChannel, IIPCChannel $documentChannel, CommandDispatcher $commandDispatcher): void {
-		$requestPaths = $command['message']['data'];
+		$type = $command['message']['c'];
 
-		$paths = array_map(function($path) use ($session) {
+		if ($type === 'pathurls') {
+			$requestPaths = $command['message']['data'];
+
+			$paths = array_map(function ($path) use ($session) {
+				return $this->urlGenerator->linkToRouteAbsolute(
+					'documentserver_community.Document.documentFile', [
+						'path' => $path,
+						'docId' => $session->getDocumentId(),
+					]
+				);
+			}, $requestPaths);
+
+			$message = json_encode([
+				'type' => 'documentOpen',
+				'data' => [
+					'status' => 'ok',
+					'type' => 'pathurls',
+					'data' => $paths,
+				],
+			]);
+
+			$sessionChannel->pushMessage($message);
+		} else if ($type === 'reopen' || $type === 'open') {
+			$this->openDocument($command['message'], $sessionChannel);
+		}
+
+	}
+
+	public function openDocument(array $openCmd, IIPCChannel $sessionChannel) {
+		$docId = (int)$openCmd['id'];
+		$documentUrl = $openCmd['url'] ?? null;
+		$inputFormat = $openCmd['format'];
+		$password = $openCmd['password'] ?? null;
+		$command = $openCmd['c'];
+
+		if (!$documentUrl) {
+			$documentUrl = $this->documentStore->getStashedDocumentUrl($docId);
+		}
+
+		$documentFile = $this->urlDecoder->getFileForUrl($documentUrl);
+		try {
+			$this->documentStore->getDocumentForEditor($docId, $documentFile, $inputFormat, $password);
+		} catch (PasswordRequiredException $e) {
+			$this->documentStore->stashDocumentUrl($docId, $documentUrl);
+			$sessionChannel->pushMessage(json_encode([
+				'type' => 'documentOpen',
+				'data' => [
+					'type' => 'open',
+					'status' => 'needpassword',
+					'data' => -$e->getStatus(),
+				],
+			]));
+			return;
+		}
+
+		$files = array_merge(['Editor.bin'], $this->documentStore->getEmbeddedFiles($docId));
+		$urls = array_map(function (string $file) use ($docId) {
 			return $this->urlGenerator->linkToRouteAbsolute(
 				'documentserver_community.Document.documentFile', [
-					'path' => $path,
-					'docId' => $session->getDocumentId(),
+					'path' => $file,
+					'docId' => $docId,
 				]
 			);
-		}, $requestPaths);
+		}, $files);
 
-		$message = json_encode([
+		$sessionChannel->pushMessage(json_encode([
 			'type' => 'documentOpen',
 			'data' => [
-				'type' => 'pathurls',
+				'type' => $command,
 				'status' => 'ok',
-				'data' => $paths
-			]
-		]);
-
-		$sessionChannel->pushMessage($message);
+				'data' => array_combine($files, $urls),
+			],
+		]));
 	}
 }

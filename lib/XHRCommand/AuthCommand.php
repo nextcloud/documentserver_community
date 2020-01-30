@@ -27,6 +27,7 @@ use OCA\DocumentServer\Document\Change;
 use OCA\DocumentServer\Document\ChangeStore;
 use OCA\DocumentServer\Document\DocumentStore;
 use OCA\DocumentServer\Document\LockStore;
+use OCA\DocumentServer\Document\PasswordRequiredException;
 use OCA\DocumentServer\OnlyOffice\URLDecoder;
 use OCA\DocumentServer\IPC\IIPCChannel;
 use OCA\DocumentServer\OnlyOffice\WebVersion;
@@ -36,30 +37,24 @@ use function Sabre\HTTP\encodePathSegment;
 class AuthCommand implements ICommandHandler {
 	const MAX_CONNECTIONS = 20;
 
-	private $urlGenerator;
 	private $changeStore;
 	private $sessionManager;
-	private $documentStore;
-	private $urlDecoder;
 	private $lockStore;
 	private $webVersion;
+	private $openHandler;
 
 	public function __construct(
-		IURLGenerator $urlGenerator,
 		ChangeStore $changeStore,
 		SessionManager $sessionManager,
-		DocumentStore $documentStore,
-		URLDecoder $urlDecoder,
 		LockStore $lockStore,
-		WebVersion $webVersion
+		WebVersion $webVersion,
+		OpenDocument $openHandler
 	) {
-		$this->urlGenerator = $urlGenerator;
 		$this->changeStore = $changeStore;
 		$this->sessionManager = $sessionManager;
-		$this->documentStore = $documentStore;
-		$this->urlDecoder = $urlDecoder;
 		$this->lockStore = $lockStore;
 		$this->webVersion = $webVersion;
+		$this->openHandler = $openHandler;
 	}
 
 	public function getType(): string {
@@ -119,45 +114,23 @@ class AuthCommand implements ICommandHandler {
 			],
 		]));
 
-		$message = json_encode([
-			'type' => 'connectState',
-			'participantsTimestamp' => time() * 1000,
-			'participants' => array_map(function (Session $session) {
-				return $session->formatForClient();
-			}, $participants),
-			'waitAuth' => false,
-		]);
-		$documentChannel->pushMessage($message);
-		$sessionChannel->pushMessage($message);
+		if (count($participants) > 1) {
+			$message = json_encode([
+				'type' => 'connectState',
+				'participantsTimestamp' => time() * 1000,
+				'participants' => array_map(function (Session $session) {
+					return $session->formatForClient();
+				}, $participants),
+				'waitAuth' => false,
+			]);
+			$documentChannel->pushMessage($message);
+			$sessionChannel->pushMessage($message);
+		}
 
 
 		if (isset($command['openCmd'])) {
 			$openCmd = $command['openCmd'];
-			$docId = (int)$command['docid'];
-			$documentUrl = $openCmd['url'];
-			$inputFormat = $openCmd['format'];
-
-			$documentFile = $this->urlDecoder->getFileForUrl($documentUrl);
-			$this->documentStore->getDocumentForEditor($docId, $documentFile, $inputFormat);
-
-			$files = array_merge(['Editor.bin'], $this->documentStore->getEmbeddedFiles($docId));
-			$urls = array_map(function (string $file) use ($docId) {
-				return $this->urlGenerator->linkToRouteAbsolute(
-					'documentserver_community.Document.documentFile', [
-						'path' => $file,
-						'docId' => $docId,
-					]
-				);
-			}, $files);
-
-			$sessionChannel->pushMessage(json_encode([
-				'type' => 'documentOpen',
-				'data' => [
-					'type' => 'open',
-					'status' => 'ok',
-					'data' => array_combine($files, $urls),
-				],
-			]));
+			$this->openHandler->openDocument($openCmd, $sessionChannel);
 		}
 	}
 }

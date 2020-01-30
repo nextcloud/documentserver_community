@@ -40,11 +40,11 @@ class DocumentConverter {
 		$this->converter = $converterBinary;
 	}
 
-	public function getEditorBinary($source, string $sourceExtension, string $targetFolder) {
+	public function getEditorBinary($source, string $sourceExtension, string $targetFolder, string $password = null) {
 		$sourceFile = $this->tempManager->getTemporaryFile(".$sourceExtension");
 		file_put_contents($sourceFile, $source);
 
-		$this->convertFiles($sourceFile, "$targetFolder/Editor.bin");
+		$this->convertFiles($sourceFile, "$targetFolder/Editor.bin", DocumentFormat::AVS_OFFICESTUDIO_FILE_CANVAS, $password);
 	}
 
 	/**
@@ -104,14 +104,14 @@ class DocumentConverter {
 	}
 
 
-	public function convertFiles(string $from, string $to, int $targetFormat = 8192) {
+	public function convertFiles(string $from, string $to, int $targetFormat = DocumentFormat::AVS_OFFICESTUDIO_FILE_CANVAS, string $password = null) {
 		$command = new ConvertCommand($from, $to);
 		$command->setTargetFormat($targetFormat);
 
-		$this->runCommand($command);
+		$this->runCommand($command, $password);
 	}
 
-	public function runCommand(ConvertCommand $command) {
+	public function runCommand(ConvertCommand $command, string $password = null) {
 		$xmlFile = $this->tempManager->getTemporaryFile('.xml');
 		$xmlWriter = new Writer();
 		$xmlWriter->namespaceMap["http://www.w3.org/2001/XMLSchema-instance"] = "xsi";
@@ -120,6 +120,6 @@ class DocumentConverter {
 		$xmlWriter->writeElement("TaskQueueDataConvert", $command);
 		$xmlWriter->flush();
 
-		$this->converter->run($xmlFile);
+		$this->converter->run($xmlFile, $password);
 	}
 }

@@ -32,7 +32,7 @@ class ConverterBinary {
 		$this->logger = $logger;
 	}
 
-	public function run(string $param): string {
+	public function run(string $param, string $password = null): string {
 		if (!is_executable(self::BINARY_DIRECTORY . '/x2t')) {
 			@chmod(self::BINARY_DIRECTORY . '/x2t', 0755);
 		}
@@ -44,13 +44,21 @@ class ConverterBinary {
 		];
 
 		$pipes = [];
-		$process = proc_open('./x2t ' . escapeshellarg($param), $descriptorSpec, $pipes, self::BINARY_DIRECTORY, []);
+		$cmd = './x2t ' . escapeshellarg($param);
+		if ($password) {
+			$cmd .= ' ' . escapeshellarg("<TaskQueueDataConvert><m_sPassword>$password</m_sPassword></TaskQueueDataConvert>");
+		}
+		$process = proc_open($cmd, $descriptorSpec, $pipes, self::BINARY_DIRECTORY, []);
 
 		fclose($pipes[0]);
 		$output = stream_get_contents($pipes[1]);
 		$error = stream_get_contents($pipes[2]);
 
-		proc_close($process);
+		$status = proc_close($process);
+
+		if ($status == 90 || $status == 91) {
+			throw new PasswordRequiredException($status);
+		}
 
 		if ($error) {
 			throw new DocumentConversionException($error);

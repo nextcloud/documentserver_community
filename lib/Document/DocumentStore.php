@@ -67,7 +67,7 @@ class DocumentStore {
 		}
 	}
 
-	public function getDocumentForEditor(int $documentId, File $sourceFile, string $sourceFormat): ISimpleFile {
+	public function getDocumentForEditor(int $documentId, File $sourceFile, string $sourceFormat, string $password = null): ISimpleFile {
 		$docFolder = $this->getDocumentFolder($documentId);
 		try {
 			return $docFolder->getFile('Editor.bin');
@@ -88,8 +88,8 @@ class DocumentStore {
 				throw new NotFoundException();
 			}
 
-			$this->localAppData->getReadWriteLocalPath($docFolder, function (string $localPath) use ($source, $sourceFormat) {
-				$this->documentConverter->getEditorBinary($source, $sourceFormat, $localPath);
+			$this->localAppData->getReadWriteLocalPath($docFolder, function (string $localPath) use ($source, $sourceFormat, $password) {
+				$this->documentConverter->getEditorBinary($source, $sourceFormat, $localPath, $password);
 			});
 
 			// maybe save in a new db table
@@ -245,5 +245,22 @@ class DocumentStore {
 		});
 
 		return '/convert.' . $targetFormat;
+	}
+
+	public function stashDocumentUrl(int $documentId, string $url) {
+		$docFolder = $this->getDocumentFolder($documentId);
+		$docFolder->newFile('url')->putContent($url);
+	}
+
+	public function getStashedDocumentUrl(int $documentId): ?string {
+		$docFolder = $this->getDocumentFolder($documentId);
+		try {
+			$file = $docFolder->getFile('url');
+			$url = $file->getContent();
+			$file->delete();
+			return $url;
+		} catch (NotFoundException $e) {
+			return null;
+		}
 	}
 }
