@@ -72,7 +72,7 @@ class ConverterBinary {
 			$output = $this->run('');
 			return strpos($output, 'OOX/binary file converter') !== false;
 		} catch (\Exception $e) {
-			if (trim($e->getMessage()) === 'Empty sFileFrom or sFileTo') {
+			if (trim((string)$e->getMessage()) === 'Empty sFileFrom or sFileTo') {
 				return true;
 			}
 			$this->logger->logException($e, [
