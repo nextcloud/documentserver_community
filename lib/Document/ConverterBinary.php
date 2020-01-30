@@ -50,9 +50,9 @@ class ConverterBinary {
 		}
 		$process = proc_open($cmd, $descriptorSpec, $pipes, self::BINARY_DIRECTORY, []);
 
-		fclose($pipes[0]);
-		$output = stream_get_contents($pipes[1]);
-		$error = stream_get_contents($pipes[2]);
+		@fclose($pipes[0]);
+		$output = @stream_get_contents($pipes[1]);
+		$error = @stream_get_contents($pipes[2]);
 
 		$status = proc_close($process);
 
