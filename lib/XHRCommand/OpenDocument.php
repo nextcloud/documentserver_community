@@ -22,11 +22,14 @@
 namespace OCA\DocumentServer\XHRCommand;
 
 
+use Icewind\Streams\Path;
+use Icewind\Streams\PathWrapper;
 use OCA\DocumentServer\Channel\Session;
 use OCA\DocumentServer\Document\DocumentStore;
 use OCA\DocumentServer\Document\PasswordRequiredException;
 use OCA\DocumentServer\IPC\IIPCChannel;
 use OCA\DocumentServer\OnlyOffice\URLDecoder;
+use OCP\Image;
 use OCP\ISession;
 use OCP\IURLGenerator;
 
@@ -79,6 +82,8 @@ class OpenDocument implements ICommandHandler {
 			$sessionChannel->pushMessage($message);
 		} else if ($type === 'reopen' || $type === 'open') {
 			$this->openDocument($command['message'], $sessionChannel);
+		} else if ($type === 'imgurls') {
+			$this->imageUrls($command['message'], $session, $sessionChannel, $documentChannel);
 		}
 
 	}
@@ -126,6 +131,45 @@ class OpenDocument implements ICommandHandler {
 				'type' => $command,
 				'status' => 'ok',
 				'data' => array_combine($files, $urls),
+			],
+		]));
+	}
+
+	public function imageUrls(array $command, Session $session, IIPCChannel $sessionChannel, IIPCChannel $documentChannel) {
+		$error = 0;
+		$urls = array_map(function ($inputUrl) use ($session, &$error) {
+			$path = 'media/' . md5($inputUrl) . '.png';
+			$data = fopen($inputUrl, 'r');
+			if ($data) {
+				$this->documentStore->saveDocumentFile($session->getDocumentId(), $path, $data);
+
+				return [
+					'url' => $this->urlGenerator->linkToRouteAbsolute(
+						'documentserver_community.Document.documentFile', [
+							'path' => $path,
+							'docId' => $session->getDocumentId(),
+						]
+					),
+					'path' => $path,
+				];
+			} else {
+				$error = -104;
+				return [
+					'url' => 'error',
+					'path' => 'error'
+				];
+			}
+		}, $command['data']);
+
+		$sessionChannel->pushMessage(json_encode([
+			'type' => 'documentOpen',
+			'data' => [
+				'type' => 'imgurls',
+				'status' => 'ok',
+				'data' => [
+					'error' => $error,
+					'urls' => $urls,
+				],
 			],
 		]));
 	}
