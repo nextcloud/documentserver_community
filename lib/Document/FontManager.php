@@ -61,7 +61,11 @@ class FontManager {
 			];
 
 			$pipes = [];
-			proc_open($cmd, $descriptorSpec, $pipes, ConverterBinary::BINARY_DIRECTORY, []);
+			$process = proc_open($cmd, $descriptorSpec, $pipes, ConverterBinary::BINARY_DIRECTORY, []);
+
+			if (!$process) {
+				throw new \Exception("Failed to start allfontsgen");
+			}
 
 			fclose($pipes[0]);
 			$error = stream_get_contents($pipes[2]);
