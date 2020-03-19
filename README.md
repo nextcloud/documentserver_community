@@ -1,8 +1,8 @@
 # Community Documentserver
 
 ## Requirements
-
 The community document server only supports running on x86-64 Linux servers using glibc based distributions.
+To get it running, you also need to install the [ONLYOFFICE](https://apps.nextcloud.com/apps/onlyoffice) app.
 
 ## Configuring OnlyOffice
 
