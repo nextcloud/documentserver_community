@@ -25,6 +25,7 @@ use OC\Core\Command\Base;
 use OCA\DocumentServer\Document\DocumentStore;
 use OCA\DocumentServer\Document\SaveHandler;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 class FlushChanges extends Base {
@@ -44,14 +45,27 @@ class FlushChanges extends Base {
 	protected function configure() {
 		$this
 			->setName('documentserver:flush')
-			->setDescription('Flush all pending changes made to documents');
+			->setDescription('Flush all pending changes made to documents')
+			->addOption(
+				'inactive-pages',
+				null,
+				InputOption::VALUE_NONE,
+				'Flush only inactive pages'
+			);
 		parent::configure();
 	}
 
 	protected function execute(InputInterface $input, OutputInterface $output) {
 		$documents = $this->documentStore->getOpenDocuments();
 		foreach ($documents as $documentId) {
-			$this->saveHandler->flushChanges($documentId);
-		}
+			if (!$input->getOption('inactive-pages') ||
+			   !$this->sessionManager->isDocumentActive($documentId)) {
+				try {
+					$this->saveHandler->flushChanges($documentId);
+				} catch (\Exception $e) {
+					$this->logger->logException($e, ['app' => 'documentserver_community', 'message' => 'Error while applying changes for document ' . $documentId]);
+				}
+			}
+	    }
 	}
 }
