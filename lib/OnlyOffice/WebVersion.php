@@ -23,6 +23,6 @@ namespace OCA\DocumentServer\OnlyOffice;
 
 class WebVersion {
 	public function getWebUIVersion(): string {
-		return '5.4.2';
+		return '5.5.3';
 	}
 }
