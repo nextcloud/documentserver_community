@@ -21,7 +21,7 @@ You can add custom fonts to the document server using the following occ commands
 
 - Add font by path `occ documentserver:fonts --add /usr/share/fonts/myfont.ttf`
 - List added fonts `occ documentserver:fonts`
-- Remove an dded font `occ documentserver:fonts --remove myfont.ttf`
+- Remove an added font `occ documentserver:fonts --remove myfont.ttf`
 
 ## Self signed certificates
 
