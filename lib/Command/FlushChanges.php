@@ -22,24 +22,32 @@
 namespace OCA\DocumentServer\Command;
 
 use OC\Core\Command\Base;
+use OCA\DocumentServer\Channel\SessionManager;
 use OCA\DocumentServer\Document\DocumentStore;
 use OCA\DocumentServer\Document\SaveHandler;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+use OCP\ILogger;
 
 class FlushChanges extends Base {
 	private $saveHandler;
 	private $documentStore;
+	private $sessionManager;
+	private $logger;
 
 	public function __construct(
 		SaveHandler $saveHandler,
-		DocumentStore $documentStore
+		DocumentStore $documentStore,
+		SessionManager $sessionManager,
+		ILogger $logger
 	) {
 		parent::__construct();
 
 		$this->saveHandler = $saveHandler;
 		$this->documentStore = $documentStore;
+		$this->sessionManager = $sessionManager;
+		$this->logger = $logger;
 	}
 
 	protected function configure() {
