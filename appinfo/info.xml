@@ -31,7 +31,7 @@ Additionally, the community document server only supports running on x86-64 Linu
 	<screenshot>https://raw.githubusercontent.com/nextcloud/documentserver_community/master/screenshots/main.png</screenshot>
 	<screenshot>https://raw.githubusercontent.com/nextcloud/documentserver_community/master/screenshots/new.png</screenshot>
 	<dependencies>
-		<nextcloud min-version="18" max-version="18"/>
+		<nextcloud min-version="18" max-version="19"/>
 	</dependencies>
 
 	<background-jobs>
