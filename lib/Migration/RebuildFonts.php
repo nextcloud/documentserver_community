@@ -43,6 +43,10 @@ class RebuildFonts implements IRepairStep {
 	 * @inheritdoc
 	 */
 	public function run(IOutput $output) {
-		$this->fontManager->rebuildFonts();
+		try {
+			$this->fontManager->rebuildFonts();
+		} catch (\Exception $e) {
+			$output->warning('Could not rebuild font library: ' . $e->getMessage());
+		}
 	}
 }
