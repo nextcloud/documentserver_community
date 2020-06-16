@@ -8,7 +8,7 @@
 The community document server is designed to make it easy to get OnlyOffice running in a Nextcloud instance without the need to setup an external document server,
 the community document server does not support all features of the official OnlyOffice document server and does not provide the same performance and scalability.
 
-If you are setting up a larger instance of require the additional performance, please see https://onlyoffice.com for options for getting the official document server.
+If you are setting up a larger instance or require the additional performance, please see https://onlyoffice.com for options for getting the official document server.
 
 The community document server will automatically be configured if no other document server is configured for OnlyOffice.
 
