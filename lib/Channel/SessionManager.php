@@ -27,7 +27,7 @@ use OCP\DB\QueryBuilder\IQueryBuilder;
 use OCP\IDBConnection;
 
 class SessionManager {
-        const EXPIRED_SESSION_TIMEOUT = 15;
+        const EXPIRED_SESSION_TIMEOUT = 30;
 	private $connection;
 	private $timeFactory;
 	private $ipcFactory;
