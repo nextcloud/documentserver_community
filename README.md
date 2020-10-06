@@ -29,6 +29,17 @@ If your nextcloud is using a self signed certificate for https, you'll need to i
 
     occ security:certificates:import /path/to/certificate.crt
 
+## SELinux
+
+If you're using SELinux you'll need to configure it to allow executing binaries from the `documentserver_community/3rdparty` directory, for example:
+
+```
+semanage fcontext -a -t httpd_sys_script_exec_t '/var/www/html/nextcloud/apps/documentserver_community/3rdparty/onlyoffice/documentserver(/.*)?'
+restorecon -R -v /var/www/html/nextcloud
+```
+
+Specific commands and paths will differ based on your specific setup.
+
 ## Setup from git
 
 When installing from git `make` and `docker` are required.
