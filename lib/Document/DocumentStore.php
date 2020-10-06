@@ -34,6 +34,7 @@ use OCP\Files\SimpleFS\ISimpleFolder;
 use OCP\IConfig;
 use OCP\IUser;
 use OCP\IUserManager;
+use OCP\IUserSession;
 
 class DocumentStore {
 	private $appData;
@@ -42,6 +43,7 @@ class DocumentStore {
 	private $rootFolder;
 	private $userManager;
 	private $localAppData;
+	private $userSession;
 
 	public function __construct(
 		IAppData $appData,
@@ -49,7 +51,8 @@ class DocumentStore {
 		IConfig $config,
 		IRootFolder $rootFolder,
 		IUserManager $userManager,
-		LocalAppData $localAppData
+		LocalAppData $localAppData,
+		IUserSession $userSession
 	) {
 		$this->appData = $appData;
 		$this->documentConverter = $documentConverter;
@@ -57,6 +60,7 @@ class DocumentStore {
 		$this->rootFolder = $rootFolder;
 		$this->userManager = $userManager;
 		$this->localAppData = $localAppData;
+		$this->userSession = $userSession;
 	}
 
 	private function getDocumentFolder(int $documentId): ISimpleFolder {
@@ -146,7 +150,7 @@ class DocumentStore {
 
 		$targetExtension = $sourceFile->getExtension();
 
-		$this->localAppData->getReadWriteLocalPath($docFolder, function (string $localPath) use ($changes, $targetExtension, $sourceFile) {
+		$this->localAppData->getReadWriteLocalPath($docFolder, function (string $localPath) use ($owner, $changes, $targetExtension, $sourceFile) {
 			$target = $localPath . '/saved.' . $targetExtension;
 			$this->documentConverter->saveChanges($localPath, $changes, $target, $targetExtension);
 
@@ -160,7 +164,14 @@ class DocumentStore {
 				Filesystem::init($user, $userDir);
 			}
 
+			// set owner in user session for file hooks
+			$ownerObject = $this->userManager->get($owner);
+			$oldUser = $this->userSession->getUser();
+			$this->userSession->setUser($ownerObject);
+
 			$sourceFile->putContent(stream_get_contents($savedContent));
+
+			$this->userSession->setUser($oldUser);
 		});
 	}
 
