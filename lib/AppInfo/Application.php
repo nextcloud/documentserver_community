@@ -21,8 +21,6 @@
 
 namespace OCA\DocumentServer\AppInfo;
 
-use OC\AppFramework\Middleware\MiddlewareDispatcher;
-use OCA\DocumentServer\CSPMiddleware;
 use OCA\DocumentServer\IPC\DatabaseIPCFactory;
 use OCA\DocumentServer\IPC\IIPCFactory;
 use OCA\DocumentServer\IPC\IPCFactory;

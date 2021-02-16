@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 /**
  * @copyright Copyright (c) 2019 Robin Appelman <robin@icewind.nl>
  *
@@ -94,7 +96,7 @@ class DocumentConverter {
 			/** @var SplFileInfo $fileInfo */
 			if ($fileInfo->isLink()) {
 				unlink($fileInfo->getPathname());
-			} else if ($fileInfo->isDir()) {
+			} elseif ($fileInfo->isDir()) {
 				rmdir($fileInfo->getRealPath());
 			} else {
 				unlink($fileInfo->getRealPath());

@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 /**
  * @copyright Copyright (c) 2019 Robin Appelman <robin@icewind.nl>
  *
@@ -43,7 +45,7 @@ use OCP\IURLGenerator;
 use OCP\Security\ISecureRandom;
 
 class DocumentController extends SessionController {
-	const COMMAND_HANDLERS = [
+	public const COMMAND_HANDLERS = [
 		AuthCommand::class,
 		IsSaveLock::class,
 		SaveChangesCommand::class,
@@ -53,7 +55,7 @@ class DocumentController extends SessionController {
 		OpenDocument::class,
 	];
 
-	const IDLE_HANDLERS = [
+	public const IDLE_HANDLERS = [
 		SessionDisconnect::class,
 		LockExpire::class,
 	];

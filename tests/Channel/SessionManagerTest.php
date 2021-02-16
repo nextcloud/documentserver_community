@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 /**
  * @copyright Copyright (c) 2019 Robin Appelman <robin@icewind.nl>
  *
@@ -46,7 +48,7 @@ class SessionManagerTest extends TestCase {
 		$this->connection = \OC::$server->getDatabaseConnection();
 		$this->timeFactory = $this->createMock(ITimeFactory::class);
 		$this->timeFactory->method('getTime')
-			->willReturnCallback(function() {
+			->willReturnCallback(function () {
 				return $this->time;
 			});
 

@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 /**
  * @copyright Copyright (c) 2019 Robin Appelman <robin@icewind.nl>
  *
@@ -21,13 +23,12 @@
 
 namespace OCA\DocumentServer\Document;
 
-
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\DB\QueryBuilder\IQueryBuilder;
 use OCP\IDBConnection;
 
 class LockStore {
-	const TIMEOUT = 60;
+	public const TIMEOUT = 60;
 
 	private $connection;
 	private $timeFactory;

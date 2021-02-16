@@ -6,7 +6,6 @@ namespace OCA\DocumentServer\Migration;
 
 use Closure;
 use Doctrine\DBAL\Schema\Schema;
-use OCP\DB\ISchemaWrapper;
 use OCP\Migration\SimpleMigrationStep;
 use OCP\Migration\IOutput;
 

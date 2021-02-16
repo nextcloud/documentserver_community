@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 /**
  * @copyright Copyright (c) 2019 Robin Appelman <robin@icewind.nl>
  *
@@ -24,7 +26,6 @@ namespace OCA\DocumentServer\Tests\IPC;
 use OCA\DocumentServer\IPC\IIPCBackend;
 use OCA\DocumentServer\IPC\MemcacheIPCBackend;
 use OC\Memcache\ArrayCache;
-use Test\TestCase;
 
 class MemcacheIPCBackendTest extends BackendTest {
 	/** @var ArrayCache */

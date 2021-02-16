@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 /**
  * @copyright Copyright (c) 2020 Robin Appelman <robin@icewind.nl>
  *
@@ -38,13 +40,13 @@ class SetupCheck {
 		$x2t = ConverterBinary::BINARY_DIRECTORY . '/x2t';
 		if (!is_callable('proc_open')) {
 			return "'proc_open' needs to be enabled";
-		} else if (!is_callable('proc_close')) {
+		} elseif (!is_callable('proc_close')) {
 			return "'proc_close' needs to be enabled";
-		} else if (!file_exists($x2t)) {
+		} elseif (!file_exists($x2t)) {
 			return "x2t binary missing, please try removing and re-installing the app";
-		} else if (PHP_INT_SIZE === 4) {
+		} elseif (PHP_INT_SIZE === 4) {
 			return "32 bit setups are not supported";
-		} else if (PHP_OS_FAMILY  !== "Linux") {
+		} elseif (PHP_OS_FAMILY  !== "Linux") {
 			return "only linux based servers are supported";
 		}
 
@@ -55,9 +57,9 @@ class SetupCheck {
 		$ldError = $this->lddError();
 		if (strpos($ldError, 'ld-linux') !== false) {
 			return "using a musl libc based distribution is not supported";
-		} else if (strpos($ldError, 'version `GLIBC_') !== false) {
+		} elseif (strpos($ldError, 'version `GLIBC_') !== false) {
 			return "glibc version 2.17 or higher is required";
-		} else if ($ldError) {
+		} elseif ($ldError) {
 			return "one or more dependencies are missing or outdated";
 		}
 

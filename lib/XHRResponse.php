@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 /**
  * @copyright Copyright (c) 2019 Robin Appelman <robin@icewind.nl>
  *
@@ -27,7 +29,6 @@ use OCP\AppFramework\Http\IOutput;
 use OCP\AppFramework\Http\Response;
 
 class XHRResponse extends Response implements ICallbackResponse {
-
 	private $type;
 	private $data;
 
@@ -47,8 +48,6 @@ class XHRResponse extends Response implements ICallbackResponse {
 
 	public function callback(IOutput $output) {
 		if ($output->getHttpResponseCode() !== Http::STATUS_NOT_MODIFIED) {
-
-
 			if ($this->data) {
 				$encodedData = json_encode($this->data);
 				$escapedData = \GuzzleHttp\json_encode($encodedData);

@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 /**
  * @copyright Copyright (c) 2019 Robin Appelman <robin@icewind.nl>
  *
@@ -21,8 +23,6 @@
 
 namespace OCA\DocumentServer\OnlyOffice;
 
-
-use Behat\Testwork\Suite\Exception\ParameterNotFoundException;
 use OCP\Files\IRootFolder;
 use OCP\Files\File;
 use OCA\Onlyoffice\Crypt;
@@ -69,7 +69,7 @@ class URLDecoder {
 
 		$fileId = $hashData->fileId;
 
-		if(isset($hashData->shareToken)) {
+		if (isset($hashData->shareToken)) {
 			$share = $this->shareManager->getShareByToken($hashData->shareToken);
 
 			$node = $share->getNode();
@@ -87,9 +87,9 @@ class URLDecoder {
 		} else {
 			if ($this->userSession->isLoggedIn()) {
 				$userId = $this->userSession->getUser()->getUID();
-			} else if (isset($hashData->ownerId)) {
+			} elseif (isset($hashData->ownerId)) {
 				$userId = $hashData->ownerId;
-			} else if (isset($hashData->userId)) {
+			} elseif (isset($hashData->userId)) {
 				$userId = $hashData->userId;
 			} else {
 				throw new \Exception("Can't get owner id from document url");

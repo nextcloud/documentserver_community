@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 /**
  * @copyright Copyright (c) 2019 Robin Appelman <robin@icewind.nl>
  *
@@ -39,7 +41,7 @@ class LockExpire implements IIdleHandler {
 		if ($released) {
 			$locksMessage = json_encode([
 				"type" => "releaseLock",
-				"locks" => array_map(function(Lock $lock) {
+				"locks" => array_map(function (Lock $lock) {
 					$data = $lock->jsonSerialize();
 					$data['changes'] = null;
 					return $data;

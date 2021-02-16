@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 /**
  * @copyright Copyright (c) 2019 Robin Appelman <robin@icewind.nl>
  *
@@ -22,7 +24,6 @@
 namespace OCA\DocumentServer\Channel;
 
 use OCA\DocumentServer\XHRCommand\CommandDispatcher;
-use OCP\ICacheFactory;
 use OCA\DocumentServer\IPC\IIPCFactory;
 
 class ChannelFactory {

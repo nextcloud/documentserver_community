@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 /**
  * @copyright Copyright (c) 2019 Robin Appelman <robin@icewind.nl>
  *
@@ -25,7 +27,6 @@ use OCA\DocumentServer\Document\DocumentStore;
 use OCA\DocumentServer\OnlyOffice\URLDecoder;
 use OCA\DocumentServer\XMLResponse;
 use OCP\AppFramework\Controller;
-use OCP\AppFramework\Http\DataResponse;
 use OCP\IURLGenerator;
 
 class ConvertController extends Controller {

@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 /**
  * @copyright Copyright (c) 2019 Robin Appelman <robin@icewind.nl>
  *
@@ -26,7 +28,7 @@ use OCP\DB\QueryBuilder\IQueryBuilder;
 use OCP\IDBConnection;
 
 class DatabaseIPCBackend implements IIPCBackend {
-	const TIMEOUT = 120;
+	public const TIMEOUT = 120;
 
 	private $connection;
 	private $timeFactory;
@@ -89,4 +91,3 @@ class DatabaseIPCBackend implements IIPCBackend {
 		$query->execute();
 	}
 }
-

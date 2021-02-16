@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 /**
  * @copyright Copyright (c) 2020 Robin Appelman <robin@icewind.nl>
  *
@@ -21,15 +23,11 @@
 
 namespace OCA\DocumentServer\XHRCommand;
 
-
-use Icewind\Streams\Path;
-use Icewind\Streams\PathWrapper;
 use OCA\DocumentServer\Channel\Session;
 use OCA\DocumentServer\Document\DocumentStore;
 use OCA\DocumentServer\Document\PasswordRequiredException;
 use OCA\DocumentServer\IPC\IIPCChannel;
 use OCA\DocumentServer\OnlyOffice\URLDecoder;
-use OCP\Image;
 use OCP\ISession;
 use OCP\IURLGenerator;
 
@@ -80,12 +78,11 @@ class OpenDocument implements ICommandHandler {
 			]);
 
 			$sessionChannel->pushMessage($message);
-		} else if ($type === 'reopen' || $type === 'open') {
+		} elseif ($type === 'reopen' || $type === 'open') {
 			$this->openDocument($command['message'], $sessionChannel);
-		} else if ($type === 'imgurls') {
+		} elseif ($type === 'imgurls') {
 			$this->imageUrls($command['message'], $session, $sessionChannel, $documentChannel);
 		}
-
 	}
 
 	public function openDocument(array $openCmd, IIPCChannel $sessionChannel) {

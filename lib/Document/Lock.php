@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 /**
  * @copyright Copyright (c) 2019 Robin Appelman <robin@icewind.nl>
  *
@@ -20,7 +22,6 @@
  */
 
 namespace OCA\DocumentServer\Document;
-
 
 class Lock implements \JsonSerializable {
 	private $lockId;

@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 /**
  * @copyright Copyright (c) 2020 Robin Appelman <robin@icewind.nl>
  *
@@ -112,7 +114,7 @@ class LocalAppData {
 			if ($node instanceof Folder) {
 				@mkdir($localNodePath);
 				$this->copyToLocal($node, $localNodePath);
-			} else if ($node instanceof File) {
+			} elseif ($node instanceof File) {
 				file_put_contents($localNodePath, $node->fopen('r'));
 			}
 		}

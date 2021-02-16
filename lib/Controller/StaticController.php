@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 /**
  * @copyright Copyright (c) 2019 Robin Appelman <robin@icewind.nl>
  *
@@ -25,7 +27,6 @@ use OC\ForbiddenException;
 use OC\Security\CSP\ContentSecurityPolicy;
 use OC\Security\CSP\ContentSecurityPolicyNonceManager;
 use OCA\DocumentServer\Channel\SessionManager;
-use OCA\DocumentServer\Document\ConverterBinary;
 use OCA\DocumentServer\FileResponse;
 use OCA\DocumentServer\SetupCheck;
 use OCP\AppFramework\Controller;
@@ -92,7 +93,7 @@ class StaticController extends Controller {
 				$rawContent = file_get_contents($localPath);
 				$content = str_replace('__HINT__', addcslashes($hint, "'"), $rawContent);
 				return $this->createFileResponseWithContent($localPath, $content, false);
-			} else if ($this->sessionManager->getSessionCount() >= 20) {
+			} elseif ($this->sessionManager->getSessionCount() >= 20) {
 				$localPath = __DIR__ . '/../../js/sessionlimit.js';
 			}
 		}
@@ -101,7 +102,6 @@ class StaticController extends Controller {
 	}
 
 	private function createFileResponse($path) {
-
 		if (!file_exists($path)) {
 			return new NotFoundResponse();
 		}
@@ -156,4 +156,3 @@ class StaticController extends Controller {
 		return "[]";
 	}
 }
-

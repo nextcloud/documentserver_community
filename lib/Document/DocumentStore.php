@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 /**
  * @copyright Copyright (c) 2019 Robin Appelman <robin@icewind.nl>
  *
@@ -114,7 +116,6 @@ class DocumentStore {
 				$files[] = 'media/' . $mediaFile->getName();
 			}
 		} catch (NotFoundException $e) {
-
 		}
 
 		return $files;
@@ -229,7 +230,6 @@ class DocumentStore {
 		try {
 			$docFolder->getFile($title)->delete();
 		} catch (\Exception $e) {
-
 		}
 
 		$this->localAppData->getReadWriteLocalPath($docFolder, function (string $localPath) use ($title, $cmd, $sourceFile) {

@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 /**
  * @copyright Copyright (c) 2019 Robin Appelman <robin@icewind.nl>
  *
@@ -55,7 +57,8 @@ class SaveChangesCommand implements ICommandHandler {
 
 		$this->changeStore->addChangesForDocument($session->getDocumentId(), $changes, $session->getUserId(), $session->getUserOriginal());
 
-		$changeIndex = $this->changeStore->getMaxChangeIndexForDocument($session->getDocumentId());;
+		$changeIndex = $this->changeStore->getMaxChangeIndexForDocument($session->getDocumentId());
+		;
 
 		$documentChannel->pushMessage(json_encode([
 			'type' => 'saveChanges',

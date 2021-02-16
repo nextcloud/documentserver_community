@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 /**
  * @copyright Copyright (c) 2019 Robin Appelman <robin@icewind.nl>
  *
@@ -25,17 +27,12 @@ use OCA\DocumentServer\Channel\Session;
 use OCA\DocumentServer\Channel\SessionManager;
 use OCA\DocumentServer\Document\Change;
 use OCA\DocumentServer\Document\ChangeStore;
-use OCA\DocumentServer\Document\DocumentStore;
 use OCA\DocumentServer\Document\LockStore;
-use OCA\DocumentServer\Document\PasswordRequiredException;
-use OCA\DocumentServer\OnlyOffice\URLDecoder;
 use OCA\DocumentServer\IPC\IIPCChannel;
 use OCA\DocumentServer\OnlyOffice\WebVersion;
-use OCP\IURLGenerator;
-use function Sabre\HTTP\encodePathSegment;
 
 class AuthCommand implements ICommandHandler {
-	const MAX_CONNECTIONS = 20;
+	public const MAX_CONNECTIONS = 20;
 
 	private $changeStore;
 	private $sessionManager;

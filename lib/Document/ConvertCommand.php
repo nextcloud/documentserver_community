@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 /**
  * @copyright Copyright (c) 2019 Robin Appelman <robin@icewind.nl>
  *
@@ -89,7 +91,7 @@ class ConvertCommand implements XmlSerializable {
 		$this->fileTo = $fileTo;
 	}
 
-	function xmlSerialize(Writer $writer) {
+	public function xmlSerialize(Writer $writer) {
 		$xsiNS = "{http://www.w3.org/2001/XMLSchema-instance}";
 		$keyMap = [
 			"m_sFileFrom" => "fileFrom",

@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 /**
  * @copyright Copyright (c) 2019 Robin Appelman <robin@icewind.nl>
  *
@@ -59,7 +61,6 @@ class FileResponse extends Response implements ICallbackResponse {
 	}
 
 	public function setDownload() {
-
 		$encodedName = rawurlencode(basename($this->name));
 		$this->addHeader(
 			'Content-Disposition',

@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 /**
  * @copyright Copyright (c) 2019 Robin Appelman <robin@icewind.nl>
  *
@@ -35,10 +37,10 @@ class IPCFactory implements IIPCFactory {
 	 */
 	private function getBackend() {
 		/** @var IIPCBackendFactory[] $backends */
-		$backends = array_filter($this->backendFactories, function(IIPCBackendFactory $backendFactory) {
+		$backends = array_filter($this->backendFactories, function (IIPCBackendFactory $backendFactory) {
 			return $backendFactory->isAvailable();
 		});
-		usort($backends, function(IIPCBackendFactory $a, IIPCBackendFactory $b) {
+		usort($backends, function (IIPCBackendFactory $a, IIPCBackendFactory $b) {
 			return $a->getPriority() - $b->getPriority();
 		});
 

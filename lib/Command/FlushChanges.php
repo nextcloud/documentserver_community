@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 /**
  * @copyright Copyright (c) 2019 Robin Appelman <robin@icewind.nl>
  *
@@ -74,6 +76,6 @@ class FlushChanges extends Base {
 					$this->logger->logException($e, ['app' => 'documentserver_community', 'message' => 'Error while applying changes for document ' . $documentId]);
 				}
 			}
-	    }
+		}
 	}
 }

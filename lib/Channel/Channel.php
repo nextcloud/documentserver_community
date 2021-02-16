@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 /**
  * @copyright Copyright (c) 2019 Robin Appelman <robin@icewind.nl>
  *
@@ -23,16 +25,15 @@ namespace OCA\DocumentServer\Channel;
 
 use OCA\DocumentServer\XHRCommand\CommandDispatcher;
 use OCP\Files\NotFoundException;
-use OCP\IMemcache;
 use OCA\DocumentServer\IPC\IIPCChannel;
 
 class Channel {
-	const TYPE_OPEN = 'o';
-	const TYPE_HEARTBEAT = 'h';
-	const TYPE_ARRAY = 'a';
-	const TYPE_CLOSE = 'c';
+	public const TYPE_OPEN = 'o';
+	public const TYPE_HEARTBEAT = 'h';
+	public const TYPE_ARRAY = 'a';
+	public const TYPE_CLOSE = 'c';
 
-	const TIMEOUT = 25;
+	public const TIMEOUT = 25;
 
 	private $sessionId;
 	private $documentId;
