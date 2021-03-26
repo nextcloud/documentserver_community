@@ -31,61 +31,71 @@ use OCA\DocumentServer\OnlyOffice\AutoConfig;
 use OCA\DocumentServer\OnlyOffice\URLDecoder;
 use OCA\Onlyoffice\AppConfig;
 use OCA\Onlyoffice\Crypt;
+use OCP\App\IAppManager;
 use OCP\AppFramework\App;
+use OCP\AppFramework\Bootstrap\IBootContext;
+use OCP\AppFramework\Bootstrap\IBootstrap;
+use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use OCP\AppFramework\IAppContainer;
+use OCP\Files\IRootFolder;
+use OCP\IURLGenerator;
+use OCP\IUserSession;
+use OCP\Share\IManager;
 use OCP\Util;
 
-class Application extends App {
+class Application extends App implements IBootstrap {
 	public function __construct(array $urlParams = []) {
 		parent::__construct('documentserver_community', $urlParams);
+	}
 
-		$container = $this->getContainer();
-
-		$container->registerService(IIPCFactory::class, function (IAppContainer $c) {
+	public function register(IRegistrationContext $context): void {
+		$context->registerService(IIPCFactory::class, function (IAppContainer $c) {
 			$factory = new IPCFactory();
-			$factory->registerBackend($c->query(DatabaseIPCFactory::class));
-			$factory->registerBackend($c->query(MemcacheIPCFactory::class));
-			$factory->registerBackend($c->query(RedisIPCFactory::class));
+			$factory->registerBackend($c->get(DatabaseIPCFactory::class));
+			$factory->registerBackend($c->get(MemcacheIPCFactory::class));
+			$factory->registerBackend($c->get(RedisIPCFactory::class));
 
 			return $factory;
 		});
 
-		$container->registerService(URLDecoder::class, function (IAppContainer $container) {
+		$context->registerService(URLDecoder::class, function (IAppContainer $container) {
 			$server = $container->getServer();
 			$appConfig = new AppConfig('onlyoffice');
 			$crypto = new Crypt($appConfig);
 
 			return new URLDecoder(
 				$crypto,
-				$server->getUserSession(),
-				$server->getShareManager(),
-				$server->getRootFolder()
+				$server->get(IUserSession::class),
+				$server->get(IManager::class),
+				$server->get(IRootFolder::class)
 			);
 		});
 
-		$container->registerService(AutoConfig::class, function (IAppContainer $container) {
+		$context->registerService(AutoConfig::class, function (IAppContainer $container) {
 			$server = $container->getServer();
 			$appConfig = new AppConfig('onlyoffice');
 
 			return new AutoConfig(
-				$server->getURLGenerator(),
+				$server->get(IURLGenerator::class),
 				$appConfig
 			);
 		});
 	}
 
+	public function boot(IBootContext $context): void {
+		$context->injectFn(function (IAppManager $appManager) {
+			if ($appManager->isEnabledForUser('onlyoffice')) {
+				$this->getAutoConfig()->autoConfigIfNeeded();
+				Util::connectHook('\OCP\Config', 'js', $this->getJSSettingsHelper(), 'extend');
+			}
+		});
+	}
+
 	private function getJSSettingsHelper(): JSSettingsHelper {
-		return $this->getContainer()->query(JSSettingsHelper::class);
+		return $this->getContainer()->get(JSSettingsHelper::class);
 	}
 
 	private function getAutoConfig(): AutoConfig {
-		return $this->getContainer()->query(AutoConfig::class);
-	}
-
-	public function register() {
-		if ($this->getContainer()->getServer()->getAppManager()->isEnabledForUser('onlyoffice')) {
-			$this->getAutoConfig()->autoConfigIfNeeded();
-			Util::connectHook('\OCP\Config', 'js', $this->getJSSettingsHelper(), 'extend');
-		}
+		return $this->getContainer()->get(AutoConfig::class);
 	}
 }

@@ -48,7 +48,7 @@ class RedisIPCBackend implements IIPCBackend {
 			return null;
 		}
 
-		list(, $message) = $response;
+		[, $message] = $response;
 		if (is_string($message)) {
 			return $message;
 		} else {
