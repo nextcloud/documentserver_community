@@ -41,7 +41,7 @@ class Version001000Date20190806104527 extends SimpleMigrationStep {
 				'length' => 64,
 			]);
 			$table->addColumn('processing', 'boolean', [
-				'notnull' => true,
+				'notnull' => false,
 				'default' => false
 			]);
 			$table->setPrimaryKey(['change_id']);
@@ -73,7 +73,7 @@ class Version001000Date20190806104527 extends SimpleMigrationStep {
 				'length' => 6
 			]);
 			$table->addColumn('readonly', 'boolean', [
-				'notnull' => true
+				'notnull' => false
 			]);
 			$table->addColumn('user_index', 'bigint', [
 				'notnull' => true,
