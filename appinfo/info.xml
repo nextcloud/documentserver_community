@@ -12,7 +12,14 @@ If you are setting up a larger instance or require the additional performance, p
 
 The community document server will automatically be configured if no other document server is configured for OnlyOffice.
 
-Additionally, the community document server only supports running on x86-64 Linux servers.]]>
+Additionally, the community document server only supports running on x86-64 Linux servers.
+
+WARNING:
+
+This app was not developed by Ascensio and should only be seen as a "proof of concept" and is not intended for regular use!
+
+If you want to set up an instance for regular use, please see https://onlyoffice.com and https://apps.nextcloud.com/apps/onlyoffice for options
+for getting the official document server and Nextcloud connector by Ascensio.]]>
 	</description>
 	<version>0.1.10</version>
 	<licence>agpl</licence>
