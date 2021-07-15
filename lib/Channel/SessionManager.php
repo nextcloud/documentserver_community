@@ -29,7 +29,7 @@ use OCP\DB\QueryBuilder\IQueryBuilder;
 use OCP\IDBConnection;
 
 class SessionManager {
-        const EXPIRED_SESSION_TIMEOUT = 30;
+	const EXPIRED_SESSION_TIMEOUT = 30;
 	private $connection;
 	private $timeFactory;
 	private $ipcFactory;
@@ -131,7 +131,7 @@ class SessionManager {
 		$query = $this->connection->getQueryBuilder();
 
 		$cutoffTime = $this->timeFactory->getTime() -
-		        self::EXPIRED_SESSION_TIMEOUT;
+			self::EXPIRED_SESSION_TIMEOUT;
 
 		$query->select('session_id')
 			->from('documentserver_sess')
