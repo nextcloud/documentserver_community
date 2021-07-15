@@ -131,7 +131,7 @@ class SessionManager {
 		$query = $this->connection->getQueryBuilder();
 
 		$cutoffTime = $this->timeFactory->getTime() -
-		        EXPIRED_SESSION_TIMEOUT;
+		        self::EXPIRED_SESSION_TIMEOUT;
 
 		$query->select('session_id')
 			->from('documentserver_sess')
