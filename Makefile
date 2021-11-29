@@ -17,7 +17,7 @@ clean:
 	docker create --name oo-extract onlyoffice/documentserver:6.3.1.32
 	docker cp oo-extract:/var/www/onlyoffice/documentserver 3rdparty/onlyoffice
 	docker rm oo-extract
-	rm -r 3rdparty/onlyoffice/documentserver/server/{SpellChecker,Common,DocService}
+	rm -rf 3rdparty/onlyoffice/documentserver/server/{SpellChecker,Common,DocService}
 	cd 3rdparty/onlyoffice/documentserver/server/FileConverter/bin && \
 		../../tools/allfontsgen \
 		--input="../../../core-fonts" \
