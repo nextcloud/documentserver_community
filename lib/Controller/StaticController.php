@@ -66,6 +66,9 @@ class StaticController extends Controller {
 			throw new ForbiddenException();
 		}
 
+		// use english images for all help pages to save space
+		$path = preg_replace("|resources/help/\w+/images|", "resources/help/en/images", $path);
+
 		$localPath = __DIR__ . '/../../3rdparty/onlyoffice/documentserver/' . $path;
 
 		return $this->createFileResponse($localPath);
