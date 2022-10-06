@@ -14,7 +14,7 @@ clean:
 
 3rdparty/onlyoffice/documentserver:
 	mkdir -p 3rdparty/onlyoffice
-	docker create --name oo-extract onlyoffice/documentserver:6.4.2.6
+	docker create --name oo-extract onlyoffice/documentserver:7.2.0
 	docker cp oo-extract:/var/www/onlyoffice/documentserver 3rdparty/onlyoffice
 	docker rm oo-extract
 	rm -r 3rdparty/onlyoffice/documentserver/server/{Common,DocService}
