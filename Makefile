@@ -11,7 +11,6 @@ all: 3rdparty/onlyoffice/documentserver version
 clean:
 	rm -rf 3rdparty/onlyoffice
 	rm -rf build
-	docker rm -if oo-extract
 
 3rdparty/onlyoffice/documentserver:
 	mkdir -p 3rdparty/onlyoffice
