@@ -11,22 +11,24 @@ all: 3rdparty/onlyoffice/documentserver version
 clean:
 	rm -rf 3rdparty/onlyoffice
 	rm -rf build
+	docker rm -if oo-extract
 
 3rdparty/onlyoffice/documentserver:
 	mkdir -p 3rdparty/onlyoffice
 	docker create --name oo-extract onlyoffice/documentserver:7.2.1
 	docker cp oo-extract:/var/www/onlyoffice/documentserver 3rdparty/onlyoffice
 	docker rm oo-extract
-	chmod -R +w 3rdparty/
+	chmod -R 777 3rdparty/
+	cp 3rdparty/onlyoffice/documentserver/server/FileConverter/bin/lib*.so* 3rdparty/onlyoffice/documentserver/server/tools/
 	rm -rf 3rdparty/onlyoffice/documentserver/server/{Common,DocService}
-	cd 3rdparty/onlyoffice/documentserver/server/FileConverter/bin && \
-		../../tools/allfontsgen \
-		--input="../../../core-fonts" \
-		--allfonts-web="../../../sdkjs/common/AllFonts.js" \
-		--allfonts="AllFonts.js" \
-		--images="../../../sdkjs/common/Images" \
-		--output-web="../../../fonts" \
-		--selection="font_selection.bin"
+	cd 3rdparty/onlyoffice/documentserver/server/tools && \
+		./allfontsgen \
+		--input="../../core-fonts" \
+		--allfonts-web="../../sdkjs/common/AllFonts.js" \
+		--allfonts="../FileConverter/bin/AllFonts.js" \
+		--images="../../sdkjs/common/Images" \
+		--output-web="../../fonts" \
+		--selection="../FileConverter/bin/font_selection.bin"
 	sed -i 's/if(yb===d\[a\].ka)/if(d[a]\&\&yb===d[a].ka)/' 3rdparty/onlyoffice/documentserver/sdkjs/*/sdk-all.js
 
 version:
