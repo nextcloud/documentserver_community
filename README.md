@@ -44,7 +44,7 @@ Specific commands and paths will differ based on your specific setup.
 
 ## Setup from git
 
-When installing from git `make` and `docker` are required.
+When installing from git `make`, `curl`, `rpm2cpio`, and `cpio` are required.
 
 - clone the repo into the Nextcloud app directory 
 - run `make` in the app folder to download the 3rdparty components
