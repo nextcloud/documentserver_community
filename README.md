@@ -15,6 +15,8 @@ We'd like to also support ARM devices like the Raspberry Pi in the future.
 The community documentserver will automatically configure itself if no other document server is configured in the onlyoffice settings ("Document Editing Service address" is empty).
 All other "Server settings" should be left empty.
 
+If autoconfiguration fails for any reason, you may manually enter the url. Log in as the dsmin and go to Settings > ONLYOFFICE. For the ONLYOFFICE Docs address, enter the value in the format of `https://<nextcloud_server>/apps/documentserver_community/`.
+
 ## Adding fonts
 
 You can add custom fonts to the document server using the following occ commands
