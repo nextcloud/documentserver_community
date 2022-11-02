@@ -15,11 +15,15 @@ clean:
 
 3rdparty/onlyoffice/documentserver:
 	mkdir -p 3rdparty/onlyoffice
-	docker create --name oo-extract onlyoffice/documentserver:7.2.1
-	docker cp oo-extract:/var/www/onlyoffice/documentserver 3rdparty/onlyoffice
-	docker rm oo-extract
-	chmod -R 777 3rdparty/
-	cp 3rdparty/onlyoffice/documentserver/server/FileConverter/bin/lib*.so* 3rdparty/onlyoffice/documentserver/server/tools/
+	mkdir -p oo-extract
+	curl -sLO https://github.com/ONLYOFFICE/DocumentServer/releases/download/v7.2.1/onlyoffice-documentserver.x86_64.rpm
+	cd oo-extract && rpm2cpio ../onlyoffice-documentserver.x86_64.rpm | cpio -idm
+	chmod -R 777 oo-extract/
+	cp -r oo-extract/var/www/onlyoffice/documentserver 3rdparty/onlyoffice
+	cp oo-extract/usr/lib64/* 3rdparty/onlyoffice/documentserver/server/FileConverter/bin/
+	cp oo-extract/usr/lib64/* 3rdparty/onlyoffice/documentserver/server/tools/
+	rm -rf oo-extract
+	rm -f onlyoffice-documentserver.x86_64.rpm
 	rm -rf 3rdparty/onlyoffice/documentserver/server/{Common,DocService}
 	cd 3rdparty/onlyoffice/documentserver/server/tools && \
 		./allfontsgen \
