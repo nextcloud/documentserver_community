@@ -14,18 +14,24 @@ clean:
 
 3rdparty/onlyoffice/documentserver:
 	mkdir -p 3rdparty/onlyoffice
-	docker create --name oo-extract onlyoffice/documentserver:6.4.2.6
-	docker cp oo-extract:/var/www/onlyoffice/documentserver 3rdparty/onlyoffice
-	docker rm oo-extract
-	rm -r 3rdparty/onlyoffice/documentserver/server/{Common,DocService}
-	cd 3rdparty/onlyoffice/documentserver/server/FileConverter/bin && \
-		../../tools/allfontsgen \
-		--input="../../../core-fonts" \
-		--allfonts-web="../../../sdkjs/common/AllFonts.js" \
-		--allfonts="AllFonts.js" \
-		--images="../../../sdkjs/common/Images" \
-		--output-web="../../../fonts" \
-		--selection="font_selection.bin"
+	mkdir -p oo-extract
+	curl -sLO https://github.com/ONLYOFFICE/DocumentServer/releases/download/v7.2.1/onlyoffice-documentserver.x86_64.rpm
+	cd oo-extract && rpm2cpio ../onlyoffice-documentserver.x86_64.rpm | cpio -idm
+	chmod -R 777 oo-extract/
+	cp -r oo-extract/var/www/onlyoffice/documentserver 3rdparty/onlyoffice
+	cp oo-extract/usr/lib64/* 3rdparty/onlyoffice/documentserver/server/FileConverter/bin/
+	cp oo-extract/usr/lib64/* 3rdparty/onlyoffice/documentserver/server/tools/
+	rm -rf oo-extract
+	rm -f onlyoffice-documentserver.x86_64.rpm
+	rm -rf 3rdparty/onlyoffice/documentserver/server/{Common,DocService}
+	cd 3rdparty/onlyoffice/documentserver/server/tools && \
+		./allfontsgen \
+		--input="../../core-fonts" \
+		--allfonts-web="../../sdkjs/common/AllFonts.js" \
+		--allfonts="../FileConverter/bin/AllFonts.js" \
+		--images="../../sdkjs/common/Images" \
+		--output-web="../../fonts" \
+		--selection="../FileConverter/bin/font_selection.bin"
 	sed -i 's/if(yb===d\[a\].ka)/if(d[a]\&\&yb===d[a].ka)/' 3rdparty/onlyoffice/documentserver/sdkjs/*/sdk-all.js
 
 version:

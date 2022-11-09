@@ -1,2 +1,4 @@
 3rdparty/onlyoffice
 build
+oo-extract
+*.rpm
