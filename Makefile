@@ -23,8 +23,8 @@ clean:
 	cp oo-extract/usr/lib64/* 3rdparty/onlyoffice/documentserver/server/tools/
 	rm -rf oo-extract
 	rm -f onlyoffice-documentserver.x86_64.rpm
-	rm -rf 3rdparty/onlyoffice/documentserver/server/{Common,DocService}
-	rm -rf 3rdparty/onlyoffice/documentserver/web-apps/apps/*/main/resources/help/{de,es,fr,it,ru}/images
+	bash -c 'rm -rf 3rdparty/onlyoffice/documentserver/server/{Common,DocService}'
+	bash -c 'rm -rf 3rdparty/onlyoffice/documentserver/web-apps/apps/*/main/resources/help/{de,es,fr,it,ru}/images'
 	cd 3rdparty/onlyoffice/documentserver/server/tools && \
 		./allfontsgen \
 		--input="../../core-fonts" \
