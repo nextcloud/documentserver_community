@@ -45,7 +45,7 @@ class AutoConfig {
 	 * @return bool
 	 */
 	private function shouldAutoConfig(): bool {
-		return $this->appConfig->GetDocumentServerUrl() === '';
+		return !$this->appConfig->GetDocumentServerUrl();
 	}
 
 	/**
