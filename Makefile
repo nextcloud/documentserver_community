@@ -15,7 +15,7 @@ clean:
 3rdparty/onlyoffice/documentserver:
 	mkdir -p 3rdparty/onlyoffice
 	mkdir -p oo-extract
-	curl -sLO https://github.com/ONLYOFFICE/DocumentServer/releases/download/v7.4.1/onlyoffice-documentserver.x86_64.rpm
+	curl -sLO https://github.com/ONLYOFFICE/DocumentServer/releases/download/v7.2.2/onlyoffice-documentserver.x86_64.rpm
 	cd oo-extract && rpm2cpio ../onlyoffice-documentserver.x86_64.rpm | cpio -idm
 	chmod -R 777 oo-extract/
 	cp -r oo-extract/var/www/onlyoffice/documentserver 3rdparty/onlyoffice
