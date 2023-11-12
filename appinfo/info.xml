@@ -14,7 +14,7 @@ The community document server will automatically be configured if no other docum
 
 Additionally, the community document server only supports running on x86-64 Linux servers.]]>
 	</description>
-	<version>0.1.13</version>
+	<version>0.1.14</version>
 	<licence>agpl</licence>
 	<author>Robin Appelman</author>
 	<namespace>DocumentServer</namespace>
@@ -31,7 +31,7 @@ Additionally, the community document server only supports running on x86-64 Linu
 	<screenshot>https://raw.githubusercontent.com/nextcloud/documentserver_community/master/screenshots/main.png</screenshot>
 	<screenshot>https://raw.githubusercontent.com/nextcloud/documentserver_community/master/screenshots/new.png</screenshot>
 	<dependencies>
-		<nextcloud min-version="21" max-version="25"/>
+		<nextcloud min-version="21" max-version="27"/>
 	</dependencies>
 
 	<background-jobs>
