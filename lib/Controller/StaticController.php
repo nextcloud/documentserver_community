@@ -142,7 +142,6 @@ class StaticController extends Controller {
 		$csp->addAllowedScriptDomain('\'unsafe-inline\'');
 		$csp->addAllowedFrameDomain($this->request->getServerHost());
 		$response->setContentSecurityPolicy($csp);
-		$response->addHeader('Content-Security-Policy', $csp->buildPolicy());
 
 		return $response;
 	}
