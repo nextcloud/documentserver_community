@@ -96,8 +96,6 @@ class StaticController extends Controller {
 				$rawContent = file_get_contents($localPath);
 				$content = str_replace('__HINT__', addcslashes($hint, "'"), $rawContent);
 				return $this->createFileResponseWithContent($localPath, $content, false);
-			} elseif ($this->sessionManager->getSessionCount() >= 20) {
-				$localPath = __DIR__ . '/../../js/sessionlimit.js';
 			}
 		}
 

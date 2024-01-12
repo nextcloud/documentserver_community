@@ -41,7 +41,7 @@ class XHRResponse extends Response implements ICallbackResponse {
 		$this->type = $type;
 		$this->data = $data;
 		$this->setStatus($statusCode);
-		$this->setHeaders(array_merge($this->getHeaders(), $headers));
+		$this->setHeaders($headers);
 
 		$this->addHeader('Content-Type', 'application/javascript; charset=UTF-8');
 	}
