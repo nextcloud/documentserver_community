@@ -17,8 +17,7 @@ jobs:
           path: ${{ env.APP_NAME }}
       
       - name: Run build
-        run: cd ${{ env.APP_NAME }} && make
-#        run: cd ${{ env.APP_NAME }} && make appstore
+        run: cd ${{ env.APP_NAME }} && make appstore
 
       - name: Upload app tarball to release
         uses: svenstaro/upload-release-action@v2
