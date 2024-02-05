@@ -32,8 +32,6 @@ use OCA\DocumentServer\IPC\IIPCChannel;
 use OCA\DocumentServer\OnlyOffice\WebVersion;
 
 class AuthCommand implements ICommandHandler {
-	public const MAX_CONNECTIONS = 20;
-
 	private $changeStore;
 	private $sessionManager;
 	private $lockStore;
@@ -74,15 +72,6 @@ class AuthCommand implements ICommandHandler {
 		$session = $this->sessionManager->authenticate($session, $user['id'], $user['id'], $user['username'], $readOnly);
 
 		$participants = $this->sessionManager->getSessionsForDocument($session->getDocumentId());
-
-		if (count($participants) > self::MAX_CONNECTIONS) {
-			$sessionChannel->pushMessage(json_encode([
-				'type' => 'auth',
-				'result' => 0,
-			]));
-
-			return;
-		}
 
 		$sessionChannel->pushMessage(json_encode([
 			'type' => 'auth',

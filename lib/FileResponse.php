@@ -37,7 +37,7 @@ class FileResponse extends Response implements ICallbackResponse {
 		$this->data = $data;
 		$this->name = $name;
 		$this->setStatus($statusCode);
-		$this->setHeaders(array_merge($this->getHeaders(), $headers));
+		$this->setHeaders($headers);
 		$this->addHeader('Content-Length', $length);
 		$this->addHeader('Content-Type', $mimeType);
 
