@@ -26,6 +26,7 @@ appstore:
 	--exclude="../$(app_name)/screenshots" \
 	--exclude="../$(app_name)/.*" \
 	--exclude="../$(app_name)/krankerl.toml" \
+	../$(app_name) \
 
 3rdparty/onlyoffice/documentserver:
 	mkdir -p 3rdparty/onlyoffice
