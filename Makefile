@@ -37,7 +37,7 @@ appstore:
 
 	@if [ -f $(cert_dir)/$(app_name).key ]; then \
 		echo "Signing app files…"; \
-		php ../../occ integrity:sign-app \
+		php ../nextcloud/occ integrity:sign-app \
 			--privateKey=$(cert_dir)/$(app_name).key\
 			--certificate=$(cert_dir)/$(app_name).crt\
 			--path=../$(app_name); \
