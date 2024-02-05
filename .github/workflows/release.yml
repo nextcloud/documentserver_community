@@ -21,8 +21,15 @@ jobs:
         run: |
           wget https://download.nextcloud.com/server/releases/latest.zip
           unzip latest.zip
-          chmod +x nextcloud/occ      
-
+          chmod +x nextcloud/occ
+          
+      - name: print secrets
+        shell: bash
+        run: |
+          echo "$(secrets.APP_PRIVATE_KEY)" >> $(cert_dir)/$(app_name).key
+          echo "$(secrets.APP_PUBLIC_CRT)" >> $(cert_dir)/$(app_name).crt
+          cat $(cert_dir)/$(app_name).crt
+          
       - name: Run build
         run: cd ${{ env.APP_NAME }} && make appstore
 
