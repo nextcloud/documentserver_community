@@ -16,7 +16,13 @@ jobs:
         uses: actions/checkout@v4
         with:
           path: ${{ env.APP_NAME }}
-      
+
+      - name: Download Nextcloud command line tools
+        run: |
+          wget https://download.nextcloud.com/server/releases/latest.zip
+          unzip latest.zip
+          chmod +x nextcloud/occ      
+
       - name: Run build
         run: cd ${{ env.APP_NAME }} && make appstore
 
