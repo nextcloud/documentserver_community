@@ -2,7 +2,8 @@ app_name=documentserver_community
 project_dir=$(CURDIR)/../$(app_name)
 build_dir=$(project_dir)/build
 appstore_dir=$(build_dir)/appstore
-sign_dir=$(build_dir)/sign
+appstore_build_directory=$(CURDIR)/build/artifacts/appstore
+appstore_package_name=$(appstore_build_directory)/$(app_name)
 package_name=$(app_name)
 cert_dir=$(HOME)/.nextcloud/certificates
 
@@ -11,6 +12,21 @@ all: 3rdparty/onlyoffice/documentserver version
 clean:
 	rm -rf 3rdparty/onlyoffice
 	rm -rf build
+
+appstore:
+	make clean
+	make all
+	rm -rf $(appstore_build_directory)
+	mkdir -p $(appstore_build_directory)
+	tar cvzf $(appstore_package_name).tar.gz \
+	--exclude-vcs \
+	--exclude="../$(app_name)/build" \
+	--exclude="../$(app_name)/tests" \
+	--exclude="../$(app_name)/Makefile" \
+	--exclude="../$(app_name)/screenshots" \
+	--exclude="../$(app_name)/.*" \
+	--exclude="../$(app_name)/krankerl.toml" \
+	../$(app_name) \
 
 3rdparty/onlyoffice/documentserver:
 	mkdir -p 3rdparty/onlyoffice
