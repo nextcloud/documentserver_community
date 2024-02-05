@@ -26,8 +26,8 @@ jobs:
       - name: print secrets
         shell: bash
         run: |
-          echo "$(secrets.APP_PRIVATE_KEY)" >> $(cert_dir)/$(app_name).key
-          echo "$(secrets.APP_PUBLIC_CRT)" >> $(cert_dir)/$(app_name).crt
+          echo "$(APP_PRIVATE_KEY)" >> $(cert_dir)/$(app_name).key
+          echo "$(APP_PUBLIC_CRT)" >> $(cert_dir)/$(app_name).crt
           cat $(cert_dir)/$(app_name).crt
           
       - name: Run build
