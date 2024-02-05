@@ -1,11 +1,9 @@
 app_name=documentserver_community
 project_dir=$(CURDIR)/../$(app_name)
-build_dir=$(project_dir)/build
-appstore_build_directory=$(CURDIR)/build/artifacts/appstore
-appstore_package_name=$(appstore_build_directory)/$(app_name)
+build_dir=$(project_dir)/build/artifacts
 sign_dir=$(build_dir)/sign
 package_name=$(app_name)
-cert_dir=$(HOME)/.nextcloud/certificates
+cert_dir=$(CURDIR)/.cert
 
 all: 3rdparty/onlyoffice/documentserver version
 
@@ -16,9 +14,13 @@ clean:
 appstore:
 	make clean
 	make all
-	rm -rf $(appstore_build_directory)
-	mkdir -p $(appstore_build_directory)
-	tar cvzf $(appstore_package_name).tar.gz \
+	rm -rf $(build_dir)
+	mkdir -p $(sign_dir)
+	mkdir -p $(cert_dir)
+	echo $(APP_PRIVATE_KEY) > $(cert_dir)/$(app_name).key
+	echo $(APP_PUBLIC_CRT) > $(cert_dir)/$(app_name).crt
+
+	rsync -a \
 	--exclude-vcs \
 	--exclude="../$(app_name)/build" \
 	--exclude="../$(app_name)/tests" \
@@ -26,7 +28,22 @@ appstore:
 	--exclude="../$(app_name)/screenshots" \
 	--exclude="../$(app_name)/.*" \
 	--exclude="../$(app_name)/krankerl.toml" \
-	../$(app_name) \
+	$(project_dir)/  $(sign_dir)/$(app_name)
+	@if [ -f $(cert_dir)/$(app_name).key ]; then \
+		echo "Signing app files…"; \
+		php ../../occ integrity:sign-app \
+			--privateKey=$(cert_dir)/$(app_name).key\
+			--certificate=$(cert_dir)/$(app_name).crt\
+			--path=$(sign_dir)/$(app_name); \
+	fi
+	tar -czf $(build_dir)/$(app_name)-$(version).tar.gz \
+		-C $(sign_dir) $(app_name)
+	@if [ -f $(cert_dir)/$(app_name).key ]; then \
+		echo "Signing package…"; \
+		openssl dgst -sha512 -sign $(cert_dir)/$(app_name).key $(build_dir)/$(app_name)-$(version).tar.gz | openssl base64; \
+	fi
+	rm -rf $(cert_dir)
+
 
 3rdparty/onlyoffice/documentserver:
 	mkdir -p 3rdparty/onlyoffice
