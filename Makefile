@@ -21,7 +21,6 @@ appstore:
 	echo $(APP_PUBLIC_CRT) > $(cert_dir)/$(app_name).crt
 
 	rsync -a \
-	--exclude-vcs \
 	--exclude="../$(app_name)/build" \
 	--exclude="../$(app_name)/tests" \
 	--exclude="../$(app_name)/Makefile" \
