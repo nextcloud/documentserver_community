@@ -10,30 +10,12 @@ env:
 jobs:
   build_and_publish:
     runs-on: ubuntu-20.04
-    environment: release
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           path: ${{ env.APP_NAME }}
-
-      - name: Download Nextcloud command line tools
-        run: |
-          wget https://download.nextcloud.com/server/releases/latest.zip
-          unzip latest.zip
-          chmod +x nextcloud/occ
       
-      - name: print secrets
-        env:
-          APP_PRIVATE_KEY: ${{secrets.APP_PRIVATE_KEY}} 
-          APP_PUBLIC_CRT: ${{secrets.APP_PUBLIC_CRT}}      
-        shell: bash
-        run: |
-          mkdir -p ${{ env.APP_NAME }}/.cert
-          echo "$APP_PRIVATE_KEY" >> ${{ env.APP_NAME }}/.cert/${{ env.APP_NAME }}.key
-          echo "$APP_PUBLIC_CRT" >> ${{ env.APP_NAME }}/.cert/${{ env.APP_NAME }}.crt
-          cat ${{ env.APP_NAME }}/.cert/${{ env.APP_NAME }}.crt
-
       - name: Run build
         run: cd ${{ env.APP_NAME }} && make appstore
 
