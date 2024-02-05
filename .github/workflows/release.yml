@@ -30,8 +30,8 @@ jobs:
         shell: bash
         run: |
           mkdir -p ${{ env.APP_NAME }}/.cert
-          echo "$(APP_PRIVATE_KEY)" >> ${{ env.APP_NAME }}/.cert/${{ env.APP_NAME }}.key
-          echo "$(APP_PUBLIC_CRT)" >> ${{ env.APP_NAME }}/.cert/${{ env.APP_NAME }}.crt
+          echo "$APP_PRIVATE_KEY" >> ${{ env.APP_NAME }}/.cert/${{ env.APP_NAME }}.key
+          echo "$APP_PUBLIC_CRT" >> ${{ env.APP_NAME }}/.cert/${{ env.APP_NAME }}.crt
           cat${{ env.APP_NAME }}/.cert/${{ env.APP_NAME }}.crt
 
       - name: Run build
