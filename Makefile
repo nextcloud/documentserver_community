@@ -37,10 +37,13 @@ appstore:
 	cp -r oo-extract/var/www/onlyoffice/documentserver 3rdparty/onlyoffice
 	cp oo-extract/usr/lib64/* 3rdparty/onlyoffice/documentserver/server/FileConverter/bin/
 	cp oo-extract/usr/lib64/* 3rdparty/onlyoffice/documentserver/server/tools/
-	rm -rf oo-extract
 	rm -f onlyoffice-documentserver.x86_64.rpm
-	bash -c 'rm -rf 3rdparty/onlyoffice/documentserver/server/{Common,DocService}'
+	bash -c 'rm -rf 3rdparty/onlyoffice/documentserver/server/{Common/config/*,DocService}'
 	bash -c 'rm -rf 3rdparty/onlyoffice/documentserver/web-apps/apps/*/main/resources/help/{de,es,fr,it,ru}/images'
+	cp oo-extract/etc/onlyoffice/documentserver/default.json 3rdparty/onlyoffice/documentserver/server/Common/config/
+	rm -rf oo-extract
+	jq '.services.CoAuthoring.autoAssembly.enable = "true"' 3rdparty/onlyoffice/documentserver/server/Common/config/default.json > tmp.$$.json
+	mv tmp.$$.json 3rdparty/onlyoffice/documentserver/server/Common/config/default.json
 	cd 3rdparty/onlyoffice/documentserver/server/tools && \
 		./allfontsgen \
 		--input="../../core-fonts" \
