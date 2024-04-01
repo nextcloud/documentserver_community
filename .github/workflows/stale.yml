@@ -18,6 +18,7 @@ jobs:
           exempt-issue-labels: bug,pinned,security,planned
           exempt-pr-labels: bug,pinned,security,planned
           ascending: true
+          operations-per-run: 100
           stale-issue-label: "stale"
           stale-pr-label: "stale"
           stale-issue-message: |
