@@ -17,6 +17,10 @@ All other "Server settings" should be left empty.
 
 If autoconfiguration fails for any reason, you may manually enter the url. Log in as the admin and go to Settings > ONLYOFFICE. For the ONLYOFFICE Docs address, enter the value in the format of `https://<nextcloud_server>/apps/documentserver_community/`.
 
+## Update
+
+After community document server update and any related app (OnlyOffice app for example), you should clear your browser cache to get newer version running.
+
 ## Adding fonts
 
 You can add custom fonts to the document server using the following occ commands
