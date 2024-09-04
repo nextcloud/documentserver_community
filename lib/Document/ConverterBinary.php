@@ -51,7 +51,7 @@ class ConverterBinary {
 			$password = htmlspecialchars($password, ENT_XML1, 'UTF-8');
 			$cmd .= ' ' . escapeshellarg("<TaskQueueDataConvert><m_sPassword>$password</m_sPassword></TaskQueueDataConvert>");
 		}
-		$process = proc_open($cmd, $descriptorSpec, $pipes, self::BINARY_DIRECTORY, []);
+		$process = proc_open($cmd, $descriptorSpec, $pipes, self::BINARY_DIRECTORY, ["LD_LIBRARY_PATH" => "."]); 
 
 		@fclose($pipes[0]);
 		$output = @stream_get_contents($pipes[1]);
