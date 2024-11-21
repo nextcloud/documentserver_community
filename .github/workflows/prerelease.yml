@@ -2,7 +2,7 @@ name: Build and publish app release
 
 on:
   release:
-      types: [released]
+      types: [prereleased]
 
 env:
   APP_NAME: documentserver_community
@@ -29,12 +29,3 @@ jobs:
           asset_name: ${{ env.APP_NAME }}.tar.gz
           tag: ${{ github.ref }}
           overwrite: true
-
-      - name: Upload app to Nextcloud appstore
-        uses: R0Wi/nextcloud-appstore-push-action@v1
-        with:
-          app_name: ${{ env.APP_NAME }}
-          appstore_token: ${{ secrets.APPSTORE_TOKEN }}
-          download_url: ${{ steps.attach_to_release.outputs.browser_download_url }}
-          app_private_key: ${{ secrets.APP_PRIVATE_KEY }}
-          nightly: ${{ github.event.release.prerelease }} 
