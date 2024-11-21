@@ -2,7 +2,7 @@ name: Build and publish app release
 
 on:
   release:
-      types: [published]
+      types: [released]
 
 env:
   APP_NAME: documentserver_community
@@ -31,7 +31,6 @@ jobs:
           overwrite: true
 
       - name: Upload app to Nextcloud appstore
-        if: "!github.event.release.prerelease"      
         uses: R0Wi/nextcloud-appstore-push-action@v1
         with:
           app_name: ${{ env.APP_NAME }}
