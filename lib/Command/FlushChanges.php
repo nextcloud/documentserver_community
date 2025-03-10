@@ -30,7 +30,7 @@ use OCA\DocumentServer\Document\SaveHandler;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use OCP\ILogger;
+use Psr\Log\LoggerInterface;
 
 class FlushChanges extends Base {
 	private $saveHandler;
@@ -42,7 +42,7 @@ class FlushChanges extends Base {
 		SaveHandler $saveHandler,
 		DocumentStore $documentStore,
 		SessionManager $sessionManager,
-		ILogger $logger
+		LoggerInterface $logger
 	) {
 		parent::__construct();
 
@@ -73,7 +73,10 @@ class FlushChanges extends Base {
 				try {
 					$this->saveHandler->flushChanges($documentId);
 				} catch (\Exception $e) {
-					$this->logger->logException($e, ['app' => 'documentserver_community', 'message' => 'Error while applying changes for document ' . $documentId]);
+					$this->logger->error(
+						'Error while applying changes for document ' . $documentId, 
+						['exception' => $e, 'app' => 'documentserver_community']
+					);
 				}
 			}
 		}

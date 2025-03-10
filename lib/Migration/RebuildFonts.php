@@ -24,7 +24,7 @@ declare(strict_types=1);
 namespace OCA\DocumentServer\Migration;
 
 use OCA\DocumentServer\Document\FontManager;
-use OCP\ILogger;
+use Psr\Log\LoggerInterface;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 
@@ -32,7 +32,7 @@ class RebuildFonts implements IRepairStep {
 	private $fontManager;
 	private $logger;
 
-	public function __construct(FontManager $fontManager, ILogger $logger) {
+	public function __construct(FontManager $fontManager, LoggerInterface $logger) {
 		$this->fontManager = $fontManager;
 		$this->logger = $logger;
 	}
@@ -51,7 +51,7 @@ class RebuildFonts implements IRepairStep {
 		try {
 			$this->fontManager->rebuildFonts();
 		} catch (\Exception $e) {
-			$this->logger->logException($e);
+			$this->logger->warning('An exception occurred trying to rebuild fonts', ['exception' => $e]);
 			$output->warning("Error while trying to rebuild fonts, if you had any custom fonts configured you'll need to run `occ documentserver:fonts --rebuild`");
 		}
 	}
