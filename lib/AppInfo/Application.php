@@ -42,6 +42,8 @@ use OCP\IURLGenerator;
 use OCP\IUserSession;
 use OCP\Share\IManager;
 use OCP\Util;
+use OCP\ICacheFactory;
+use Psr\Log\LoggerInterface;
 
 class Application extends App implements IBootstrap {
 	public function __construct(array $urlParams = []) {
@@ -60,7 +62,7 @@ class Application extends App implements IBootstrap {
 
 		$context->registerService(URLDecoder::class, function (IAppContainer $container) {
 			$server = $container->getServer();
-			$appConfig = new AppConfig('onlyoffice');
+			$appConfig = new AppConfig('onlyoffice', \OC::$server->getConfig(), \OCP\Log\logger('onlyoffice'), \OC::$server->get(ICacheFactory::class));
 			$crypto = new Crypt($appConfig);
 
 			return new URLDecoder(
@@ -73,8 +75,7 @@ class Application extends App implements IBootstrap {
 
 		$context->registerService(AutoConfig::class, function (IAppContainer $container) {
 			$server = $container->getServer();
-			$appConfig = new AppConfig('onlyoffice');
-
+$appConfig = new AppConfig('onlyoffice', \OC::$server->getConfig(), \OCP\Log\logger('onlyoffice'), \OC::$server->get(ICacheFactory::class));
 			return new AutoConfig(
 				$server->get(IURLGenerator::class),
 				$appConfig
