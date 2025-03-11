@@ -75,7 +75,7 @@ class Application extends App implements IBootstrap {
 
 		$context->registerService(AutoConfig::class, function (IAppContainer $container) {
 			$server = $container->getServer();
-$appConfig = new AppConfig('onlyoffice', \OC::$server->getConfig(), \OCP\Log\logger('onlyoffice'), \OC::$server->get(ICacheFactory::class));
+			$appConfig = new AppConfig('onlyoffice', \OC::$server->getConfig(), \OCP\Log\logger('onlyoffice'), \OC::$server->get(ICacheFactory::class));
 			return new AutoConfig(
 				$server->get(IURLGenerator::class),
 				$appConfig
