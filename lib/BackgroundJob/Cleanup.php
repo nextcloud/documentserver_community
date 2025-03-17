@@ -30,7 +30,7 @@ use OCA\DocumentServer\Document\SaveHandler;
 use OCA\DocumentServer\IPC\DatabaseIPCBackend;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\Job;
-use OCP\ILogger;
+use Psr\Log\LoggerInterface;
 
 class Cleanup extends Job {
 	private $sessionManager;
@@ -47,7 +47,7 @@ class Cleanup extends Job {
 		SaveHandler $saveHandler,
 		LockStore $lockStore,
 		DatabaseIPCBackend $databaseIPCBackend,
-		ILogger $logger
+		LoggerInterface $logger
 	) {
 		parent::__construct($time);
 
@@ -70,7 +70,10 @@ class Cleanup extends Job {
 				try {
 					$this->saveHandler->flushChanges($documentId);
 				} catch (\Exception $e) {
-					$this->logger->logException($e, ['app' => 'documentserver_community', 'message' => 'Error while applying changes for document ' . $documentId]);
+					$this->logger->error(
+						'Error while applying changes for document ' . $documentId, 
+						['exception' => $e, 'app' => 'documentserver_community']
+					);
 				}
 			}
 		}

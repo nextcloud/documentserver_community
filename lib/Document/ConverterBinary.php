@@ -23,14 +23,14 @@ declare(strict_types=1);
 
 namespace OCA\DocumentServer\Document;
 
-use OCP\ILogger;
+use Psr\Log\LoggerInterface;
 
 class ConverterBinary {
 	public const BINARY_DIRECTORY = __DIR__ . '/../../3rdparty/onlyoffice/documentserver/server/FileConverter/bin';
 
 	private $logger;
 
-	public function __construct(ILogger $logger) {
+	public function __construct(LoggerInterface $logger) {
 		$this->logger = $logger;
 	}
 
@@ -78,10 +78,10 @@ class ConverterBinary {
 			if (trim((string)$e->getMessage()) === 'Empty sFileFrom or sFileTo') {
 				return true;
 			}
-			$this->logger->logException($e, [
-				'app' => 'documentserver_community',
-				'Message' => 'Error while testing x2t binary',
-			]);
+			$this->logger->error(
+				'Error while testing x2t binary', 
+				['exception' => $e, 'app' => 'documentserver_community']
+			);
 			return false;
 		}
 	}
