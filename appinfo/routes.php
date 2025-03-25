@@ -12,7 +12,7 @@ return [
 
 		['name' => 'CoAuthoring#command', 'url' => '/coauthoring/CommandService.ashx', 'verb' => 'POST'],
 
-		['name' => 'Convert#convert', 'url' => '/ConvertService.ashx', 'verb' => 'POST'],
+		['name' => 'Convert#convert', 'url' => '/converter', 'verb' => 'POST'],
 
 		['name' => 'Static#webApps', 'url' => '/web-apps/{path}', 'verb' => 'GET', 'requirements' => ['path' => '.+']],
 		['name' => 'Static#pluginsJSON', 'url' => '/plugins.json', 'verb' => 'GET'],
