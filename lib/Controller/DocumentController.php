@@ -40,6 +40,9 @@ use OCA\DocumentServer\XHRCommand\SessionDisconnect;
 use OCA\DocumentServer\XHRCommand\UnlockDocument;
 use OCA\DocumentServer\XHRCommand\OpenDocument;
 use OCP\AppFramework\Http\DataResponse;
+use OCP\AppFramework\Http\Attribute\NoAdminRequired;
+use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
+use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\IRequest;
 use OCP\IURLGenerator;
 use OCP\Security\ISecureRandom;
@@ -115,20 +118,17 @@ class DocumentController extends SessionController {
 		return self::IDLE_HANDLERS;
 	}
 
-	/**
-	 * @NoAdminRequired
-	 * @NoCSRFRequired
-	 * @PublicPage
-	 */
+	#[NoAdminRequired]
+	#[NoCSRFRequired]
+	#[PublicPage]
 	public function healthCheck() {
-		return true;
+		return new DataResponse(true);
+                //return true;
 	}
 
-	/**
-	 * @NoAdminRequired
-	 * @NoCSRFRequired
-	 * @PublicPage
-	 */
+	#[NoAdminRequired]
+	#[NoCSRFRequired]
+	#[PublicPage]
 	public function documentFile(int $docId, string $path, ?bool $download) {
 		$file = $this->documentStore->openDocumentFile($docId, $path);
 
@@ -146,11 +146,9 @@ class DocumentController extends SessionController {
 		return $response;
 	}
 
-	/**
-	 * @NoAdminRequired
-	 * @NoCSRFRequired
-	 * @PublicPage
-	 */
+	#[NoAdminRequired]
+	#[NoCSRFRequired]
+	#[PublicPage]
 	public function upload(int $docId, string $index) {
 		$content = fopen('php://input', 'r');
 		$mime = $this->request->getHeader('Content-Type');
@@ -170,11 +168,9 @@ class DocumentController extends SessionController {
 		]);
 	}
 
-	/**
-	 * @NoAdminRequired
-	 * @NoCSRFRequired
-	 * @PublicPage
-	 */
+	#[NoAdminRequired]
+	#[NoCSRFRequired]
+	#[PublicPage]
 	public function download(int $docId, string $cmd) {
 		$cmd = json_decode($cmd, true);
 		$content = fopen('php://input', 'r');

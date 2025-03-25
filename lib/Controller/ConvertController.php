@@ -26,7 +26,11 @@ namespace OCA\DocumentServer\Controller;
 use OCA\DocumentServer\Document\DocumentStore;
 use OCA\DocumentServer\OnlyOffice\URLDecoder;
 use OCA\DocumentServer\XMLResponse;
+use OCA\DocumentServer\JSONResponse;
 use OCP\AppFramework\Controller;
+use OCP\AppFramework\Http\Attribute\NoAdminRequired;
+use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
+use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\IURLGenerator;
 
 class ConvertController extends Controller {
@@ -41,14 +45,12 @@ class ConvertController extends Controller {
 	}
 
 
-	/**
-	 * @NoAdminRequired
-	 * @NoCSRFRequired
-	 * @PublicPage
-	 */
+    #[NoAdminRequired]
+    #[NoCSRFRequired]
+    #[PublicPage]
 	public function convert(bool $async, string $url, string $outputtype, string $filetype, string $title, string $key) {
 		if ($outputtype === $filetype) {
-			return new XMLResponse([
+			return new JSONResponse([
 				'FileUrl' => $url,
 				'Percent' => "100",
 				'EndConvert' => "True",
@@ -66,7 +68,7 @@ class ConvertController extends Controller {
 				]
 			);
 
-			return new XMLResponse([
+			return new JSONResponse([
 				'FileUrl' => $url,
 				'Percent' => "100",
 				'EndConvert' => "True",

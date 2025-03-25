@@ -23,21 +23,22 @@ declare(strict_types=1);
 
 namespace OCA\DocumentServer\Controller;
 
+use OCP\AppFramework\Http\DataResponse;
 use OCA\DocumentServer\OnlyOffice\WebVersion;
 use OCP\AppFramework\Controller;
+use OCP\AppFramework\Http\Attribute\NoAdminRequired;
+use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
+use OCP\AppFramework\Http\Attribute\PublicPage;
 
 class CoAuthoringController extends Controller {
-	/**
-	 * @NoAdminRequired
-	 * @NoCSRFRequired
-	 * @PublicPage
-	 */
+    #[NoAdminRequired]
+    #[NoCSRFRequired]
+    #[PublicPage]
 	public function command(string $c) {
 		switch ($c) {
 			case 'version':
 				$webVersion = new WebVersion();
-
-				return ['version' => $webVersion->getWebUIVersion(), 'error' => 0];
+				return new DataResponse(['version' => $webVersion->getWebUIVersion(), 'error' => 0]);
 			default:
 				return ['error' => 5];
 		}
