@@ -51,9 +51,9 @@ class ConvertController extends Controller {
 	public function convert(bool $async, string $url, string $outputtype, string $filetype, string $title, string $key) {
 		if ($outputtype === $filetype) {
 			return new JSONResponse([
-				'FileUrl' => $url,
-				'Percent' => "100",
-				'EndConvert' => "True",
+				'fileUrl' => $url,
+				'percent' => 100,
+				'endConvert' => true,
 			]);
 		} else {
 			$documentId = (int)$key;
@@ -69,9 +69,9 @@ class ConvertController extends Controller {
 			);
 
 			return new JSONResponse([
-				'FileUrl' => $url,
-				'Percent' => "100",
-				'EndConvert' => "True",
+				'fileUrl' => $url,
+				'percent' => 100,
+				'endConvert' => true,
 			]);
 		}
 	}
