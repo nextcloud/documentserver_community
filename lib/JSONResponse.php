@@ -45,8 +45,6 @@ class JSONResponse extends Response {
     }
 
     public function render() {
-        // Convert the data to JSON format and return it
-        $data = array_flip($this->data);
         return json_encode($this->data);
     }
 
