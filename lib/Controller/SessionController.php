@@ -27,6 +27,7 @@ use OCA\DocumentServer\XHRCommand\CommandDispatcher;
 use OCA\DocumentServer\Channel\ChannelFactory;
 use OCA\DocumentServer\XHRResponse;
 use OCP\AppFramework\Controller;
+use OCP\AppFramework\Http\DataResponse;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
@@ -73,12 +74,12 @@ abstract class SessionController extends Controller {
 	#[NoCSRFRequired]
 	#[PublicPage]
 	public function info(?string $version, string $documentId) {
-		return [
+		return new DataResponse([
 			'websocket' => false,
 			'origins' => ['*:*'],
 			'cookie_needed' => false,
 			'entropy' => (int)$this->random->generate(10, ISecureRandom::CHAR_DIGITS),
-		];
+		]);
 	}
 
 	protected function getCommandDispatcher() {
@@ -112,5 +113,7 @@ abstract class SessionController extends Controller {
 			$command = json_decode($encodedCommand, true);
 			$session->handleCommand($command);
 		}
+
+		return new DataResponse(null);
 	}
 }

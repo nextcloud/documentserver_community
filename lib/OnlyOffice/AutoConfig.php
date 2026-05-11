@@ -31,6 +31,7 @@ class AutoConfig {
 		'odp',
 		'ods',
 		'odt',
+		'pdf',
 		'ppt',
 		'pptx',
 		'xls',
