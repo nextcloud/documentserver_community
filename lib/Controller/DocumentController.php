@@ -130,6 +130,7 @@ class DocumentController extends SessionController {
 	#[NoCSRFRequired]
 	#[PublicPage]
 	public function documentFile(int $docId, string $path, ?bool $download) {
+		$path = ltrim($path, '/');
 		$file = $this->documentStore->openDocumentFile($docId, $path);
 
 		$response = new FileResponse(
