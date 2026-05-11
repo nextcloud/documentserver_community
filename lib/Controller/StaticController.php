@@ -30,6 +30,7 @@ use OCA\DocumentServer\Channel\SessionManager;
 use OCA\DocumentServer\FileResponse;
 use OCA\DocumentServer\SetupCheck;
 use OCP\AppFramework\Controller;
+use OCP\AppFramework\Http\DataResponse;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
@@ -151,6 +152,6 @@ class StaticController extends Controller {
 	#[NoAdminRequired]
 	#[PublicPage]
 	public function pluginsJSON() {
-		return "[]";
+		return new DataResponse([]);
 	}
 }
