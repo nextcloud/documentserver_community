@@ -27,6 +27,9 @@ use OCA\DocumentServer\XHRCommand\CommandDispatcher;
 use OCA\DocumentServer\Channel\ChannelFactory;
 use OCA\DocumentServer\XHRResponse;
 use OCP\AppFramework\Controller;
+use OCP\AppFramework\Http\Attribute\NoAdminRequired;
+use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
+use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\IRequest;
 use OCP\Security\ISecureRandom;
 
@@ -66,11 +69,9 @@ abstract class SessionController extends Controller {
 		}, $this->getIdleHandlerClasses());
 	}
 
-	/**
-	 * @NoAdminRequired
-	 * @NoCSRFRequired
-	 * @PublicPage
-	 */
+	#[NoAdminRequired]
+	#[NoCSRFRequired]
+	#[PublicPage]
 	public function info(?string $version, string $documentId) {
 		return [
 			'websocket' => false,
@@ -91,11 +92,9 @@ abstract class SessionController extends Controller {
 		return $dispatcher;
 	}
 
-	/**
-	 * @NoAdminRequired
-	 * @NoCSRFRequired
-	 * @PublicPage
-	 */
+	#[NoAdminRequired]
+	#[NoCSRFRequired]
+	#[PublicPage]
 	public function xhr(?string $version, string $documentId, string $serverId, string $sessionId) {
 		$session = $this->sessionFactory->getSession($sessionId, $documentId, $this->getCommandDispatcher(), $this->getInitialResponses());
 		[$type, $data] = $session->getResponse();
@@ -103,11 +102,9 @@ abstract class SessionController extends Controller {
 		return new XHRResponse($type, $data);
 	}
 
-	/**
-	 * @NoAdminRequired
-	 * @NoCSRFRequired
-	 * @PublicPage
-	 */
+	#[NoAdminRequired]
+	#[NoCSRFRequired]
+	#[PublicPage]
 	public function xhrSend(?string $version, string $documentId, string $serverId, string $sessionId) {
 		$commands = json_decode(file_get_contents('php://input'));
 		$session = $this->sessionFactory->getSession($sessionId, $documentId, $this->getCommandDispatcher());
