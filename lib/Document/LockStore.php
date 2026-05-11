@@ -23,6 +23,7 @@ declare(strict_types=1);
 
 namespace OCA\DocumentServer\Document;
 
+use OCA\DocumentServer\DB\QueryHelper;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\DB\QueryBuilder\IQueryBuilder;
 use OCP\IDBConnection;
@@ -50,7 +51,7 @@ class LockStore {
 				"time" => $query->createNamedParameter($this->timeFactory->getTime(), IQueryBuilder::PARAM_INT),
 				"block" => $query->createNamedParameter(json_encode($block)),
 			]);
-		$query->execute();
+		QueryHelper::executeStatement($query);
 	}
 
 	/**
@@ -63,7 +64,7 @@ class LockStore {
 			->from("documentserver_locks")
 			->where($query->expr()->eq("document_id",
 				$query->createNamedParameter($document, IQueryBuilder::PARAM_INT)));
-		$rows = $query->execute()->fetchAll();
+		$rows = QueryHelper::fetchAll($query);
 
 		$locks = array_map([Lock::class, "fromRow"], $rows);
 		$keys = array_map(function (Lock $lock, $key) {
@@ -78,7 +79,7 @@ class LockStore {
 	}
 
 	private function releaseLocksByQuery(IQueryBuilder $query): array {
-		$rows = $query->execute()->fetchAll();
+		$rows = QueryHelper::fetchAll($query);
 
 		$released = array_map([Lock::class, "fromRow"], $rows);
 
@@ -90,7 +91,7 @@ class LockStore {
 		$query->delete("documentserver_locks")
 			->where($query->expr()->in("lock_id",
 				$query->createNamedParameter($lockIds, IQueryBuilder::PARAM_INT_ARRAY)));
-		$query->execute();
+		QueryHelper::executeStatement($query);
 
 		return $released;
 	}
@@ -128,6 +129,6 @@ class LockStore {
 		$query->delete("documentserver_locks")
 			->where($query->expr()->lt("time",
 				$query->createNamedParameter($this->timeFactory->getTime() - self::TIMEOUT, IQueryBuilder::PARAM_INT)));
-		$query->execute();
+		QueryHelper::executeStatement($query);
 	}
 }

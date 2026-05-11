@@ -23,6 +23,7 @@ declare(strict_types=1);
 
 namespace OCA\DocumentServer\IPC;
 
+use OCA\DocumentServer\DB\QueryHelper;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\DB\QueryBuilder\IQueryBuilder;
 use OCP\IDBConnection;
@@ -46,7 +47,7 @@ class DatabaseIPCBackend implements IIPCBackend {
 		$query = $this->connection->getQueryBuilder();
 		$query->delete('documentserver_ipc')
 			->where($query->expr()->eq('session_id', $query->createNamedParameter($channel)));
-		$query->execute();
+		QueryHelper::executeStatement($query);
 	}
 
 	public function pushMessage(string $channel, string $message) {
@@ -57,7 +58,7 @@ class DatabaseIPCBackend implements IIPCBackend {
 				'time' => $query->createNamedParameter($this->timeFactory->getTime(), IQueryBuilder::PARAM_INT),
 				'message' => $query->createNamedParameter($message),
 			]);
-		$query->execute();
+		QueryHelper::executeStatement($query);
 	}
 
 	public function popMessage(string $channel, int $timeout): ?string {
@@ -68,11 +69,11 @@ class DatabaseIPCBackend implements IIPCBackend {
 			->orderBy('message_id', 'ASC')
 			->setMaxResults(1);
 
-		if ($row = $query->execute()->fetch()) {
+		if ($row = QueryHelper::fetchRow($query)) {
 			$query = $this->connection->getQueryBuilder();
 			$query->delete('documentserver_ipc')
 				->where($query->expr()->eq('message_id', $query->createNamedParameter($row['message_id'], IQueryBuilder::PARAM_INT)));
-			$deleted = $query->execute();
+			$deleted = QueryHelper::executeStatement($query);
 
 			// if we didn't delete the row there was a race we lost, so we'll try again later
 			if ($deleted === 1) {
@@ -88,6 +89,6 @@ class DatabaseIPCBackend implements IIPCBackend {
 		$query = $this->connection->getQueryBuilder();
 		$query->delete('documentserver_ipc')
 			->where($query->expr()->lt('time', $query->createNamedParameter($this->timeFactory->getTime() - self::TIMEOUT, IQueryBuilder::PARAM_INT)));
-		$query->execute();
+		QueryHelper::executeStatement($query);
 	}
 }
