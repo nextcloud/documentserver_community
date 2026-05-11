@@ -62,7 +62,7 @@ class ConvertController extends Controller {
 
 			$url = $this->urlGenerator->linkToRouteAbsolute(
 				'documentserver_community.Document.documentFile', [
-					'path' => '/convert.' . $outputtype,
+					'path' => 'convert.' . $outputtype,
 					'docId' => $documentId,
 				]
 			);
