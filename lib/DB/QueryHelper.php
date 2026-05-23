@@ -25,6 +25,11 @@ namespace OCA\DocumentServer\DB;
 
 use OCP\DB\QueryBuilder\IQueryBuilder;
 
+/**
+ * Compatibility shim for the Nextcloud DB query API.
+ * NC 28+ split IQueryBuilder::execute() into executeQuery() (SELECT) and executeStatement() (INSERT/UPDATE/DELETE).
+ * Each method falls back to the legacy execute() for older NC versions.
+ */
 class QueryHelper {
 	public static function fetchOne(IQueryBuilder $query) {
 		if (method_exists($query, 'executeQuery')) {
