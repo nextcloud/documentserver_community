@@ -23,6 +23,8 @@ declare(strict_types=1);
 
 namespace OCA\DocumentServer\Tests\Channel;
 
+use OCA\DocumentServer\DB\QueryHelper;
+use OCA\DocumentServer\IPC\IIPCFactory;
 use OCA\DocumentServer\Channel\SessionManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\IDBConnection;
@@ -37,6 +39,8 @@ class SessionManagerTest extends TestCase {
 	private $connection;
 	/** @var ITimeFactory|MockObject */
 	private $timeFactory;
+	/** @var IIPCFactory|MockObject */
+	private $ipcFactory;
 	/** @var SessionManager */
 	private $manager;
 
@@ -47,12 +51,13 @@ class SessionManagerTest extends TestCase {
 
 		$this->connection = \OC::$server->getDatabaseConnection();
 		$this->timeFactory = $this->createMock(ITimeFactory::class);
+		$this->ipcFactory = $this->createMock(IIPCFactory::class);
 		$this->timeFactory->method('getTime')
 			->willReturnCallback(function () {
 				return $this->time;
 			});
 
-		$this->manager = new SessionManager($this->connection, $this->timeFactory);
+		$this->manager = new SessionManager($this->connection, $this->timeFactory, $this->ipcFactory);
 	}
 
 	public function testNewGet() {
@@ -84,7 +89,8 @@ class SessionManagerTest extends TestCase {
 
 	protected function tearDown(): void {
 		$query = $this->connection->getQueryBuilder();
-		$query->delete('documentserver_sess')->execute();
+		$query->delete('documentserver_sess');
+		QueryHelper::executeStatement($query);
 
 		parent::tearDown();
 	}

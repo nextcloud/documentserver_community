@@ -23,6 +23,7 @@ declare(strict_types=1);
 
 namespace OCA\DocumentServer\Channel;
 
+use OCA\DocumentServer\DB\QueryHelper;
 use OCA\DocumentServer\IPC\IIPCFactory;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\DB\QueryBuilder\IQueryBuilder;
@@ -45,7 +46,7 @@ class SessionManager {
 
 		$query->select($query->func()->count())
 			->from('documentserver_sess');
-		return (int)$query->execute()->fetchColumn();
+		return (int)QueryHelper::fetchOne($query);
 	}
 
 	public function getSession(string $sessionId): ?Session {
@@ -55,7 +56,7 @@ class SessionManager {
 			->from('documentserver_sess')
 			->where($query->expr()->eq('session_id', $query->createNamedParameter($sessionId)));
 
-		$row = $query->execute()->fetch();
+		$row = QueryHelper::fetchRow($query);
 		if ($row) {
 			return Session::fromRow($row);
 		} else {
@@ -70,7 +71,8 @@ class SessionManager {
 			->from('documentserver_sess')
 			->where($query->expr()->eq('document_id', $query->createNamedParameter($documentId, \PDO::PARAM_INT)));
 
-		return $query->execute()->fetchColumn() + 1;
+		$index = QueryHelper::fetchOne($query);
+		return ($index === false || $index === null) ? 1 : (int)$index + 1;
 	}
 
 	public function newSession(string $sessionId, int $documentId) {
@@ -90,7 +92,7 @@ class SessionManager {
 				'readonly' => $query->createNamedParameter(1, \PDO::PARAM_INT),
 				'user_index' => $query->createNamedParameter($userId, \PDO::PARAM_INT),
 			]);
-		$query->execute();
+		QueryHelper::executeStatement($query);
 	}
 
 	public function authenticate(Session $session, string $user, string $userOriginal, string $userName, bool $readOnly): Session {
@@ -104,7 +106,7 @@ class SessionManager {
 			->set('username', $query->createNamedParameter($userName))
 			->set('readonly', $query->createNamedParameter($readOnly, \PDO::PARAM_INT))
 			->where($query->expr()->eq('session_id', $query->createNamedParameter($session->getSessionId())));
-		$query->execute();
+		QueryHelper::executeStatement($query);
 
 		return new Session(
 			$session->getSessionId(),
@@ -124,7 +126,7 @@ class SessionManager {
 		$query->update('documentserver_sess')
 			->set('last_seen', $query->createNamedParameter($this->timeFactory->getTime(), \PDO::PARAM_INT))
 			->where($query->expr()->eq('session_id', $query->createNamedParameter($sessionId)));
-		$query->execute();
+		QueryHelper::executeStatement($query);
 	}
 
 	private function getExpiredSessions(): array {
@@ -136,7 +138,7 @@ class SessionManager {
 		$query->select('session_id')
 			->from('documentserver_sess')
 			->where($query->expr()->lt('last_seen', $query->createNamedParameter($cutoffTime, \PDO::PARAM_INT)));
-		return $query->execute()->fetchAll(\PDO::FETCH_COLUMN);
+		return QueryHelper::fetchFirstColumn($query);
 	}
 
 	public function cleanSessions(): int {
@@ -150,7 +152,7 @@ class SessionManager {
 
 		$query->delete('documentserver_sess')
 			->where($query->expr()->in('session_id', $query->createNamedParameter($expiredSessions, IQueryBuilder::PARAM_STR_ARRAY)));
-		return $query->execute();
+		return QueryHelper::executeStatement($query);
 	}
 
 	public function isDocumentActive(int $documentId): bool {
@@ -170,7 +172,7 @@ class SessionManager {
 
 		return array_map(function (array $row) {
 			return Session::fromRow($row);
-		}, $query->execute()->fetchAll());
+		}, QueryHelper::fetchAll($query));
 	}
 
 	public function getSessionForUser(string $userId): ?Session {
@@ -180,7 +182,7 @@ class SessionManager {
 			->from('documentserver_sess')
 			->where($query->expr()->eq($query->func()->concat('user', 'user_index'), $query->createNamedParameter($userId)));
 
-		$row = $query->execute()->fetch();
+		$row = QueryHelper::fetchRow($query);
 		if ($row) {
 			return Session::fromRow($row);
 		} else {

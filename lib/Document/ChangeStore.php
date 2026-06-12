@@ -23,6 +23,7 @@ declare(strict_types=1);
 
 namespace OCA\DocumentServer\Document;
 
+use OCA\DocumentServer\DB\QueryHelper;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\IDBConnection;
 
@@ -64,7 +65,7 @@ class ChangeStore {
 				'user' => $query->createNamedParameter($user),
 				'user_original' => $query->createNamedParameter($userOriginal),
 			]);
-		$query->execute();
+		QueryHelper::executeStatement($query);
 	}
 
 	public function getMaxChangeIndexForDocument(int $documentId): int {
@@ -73,9 +74,9 @@ class ChangeStore {
 		$query->select($query->func()->max('change_index'))
 			->from('documentserver_changes')
 			->where($query->expr()->eq('document_id', $query->createNamedParameter($documentId, \PDO::PARAM_INT)));
-		$index = $query->execute()->fetchColumn();
+		$index = QueryHelper::fetchOne($query);
 
-		return ($index === false) ? -1 : (int)$index;
+		return ($index === false || $index === null) ? -1 : (int)$index;
 	}
 
 	public function getChangesForDocument(int $documentId): array {
@@ -85,7 +86,7 @@ class ChangeStore {
 			->from('documentserver_changes')
 			->where($query->expr()->eq('document_id', $query->createNamedParameter($documentId, \PDO::PARAM_INT)))
 			->orderBy('change_id', 'ASC');
-		$rows = $query->execute()->fetchAll();
+		$rows = QueryHelper::fetchAll($query);
 		return array_map([Change::class, 'fromRow'], $rows);
 	}
 
@@ -95,7 +96,7 @@ class ChangeStore {
 		$query->update('documentserver_changes')
 			->set('processing', $query->createNamedParameter(true, \PDO::PARAM_BOOL))
 			->where($query->expr()->eq('document_id', $query->createNamedParameter($documentId, \PDO::PARAM_INT)));
-		$query->execute();
+		QueryHelper::executeStatement($query);
 
 		$query = $this->connection->getQueryBuilder();
 
@@ -104,7 +105,7 @@ class ChangeStore {
 			->where($query->expr()->eq('document_id', $query->createNamedParameter($documentId, \PDO::PARAM_INT)))
 			->andWhere($query->expr()->eq('processing', $query->createNamedParameter(true, \PDO::PARAM_INT)))
 			->orderBy('change_id', 'ASC');
-		$rows = $query->execute()->fetchAll();
+		$rows = QueryHelper::fetchAll($query);
 		return array_map([Change::class, 'fromRow'], $rows);
 	}
 
@@ -114,7 +115,7 @@ class ChangeStore {
 		$query->update('documentserver_changes')
 			->set('processing', $query->createNamedParameter(false, \PDO::PARAM_BOOL))
 			->where($query->expr()->eq('document_id', $query->createNamedParameter($documentId, \PDO::PARAM_INT)));
-		$query->execute();
+		QueryHelper::executeStatement($query);
 	}
 
 	public function deleteProcessedChanges(int $documentId) {
@@ -123,7 +124,7 @@ class ChangeStore {
 		$query->delete('documentserver_changes')
 			->where($query->expr()->eq('document_id', $query->createNamedParameter($documentId, \PDO::PARAM_INT)))
 			->andWhere($query->expr()->eq('processing', $query->createNamedParameter(true, \PDO::PARAM_INT)));
-		$query->execute();
+		QueryHelper::executeStatement($query);
 	}
 
 	public function deleteChangesByIndex(int $documentId, int $changeIndex) {
@@ -132,6 +133,6 @@ class ChangeStore {
 		$query->delete('documentserver_changes')
 			->where($query->expr()->eq('document_id', $query->createNamedParameter($documentId, \PDO::PARAM_INT)))
 			->andWhere($query->expr()->gte('change_index', $query->createNamedParameter($changeIndex, \PDO::PARAM_INT)));
-		$query->execute();
+		QueryHelper::executeStatement($query);
 	}
 }

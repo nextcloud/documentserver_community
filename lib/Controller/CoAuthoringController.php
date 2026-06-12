@@ -40,7 +40,7 @@ class CoAuthoringController extends Controller {
 				$webVersion = new WebVersion();
 				return new DataResponse(['version' => $webVersion->getWebUIVersion(), 'error' => 0]);
 			default:
-				return ['error' => 5];
+				return new DataResponse(['error' => 5]);
 		}
 	}
 }

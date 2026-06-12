@@ -30,6 +30,10 @@ use OCA\DocumentServer\Channel\SessionManager;
 use OCA\DocumentServer\FileResponse;
 use OCA\DocumentServer\SetupCheck;
 use OCP\AppFramework\Controller;
+use OCP\AppFramework\Http\DataResponse;
+use OCP\AppFramework\Http\Attribute\NoAdminRequired;
+use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
+use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\NotFoundResponse;
 use OCP\Files\IMimeTypeDetector;
 use OCP\IRequest;
@@ -56,11 +60,9 @@ class StaticController extends Controller {
 		$this->sessionManager = $sessionManager;
 	}
 
-	/**
-	 * @NoCSRFRequired
-	 * @NoAdminRequired
-	 * @PublicPage
-	 */
+	#[NoCSRFRequired]
+	#[NoAdminRequired]
+	#[PublicPage]
 	public function thirdparty(string $path) {
 		if (strpos($path, '..') !== false) {
 			throw new ForbiddenException();
@@ -74,11 +76,9 @@ class StaticController extends Controller {
 		return $this->createFileResponse($localPath);
 	}
 
-	/**
-	 * @NoCSRFRequired
-	 * @NoAdminRequired
-	 * @PublicPage
-	 */
+	#[NoCSRFRequired]
+	#[NoAdminRequired]
+	#[PublicPage]
 	public function webApps(string $path) {
 		if (strpos($path, '..') !== false) {
 			throw new ForbiddenException();
@@ -148,12 +148,10 @@ class StaticController extends Controller {
 		return str_replace('<script', "<script nonce=\"$nonce\"", $content);
 	}
 
-	/**
-	 * @NoCSRFRequired
-	 * @NoAdminRequired
-	 * @PublicPage
-	 */
+	#[NoCSRFRequired]
+	#[NoAdminRequired]
+	#[PublicPage]
 	public function pluginsJSON() {
-		return "[]";
+		return new DataResponse([]);
 	}
 }
