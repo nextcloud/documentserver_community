@@ -117,6 +117,16 @@ class AutoConfig {
 		if (!$forceWrite && !$hasUnsupportedFormats) {
 			return;
 		}
+		// On initial config, enable all supported formats regardless of what FormatsSetting returns,
+		// so a fresh install does not end up with zero formats enabled.
+		if ($forceWrite) {
+			foreach (self::SUPPORTED_DEFAULT_FORMATS as $format) {
+				$defaultFormats[$format] = true;
+			}
+			foreach (self::SUPPORTED_EDIT_FORMATS as $format) {
+				$editFormats[$format] = true;
+			}
+		}
 
 		$this->appConfig->SetDefaultFormats($defaultFormats);
 		$this->appConfig->SetEditableFormats($editFormats);
