@@ -71,7 +71,8 @@ class SessionManager {
 			->from('documentserver_sess')
 			->where($query->expr()->eq('document_id', $query->createNamedParameter($documentId, \PDO::PARAM_INT)));
 
-		return QueryHelper::fetchOne($query) + 1;
+		$index = QueryHelper::fetchOne($query);
+		return ($index === false || $index === null) ? 1 : (int)$index + 1;
 	}
 
 	public function newSession(string $sessionId, int $documentId) {
