@@ -145,7 +145,7 @@ class SessionManager {
 		$expiredSessions = $this->getExpiredSessions();
 
 		foreach ($expiredSessions as $expiredSession) {
-			$this->ipcFactory->cleanupChannel("session_$expiredSession");
+			$this->ipcFactory->cleanupChannel($expiredSession);
 		}
 
 		$query = $this->connection->getQueryBuilder();

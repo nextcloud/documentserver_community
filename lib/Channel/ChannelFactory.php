@@ -36,7 +36,7 @@ class ChannelFactory {
 	}
 
 	public function getSession(string $sessionId, string $documentId, CommandDispatcher $commandDispatcher, array $initialResponses = []): Channel {
-		$key = "session_$sessionId";
+		$key = $sessionId;
 
 		return new Channel(
 			$sessionId,
