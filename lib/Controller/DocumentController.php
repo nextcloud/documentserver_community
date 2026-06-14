@@ -24,23 +24,25 @@ declare(strict_types=1);
 namespace OCA\DocumentServer\Controller;
 
 use OCA\DocumentServer\Channel\Channel;
+use OCA\DocumentServer\Channel\ChannelFactory;
 use OCA\DocumentServer\Channel\SessionManager;
+use OCA\DocumentServer\Document\DocumentStore;
 use OCA\DocumentServer\EngineIOResponse;
 use OCA\DocumentServer\FileResponse;
 use OCA\DocumentServer\IPC\IIPCFactory;
 use OCA\DocumentServer\OnlyOffice\URLDecoder;
 use OCA\DocumentServer\OnlyOffice\WebVersion;
 use OCA\DocumentServer\XHRCommand\AuthCommand;
+use OCA\DocumentServer\XHRCommand\CommandDispatcher;
 use OCA\DocumentServer\XHRCommand\CursorCommand;
 use OCA\DocumentServer\XHRCommand\GetLock;
 use OCA\DocumentServer\XHRCommand\IsSaveLock;
 use OCA\DocumentServer\XHRCommand\LockExpire;
+use OCA\DocumentServer\XHRCommand\OpenDocument;
 use OCA\DocumentServer\XHRCommand\SaveChangesCommand;
-use OCA\DocumentServer\Document\DocumentStore;
-use OCA\DocumentServer\Channel\ChannelFactory;
 use OCA\DocumentServer\XHRCommand\SessionDisconnect;
 use OCA\DocumentServer\XHRCommand\UnlockDocument;
-use OCA\DocumentServer\XHRCommand\OpenDocument;
+use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\DataResponse;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
@@ -48,10 +50,9 @@ use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\Response;
 use OCP\IRequest;
 use OCP\IURLGenerator;
-use OCP\Security\ISecureRandom;
 use Psr\Log\LoggerInterface;
 
-class DocumentController extends SessionController {
+class DocumentController extends Controller {
 	public const COMMAND_HANDLERS = [
 		AuthCommand::class,
 		IsSaveLock::class,
@@ -67,6 +68,7 @@ class DocumentController extends SessionController {
 		LockExpire::class,
 	];
 
+	private ChannelFactory $sessionFactory;
 	/** @var DocumentStore */
 	private $documentStore;
 	private $urlDecoder;
@@ -81,7 +83,6 @@ class DocumentController extends SessionController {
 		IRequest $request,
 		ChannelFactory $sessionFactory,
 		DocumentStore $documentStore,
-		ISecureRandom $random,
 		URLDecoder $urlDecoder,
 		IURLGenerator $urlGenerator,
 		WebVersion $webVersion,
@@ -89,8 +90,9 @@ class DocumentController extends SessionController {
 		SessionManager $sessionManager,
 		LoggerInterface $logger
 	) {
-		parent::__construct($appName, $request, $sessionFactory, $random);
+		parent::__construct($appName, $request);
 
+		$this->sessionFactory = $sessionFactory;
 		$this->documentStore = $documentStore;
 		$this->urlDecoder = $urlDecoder;
 		$this->urlGenerator = $urlGenerator;
@@ -100,7 +102,18 @@ class DocumentController extends SessionController {
 		$this->logger = $logger;
 	}
 
-	protected function getInitialResponses(): array {
+	private function getCommandDispatcher(): CommandDispatcher {
+		$dispatcher = new CommandDispatcher();
+		foreach (self::COMMAND_HANDLERS as $class) {
+			$dispatcher->addHandler(\OC::$server->query($class));
+		}
+		foreach (self::IDLE_HANDLERS as $class) {
+			$dispatcher->addIdleHandler(\OC::$server->query($class));
+		}
+		return $dispatcher;
+	}
+
+	private function getInitialResponses(): array {
 		return [[
 			'type' => 'license',
 			'license' => [
@@ -115,14 +128,6 @@ class DocumentController extends SessionController {
 				'plugins' => false,
 			],
 		]];
-	}
-
-	protected function getCommandHandlerClasses(): array {
-		return self::COMMAND_HANDLERS;
-	}
-
-	protected function getIdleHandlerClasses(): array {
-		return self::IDLE_HANDLERS;
 	}
 
 	#[NoAdminRequired]
@@ -331,19 +336,11 @@ class DocumentController extends SessionController {
 				return;
 			}
 
-			$rawCommand = $event[1];
-
-			// sdkjs may pass the command as a pre-serialised JSON string (legacy
-			// SockJS compatibility layer) or as a plain object (native Socket.IO 4.x).
-			if (is_string($rawCommand)) {
-				$command = json_decode($rawCommand, true);
-			} else {
-				$command = $rawCommand;
-			}
+			$command = $event[1];
 
 			if (!is_array($command)) {
 				$this->logger->debug('documentserver socketIO unrecognised command payload: {raw}', [
-					'raw' => json_encode($rawCommand),
+					'raw' => json_encode($command),
 				]);
 				return;
 			}
