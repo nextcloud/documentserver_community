@@ -51,7 +51,7 @@ class IPCMulticast implements IIPCChannel {
 		$allSessions = $this->sessionManager->getSessionsForDocument($this->documentId);
 		foreach ($allSessions as $session) {
 			if ($session->getSessionId() !== $this->sessionId) {
-				$channel = $this->ipcFactory->getChannel("session_" . $session->getSessionId());
+				$channel = $this->ipcFactory->getChannel($session->getSessionId());
 				$channel->pushMessage($message);
 			}
 		}

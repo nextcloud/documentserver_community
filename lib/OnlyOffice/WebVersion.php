@@ -25,6 +25,11 @@ namespace OCA\DocumentServer\OnlyOffice;
 
 class WebVersion {
 	public function getWebUIVersion(): string {
-		return '7.2.2';
+		$path = __DIR__ . '/../../3rdparty/onlyoffice/documentserver/web-apps/apps/api/documents/api.js';
+		$apiJS = file_get_contents($path);
+		if ($apiJS && preg_match("|DocsAPI\.DocEditor\.version\s*=\s*function\(\) *\{\n\s+return\s'(\d+\.\d+\.\d+)';\n\s+}|", $apiJS, $matches)) {
+			return $matches[1];
+		}
+		return '7.3.3';
 	}
 }

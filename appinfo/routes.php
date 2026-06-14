@@ -2,9 +2,12 @@
 
 return [
 	'routes' => [
-		['name' => 'Document#info', 'url' => '/3rdparty/onlyoffice/documentserver/doc/{documentId}/c/info', 'verb' => 'GET'],
-		['name' => 'Document#xhr', 'url' => '/3rdparty/onlyoffice/documentserver/doc/{documentId}/c/{serverId}/{sessionId}/xhr', 'verb' => 'POST'],
-		['name' => 'Document#xhrSend', 'url' => '/3rdparty/onlyoffice/documentserver/doc/{documentId}/c/{serverId}/{sessionId}/xhr_send', 'verb' => 'POST'],
+		// Engine.IO / socket.io 4.x long-polling
+		// Socket.IO client always appends a trailing slash to its path, so both variants are needed.
+		['name' => 'Document#socketIOPoll', 'url' => '/3rdparty/onlyoffice/documentserver/doc/{documentId}/c', 'verb' => 'GET'],
+		['name' => 'Document#socketIOPoll', 'url' => '/3rdparty/onlyoffice/documentserver/doc/{documentId}/c/', 'verb' => 'GET'],
+		['name' => 'Document#socketIOMessage', 'url' => '/3rdparty/onlyoffice/documentserver/doc/{documentId}/c', 'verb' => 'POST'],
+		['name' => 'Document#socketIOMessage', 'url' => '/3rdparty/onlyoffice/documentserver/doc/{documentId}/c/', 'verb' => 'POST'],
 		['name' => 'Document#healthCheck', 'url' => '/healthcheck', 'verb' => 'GET'],
 		['name' => 'Document#documentFile', 'url' => '/open/{docId}/{path}', 'verb' => 'GET', 'requirements' => ['path' => '.+']],
 		['name' => 'Document#upload', 'url' => '/3rdparty/onlyoffice/documentserver/upload/{docId}/{user}/{index}', 'verb' => 'POST'],

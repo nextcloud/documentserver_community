@@ -31,7 +31,7 @@ appstore:
 3rdparty/onlyoffice/documentserver:
 	mkdir -p 3rdparty/onlyoffice
 	mkdir -p oo-extract
-	curl -sLO https://github.com/ONLYOFFICE/DocumentServer/releases/download/v7.2.2/onlyoffice-documentserver.x86_64.rpm
+	curl -sLO https://github.com/ONLYOFFICE/DocumentServer/releases/download/v7.3.3/onlyoffice-documentserver.x86_64.rpm
 	cd oo-extract && rpm2cpio ../onlyoffice-documentserver.x86_64.rpm | cpio -idm
 	chmod -R 777 oo-extract/
 	cp -r oo-extract/var/www/onlyoffice/documentserver 3rdparty/onlyoffice
@@ -52,7 +52,7 @@ appstore:
 		--images="../../sdkjs/common/Images" \
 		--output-web="../../fonts" \
 		--selection="../FileConverter/bin/font_selection.bin"
-	sed -i 's/if(yb===d\[a\].ka)/if(d[a]\&\&yb===d[a].ka)/' 3rdparty/onlyoffice/documentserver/sdkjs/*/sdk-all.js
+	sed -i 's/if(yb===d\[a\].ka)/if(d[a]\&\&yb===d[a].ka)/' 3rdparty/onlyoffice/documentserver/sdkjs/*/sdk-all.js || true
 
 version:
 	VERSION=$$(grep -ozP "DocsAPI\.DocEditor\.version\s*=\s*function\(\) *\{\n\s+return\s\'\K(\d+.\d+.\d+)" 3rdparty/onlyoffice/documentserver/web-apps/apps/api/documents/api.js) ;\
