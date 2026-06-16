@@ -62,7 +62,7 @@ class Application extends App implements IBootstrap {
 
 		$context->registerService(URLDecoder::class, function (IAppContainer $container) {
 			$server = $container->getServer();
-			$appConfig = new AppConfig('onlyoffice', \OC::$server->getConfig(), \OCP\Log\logger('onlyoffice'), \OC::$server->get(ICacheFactory::class));
+			$appConfig = $this->buildAppConfig();
 			$crypto = new Crypt($appConfig);
 
 			return new URLDecoder(
@@ -75,12 +75,41 @@ class Application extends App implements IBootstrap {
 
 		$context->registerService(AutoConfig::class, function (IAppContainer $container) {
 			$server = $container->getServer();
-			$appConfig = new AppConfig('onlyoffice', \OC::$server->getConfig(), \OCP\Log\logger('onlyoffice'), \OC::$server->get(ICacheFactory::class));
+			$appConfig = $this->buildAppConfig();
 			return new AutoConfig(
 				$server->get(IURLGenerator::class),
 				$appConfig
 			);
 		});
+	}
+
+	/**
+	 * Build an onlyoffice AppConfig instance regardless of the connector version.
+	 *
+	 * The onlyoffice connector changed AppConfig's constructor signature over
+	 * time: up to 10.0 it was (string, IConfig, LoggerInterface, ICacheFactory);
+	 * from 10.1 it became (string, IAppConfig, IConfig, IUserConfig,
+	 * LoggerInterface, ICacheFactory). Detect the arity and pass accordingly so
+	 * this app keeps booting across connector and Nextcloud versions.
+	 */
+	private function buildAppConfig(): AppConfig {
+		$config = \OC::$server->getConfig();
+		$logger = \OCP\Log\logger('onlyoffice');
+		$cacheFactory = \OC::$server->get(ICacheFactory::class);
+
+		$paramCount = (new \ReflectionMethod(AppConfig::class, '__construct'))->getNumberOfParameters();
+		if ($paramCount >= 6) {
+			return new AppConfig(
+				'onlyoffice',
+				\OC::$server->get(\OCP\IAppConfig::class),
+				$config,
+				\OC::$server->get(\OCP\Config\IUserConfig::class),
+				$logger,
+				$cacheFactory
+			);
+		}
+
+		return new AppConfig('onlyoffice', $config, $logger, $cacheFactory);
 	}
 
 	public function boot(IBootContext $context): void {
