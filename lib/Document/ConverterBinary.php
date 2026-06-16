@@ -34,7 +34,7 @@ class ConverterBinary {
 		$this->logger = $logger;
 	}
 
-	public function run(string $param, string $password = null): string {
+	public function run(string $param, ?string $password = null): string {
 		if (!is_executable(self::BINARY_DIRECTORY . '/x2t')) {
 			@chmod(self::BINARY_DIRECTORY . '/x2t', 0755);
 		}
