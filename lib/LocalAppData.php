@@ -23,6 +23,7 @@ declare(strict_types=1);
 
 namespace OCA\DocumentServer;
 
+use OCP\Files\Cache\IScanner;
 use OCP\Files\Folder;
 use OCP\Files\File;
 use OCP\Files\IAppData;
@@ -30,6 +31,8 @@ use OCP\Files\NotFoundException;
 use OCP\Files\SimpleFS\ISimpleFolder;
 use OCP\IConfig;
 use OCP\ITempManager;
+use OCP\Lock\LockedException;
+use Psr\Log\LoggerInterface;
 
 /**
  * Provide local access to appdata folders
@@ -38,15 +41,18 @@ class LocalAppData {
 	private $appData;
 	private $config;
 	private $tmpManager;
+	private LoggerInterface $logger;
 
 	public function __construct(
 		IAppData $appData,
 		IConfig $config,
-		ITempManager $tmpManager
+		ITempManager $tmpManager,
+		LoggerInterface $logger
 	) {
 		$this->appData = $appData;
 		$this->config = $config;
 		$this->tmpManager = $tmpManager;
+		$this->logger = $logger;
 	}
 
 	/**
@@ -100,6 +106,33 @@ class LocalAppData {
 
 		if (is_dir($localPath)) {
 			$callback($localPath);
+			// The callback (e.g. x2t producing Editor.bin) writes straight to the
+			// on-disk appdata folder, bypassing the Nextcloud storage layer, so the
+			// file cache never learns about the new files and a later getFile() would
+			// throw NotFoundException. Rescan the folder so the writes become visible,
+			// see #70 (editor stuck on "Loading document" because Editor.bin is on disk
+			// but absent from oc_filecache). The temp-folder branch below does not need
+			// this because copyFromLocal() writes back through File::putContent(),
+			// which updates the cache itself. The scan must be RECURSIVE: x2t emits
+			// not just Editor.bin but a media/ subfolder of embedded images, and
+			// the open flow reads those back through the file API
+			// (DocumentStore::getEmbeddedFiles -> media/.getDirectoryListing()). A
+			// shallow scan would register Editor.bin but leave media/'s children
+			// uncached, so embedded images would silently fail to load. A
+			// concurrent writer can hold the scan lock; mirror NC core's
+			// backgroundScan and skip rather than fail the open, the next access
+			// rescans.
+			try {
+				$fullFolder->getStorage()->getScanner()->scan(
+					$fullFolder->getInternalPath(),
+					IScanner::SCAN_RECURSIVE
+				);
+			} catch (LockedException $e) {
+				$this->logger->warning(
+					'documentserver: appdata rescan after conversion skipped, folder locked',
+					['exception' => $e, 'app' => 'documentserver_community']
+				);
+			}
 		} else {
 			$localPath = $this->tmpManager->getTemporaryFolder();
 			$this->copyToLocal($fullFolder, $localPath);
