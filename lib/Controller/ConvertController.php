@@ -23,13 +23,16 @@ declare(strict_types=1);
 
 namespace OCA\DocumentServer\Controller;
 
+use OCA\DocumentServer\Document\DocumentConversionException;
 use OCA\DocumentServer\Document\DocumentStore;
+use OCA\DocumentServer\Document\PasswordRequiredException;
 use OCA\DocumentServer\OnlyOffice\URLDecoder;
 use OCA\DocumentServer\JSONResponse;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
+use OCP\IRequest;
 use OCP\IURLGenerator;
 
 class ConvertController extends Controller {
@@ -37,7 +40,14 @@ class ConvertController extends Controller {
 	private $urlDecoder;
 	private $urlGenerator;
 
-	public function __construct(DocumentStore $documentStore, URLDecoder $urlDecoder, IURLGenerator $urlGenerator) {
+	public function __construct(
+		string $appName,
+		IRequest $request,
+		DocumentStore $documentStore,
+		URLDecoder $urlDecoder,
+		IURLGenerator $urlGenerator
+	) {
+		parent::__construct($appName, $request);
 		$this->documentStore = $documentStore;
 		$this->urlDecoder = $urlDecoder;
 		$this->urlGenerator = $urlGenerator;
@@ -57,8 +67,22 @@ class ConvertController extends Controller {
 		} else {
 			$documentId = (int)$key;
 			$documentFile = $this->urlDecoder->getFileForUrl($url);
-			$this->documentStore->getDocumentForEditor($documentId, $documentFile, $filetype);
-			$this->documentStore->convert($documentId, $outputtype);
+
+			// A failed conversion must come back as a structured {"error": <code>}
+			// body, not as an uncaught exception: this is a plain HTTP endpoint
+			// with no other handler, so without this catch the converter's
+			// exception escapes as a 500 the caller can't interpret. This endpoint
+			// answers the connector over the server-side conversion API, whose
+			// error codes differ from the editor's c_oAscError space used in the
+			// socket replies: -5 incorrect password, -3 conversion error.
+			try {
+				$this->documentStore->getDocumentForEditor($documentId, $documentFile, $filetype);
+				$this->documentStore->convert($documentId, $outputtype);
+			} catch (PasswordRequiredException $e) {
+				return new JSONResponse(['error' => -5]);
+			} catch (DocumentConversionException $e) {
+				return new JSONResponse(['error' => -3]);
+			}
 
 			$url = $this->urlGenerator->linkToRouteAbsolute(
 				'documentserver_community.Document.documentFile', [
