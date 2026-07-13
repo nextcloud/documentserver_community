@@ -93,7 +93,7 @@ class Application extends App implements IBootstrap {
 	 * this app keeps booting across connector and Nextcloud versions.
 	 */
 	private function buildAppConfig(): AppConfig {
-		$config = \OC::$server->getConfig();
+		$config = \OC::$server->get(\OCP\IConfig::class);
 		$logger = \OCP\Log\logger('onlyoffice');
 		$cacheFactory = \OC::$server->get(ICacheFactory::class);
 
