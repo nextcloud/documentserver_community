@@ -71,6 +71,17 @@ class StaticController extends Controller {
 		// use english images for all help pages to save space
 		$path = preg_replace("|resources/help/\w+/images|", "resources/help/en/images", $path);
 
+		// A couple of files are requested at the documentserver root while the
+		// package ships them deeper in the tree; upstream nginx maps them.
+		// Without this the editor logs a 404 for each on every document open.
+		$rootAliases = [
+			'document_editor_service_worker.js' => 'sdkjs/common/serviceworker/document_editor_service_worker.js',
+			'themes.json' => 'web-apps/apps/common/main/resources/themes/themes.json',
+		];
+		if (isset($rootAliases[$path])) {
+			$path = $rootAliases[$path];
+		}
+
 		$localPath = __DIR__ . '/../../3rdparty/onlyoffice/documentserver/' . $path;
 
 		return $this->createFileResponse($localPath);
