@@ -7,6 +7,10 @@ appstore_package_name=$(appstore_build_directory)/$(app_name)
 package_name=$(app_name)
 cert_dir=$(HOME)/.nextcloud/certificates
 
+# ONLYOFFICE DocumentServer release to bundle. Override to test another one:
+#   make oo_version=v8.3.3 3rdparty/onlyoffice/documentserver
+oo_version=v7.3.3
+
 all: 3rdparty/onlyoffice/documentserver version
 
 clean:
@@ -31,7 +35,7 @@ appstore:
 3rdparty/onlyoffice/documentserver:
 	mkdir -p 3rdparty/onlyoffice
 	mkdir -p oo-extract
-	curl -sLO https://github.com/ONLYOFFICE/DocumentServer/releases/download/v7.3.3/onlyoffice-documentserver.x86_64.rpm
+	curl -sLO https://github.com/ONLYOFFICE/DocumentServer/releases/download/$(oo_version)/onlyoffice-documentserver.x86_64.rpm
 	cd oo-extract && rpm2cpio ../onlyoffice-documentserver.x86_64.rpm | cpio -idm
 	chmod -R 777 oo-extract/
 	cp -r oo-extract/var/www/onlyoffice/documentserver 3rdparty/onlyoffice
