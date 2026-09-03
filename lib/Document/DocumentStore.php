@@ -73,7 +73,7 @@ class DocumentStore {
 		}
 	}
 
-	public function getDocumentForEditor(int $documentId, File $sourceFile, string $sourceFormat, string $password = null): ISimpleFile {
+	public function getDocumentForEditor(int $documentId, File $sourceFile, string $sourceFormat, ?string $password = null): ISimpleFile {
 		$docFolder = $this->getDocumentFolder($documentId);
 		try {
 			return $docFolder->getFile('Editor.bin');
