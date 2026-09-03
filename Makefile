@@ -10,6 +10,7 @@ cert_dir=$(HOME)/.nextcloud/certificates
 # ONLYOFFICE DocumentServer release to bundle. Override to test another one:
 #   make oo_version=v8.3.3 3rdparty/onlyoffice/documentserver
 oo_version=v7.3.3
+oo_dir=$(CURDIR)/3rdparty/onlyoffice/documentserver
 
 all: 3rdparty/onlyoffice/documentserver version
 
@@ -86,6 +87,16 @@ appstore:
 	# used for loading, so they can stay as generated.
 	sed -i 's|"[^"]*/core-fonts/|"../../../core-fonts/|g' \
 		3rdparty/onlyoffice/documentserver/server/FileConverter/bin/AllFonts.js
+	# Build the presentation design themes. Another job the DocService we do not
+	# ship normally does: the package only carries their sources under
+	# sdkjs/slide/themes/src, so without this the presentation editor's design
+	# gallery is empty and it 404s on sdkjs/slide/themes/themes.js. Runs from
+	# FileConverter/bin, both for the converter libraries and so the font paths
+	# pinned just above resolve while it renders the thumbnails.
+	cd 3rdparty/onlyoffice/documentserver/server/FileConverter/bin && \
+		LD_LIBRARY_PATH=. ../../tools/allthemesgen \
+		--converter-dir="$(oo_dir)/server/FileConverter/bin" \
+		--src="$(oo_dir)/sdkjs/slide/themes"
 	sed -i 's/if(yb===d\[a\].ka)/if(d[a]\&\&yb===d[a].ka)/' 3rdparty/onlyoffice/documentserver/sdkjs/*/sdk-all.js || true
 
 version:
