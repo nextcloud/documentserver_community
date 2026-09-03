@@ -63,14 +63,29 @@ appstore:
 	rm -rf oo-extract
 	jq '.services.CoAuthoring.autoAssembly.enable = "true"' 3rdparty/onlyoffice/documentserver/server/Common/config/default.json > tmp.$$.json
 	mv tmp.$$.json 3rdparty/onlyoffice/documentserver/server/Common/config/default.json
+	# Since 9.x the converter's shared libraries only ship in
+	# FileConverter/bin (they used to come from /usr/lib64 and get copied next
+	# to the binary), so allfontsgen needs them on its library path. Paths stay
+	# relative to server/tools: 9.x resolves relative arguments against the
+	# binary's own directory, not the working directory.
 	cd 3rdparty/onlyoffice/documentserver/server/tools && \
-		./allfontsgen \
+		LD_LIBRARY_PATH=../FileConverter/bin ./allfontsgen \
 		--input="../../core-fonts" \
 		--allfonts-web="../../sdkjs/common/AllFonts.js" \
 		--allfonts="../FileConverter/bin/AllFonts.js" \
 		--images="../../sdkjs/common/Images" \
 		--output-web="../../fonts" \
 		--selection="../FileConverter/bin/font_selection.bin"
+	# Pin the generated font paths to x2t's working directory
+	# (server/FileConverter/bin). allfontsgen writes them out prefixed with its
+	# own working directory, which is neither where x2t runs nor the same path
+	# on the machine that installs the app; x2t then hands a null buffer to
+	# CFontFileLoader.LoadFontFromData and any change replay that has to measure
+	# text - saving a spreadsheet, for one - dies with "Cannot read property
+	# 'length' of null". The paths in font_selection.bin alongside it are not
+	# used for loading, so they can stay as generated.
+	sed -i 's|"[^"]*/core-fonts/|"../../../core-fonts/|g' \
+		3rdparty/onlyoffice/documentserver/server/FileConverter/bin/AllFonts.js
 	sed -i 's/if(yb===d\[a\].ka)/if(d[a]\&\&yb===d[a].ka)/' 3rdparty/onlyoffice/documentserver/sdkjs/*/sdk-all.js || true
 
 version:

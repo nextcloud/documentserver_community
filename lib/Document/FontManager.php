@@ -47,14 +47,19 @@ class FontManager {
 		}
 
 		$this->localAppData->getReadLocalPath($this->getFontDir(), function (string $fontsDir) {
-			$cmd = '../../tools/allfontsgen \
-				--input="../../../core-fonts" \
+			// Absolute paths throughout: since 9.x allfontsgen no longer
+			// resolves relative arguments against the working directory, and
+			// with relative ones it just writes out an empty font list.
+			$binDir = ConverterBinary::BINARY_DIRECTORY;
+			$documentServer = $binDir . '/../../..';
+			$cmd = $binDir . '/../../tools/allfontsgen \
+				--input="' . $documentServer . '/core-fonts" \
 				--input="' . $fontsDir . '" \
-				--allfonts-web="../../../sdkjs/common/AllFonts.js" \
-				--allfonts="AllFonts.js" \
-				--images="../../../sdkjs/common/Images" \
-				--output-web="../../../fonts" \
-				--selection="font_selection.bin"';
+				--allfonts-web="' . $documentServer . '/sdkjs/common/AllFonts.js" \
+				--allfonts="' . $binDir . '/AllFonts.js" \
+				--images="' . $documentServer . '/sdkjs/common/Images" \
+				--output-web="' . $documentServer . '/fonts" \
+				--selection="' . $binDir . '/font_selection.bin"';
 
 			$descriptorSpec = [
 				0 => ["pipe", "r"],// stdin
@@ -63,19 +68,58 @@ class FontManager {
 			];
 
 			$pipes = [];
-			$process = proc_open($cmd, $descriptorSpec, $pipes, ConverterBinary::BINARY_DIRECTORY, []);
+			// Same environment x2t is given: since 9.x the converter's shared
+			// libraries ship only in FileConverter/bin (the working directory
+			// here), and allfontsgen cannot load them without this.
+			$process = proc_open($cmd, $descriptorSpec, $pipes, ConverterBinary::BINARY_DIRECTORY, ["LD_LIBRARY_PATH" => "."]);
 
 			if (!$process) {
 				throw new \Exception("Failed to start allfontsgen");
 			}
 
 			fclose($pipes[0]);
+			$output = stream_get_contents($pipes[1]);
 			$error = stream_get_contents($pipes[2]);
+			fclose($pipes[1]);
+			fclose($pipes[2]);
+			$status = proc_close($process);
 
 			if ($error) {
 				throw new \Exception($error);
 			}
+
+			$this->finishFontList($binDir . '/AllFonts.js', $status, $output);
 		});
+	}
+
+	/**
+	 * Check what allfontsgen produced, then pin the bundled font paths to
+	 * x2t's working directory (server/FileConverter/bin).
+	 *
+	 * Two problems are handled here, both of which allfontsgen reports by
+	 * exiting successfully with nothing on stderr. It writes no font list at
+	 * all when it cannot create the file, and it writes an empty one when it
+	 * cannot find the fonts. It also prefixes every path it does write with its
+	 * own working directory, which stops resolving as soon as the app directory
+	 * moves. In each case x2t ends up handing a null buffer to
+	 * CFontFileLoader.LoadFontFromData, and any change replay that has to
+	 * measure text - saving a spreadsheet, for one - fails with "Cannot read
+	 * property 'length' of null". Paths to custom fonts live outside the app
+	 * directory and stay absolute.
+	 */
+	private function finishFontList(string $allFontsJs, int $status, string $output): void {
+		$content = @file_get_contents($allFontsJs);
+		if ($content === false || strpos($content, '/core-fonts/') === false) {
+			throw new \Exception(
+				"allfontsgen produced no usable font list in $allFontsJs (exit status $status) "
+				. trim($output)
+			);
+		}
+
+		$pinned = preg_replace('|"[^"]*/core-fonts/|', '"../../../core-fonts/', $content);
+		if ($pinned !== null && $pinned !== $content) {
+			file_put_contents($allFontsJs, $pinned);
+		}
 	}
 
 	private function getFontDir(): ISimpleFolder {
