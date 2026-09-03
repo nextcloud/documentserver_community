@@ -9,7 +9,7 @@ cert_dir=$(HOME)/.nextcloud/certificates
 
 # ONLYOFFICE DocumentServer release to bundle. Override to test another one:
 #   make oo_version=v8.3.3 3rdparty/onlyoffice/documentserver
-oo_version=v7.3.3
+oo_version=v9.4.0
 oo_dir=$(CURDIR)/3rdparty/onlyoffice/documentserver
 
 all: 3rdparty/onlyoffice/documentserver version
