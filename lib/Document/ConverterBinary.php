@@ -53,6 +53,14 @@ class ConverterBinary {
 		}
 		$process = proc_open($cmd, $descriptorSpec, $pipes, self::BINARY_DIRECTORY, ["LD_LIBRARY_PATH" => "."]);
 
+		// proc_open returns false if x2t couldn't be spawned at all (missing
+		// binary, fork failure). Without this the next lines fclose/read null
+		// pipes and proc_close(false) warns, and the caller silently gets no
+		// output instead of a clear failure.
+		if ($process === false) {
+			throw new DocumentConversionException("failed to start x2t");
+		}
+
 		@fclose($pipes[0]);
 		$output = @stream_get_contents($pipes[1]);
 		$error = @stream_get_contents($pipes[2]);
@@ -65,9 +73,18 @@ class ConverterBinary {
 
 		if ($error) {
 			throw new DocumentConversionException($error);
-		} else {
-			return $output;
 		}
+
+		// x2t can fail with a nonzero exit status while writing nothing to stderr;
+		// without this the caller treats a failed conversion as success and later
+		// trips over the missing Editor.bin, see #70. Stderr is checked first so its
+		// (more specific) message wins, including the "Empty sFileFrom or sFileTo"
+		// string that test() relies on.
+		if ($status !== 0) {
+			throw new DocumentConversionException("x2t exited with status $status");
+		}
+
+		return $output;
 	}
 
 	public function test(): bool {

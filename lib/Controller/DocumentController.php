@@ -187,7 +187,47 @@ class DocumentController extends Controller {
 	public function download(int $docId, string $cmd) {
 		$cmd = json_decode($cmd, true);
 		$content = fopen('php://input', 'r');
-		$title = $this->documentStore->convertForDownload($docId, $content, $cmd);
+
+		// A failed save-as conversion must be reported to the editor as a 'save'
+		// error, not escape as an uncaught 500: this endpoint has no other
+		// handler, and the editor is waiting on a documentOpen 'save' reply. Tell
+		// the session it failed (-4 = sdkjs DownloadError) so the user sees a
+		// failed download instead of a silent hang, then return the same error to
+		// the HTTP caller. The reply push is itself guarded: if the IPC backend is
+		// what failed, getChannel() would throw and re-raise an uncaught 500.
+		try {
+			$title = $this->documentStore->convertForDownload($docId, $content, $cmd);
+		} catch (\Exception $e) {
+			$this->logger->warning('documentserver download conversion error: {error}', [
+				'error' => $e->getMessage(),
+				'exception' => $e,
+			]);
+
+			try {
+				$session = $this->sessionManager->getSessionForUser($cmd['userconnectionid']);
+				if ($session) {
+					$this->ipcFactory->getChannel($session->getSessionId())->pushMessage(json_encode([
+						'type' => 'documentOpen',
+						'data' => [
+							'type' => 'save',
+							'status' => 'err',
+							'data' => -4,
+						],
+					]));
+				}
+			} catch (\Exception $replyError) {
+				$this->logger->warning('documentserver download could not deliver error reply: {error}', [
+					'error' => $replyError->getMessage(),
+					'exception' => $replyError,
+				]);
+			}
+
+			return new DataResponse([
+				'type' => 'save',
+				'status' => 'err',
+				'data' => -4,
+			]);
+		}
 
 		$session = $this->sessionManager->getSessionForUser($cmd['userconnectionid']);
 		if ($session) {
@@ -361,6 +401,35 @@ class DocumentController extends Controller {
 					'error' => $e->getMessage(),
 					'exception' => $e,
 				]);
+
+				// Don't let a failed command (e.g. the document failing to
+				// open) disappear into the log: with no reply the editor stays
+				// on "Loading document" forever. Push a documentOpen error so
+				// the client surfaces it instead of spinning. Same message shape
+				// the client already handles for the password case in
+				// OpenDocument::openDocument; sdkjs parses data as a
+				// c_oAscError.ID and shows the matching error, -4 is
+				// DownloadError ("download failed"), the closest generic
+				// open-failure code. Guard the reply itself: if the original
+				// failure was the IPC backend being unavailable, getChannel()
+				// throws too, and an unguarded re-throw here would turn the
+				// swallowed error back into an uncaught 500.
+				try {
+					$sessionChannel = $this->ipcFactory->getChannel($sid);
+					$sessionChannel->pushMessage(json_encode([
+						'type' => 'documentOpen',
+						'data' => [
+							'type' => 'open',
+							'status' => 'err',
+							'data' => -4,
+						],
+					]));
+				} catch (\Exception $replyError) {
+					$this->logger->warning('documentserver socketIO could not deliver error reply: {error}', [
+						'error' => $replyError->getMessage(),
+						'exception' => $replyError,
+					]);
+				}
 			}
 		}
 		// sio types '0' (CONNECT) and '1' (DISCONNECT) require no action here.
