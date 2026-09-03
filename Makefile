@@ -39,12 +39,27 @@ appstore:
 	cd oo-extract && rpm2cpio ../onlyoffice-documentserver.x86_64.rpm | cpio -idm
 	chmod -R 777 oo-extract/
 	cp -r oo-extract/var/www/onlyoffice/documentserver 3rdparty/onlyoffice
-	cp oo-extract/usr/lib64/* 3rdparty/onlyoffice/documentserver/server/FileConverter/bin/
-	cp oo-extract/usr/lib64/* 3rdparty/onlyoffice/documentserver/server/tools/
+	# Up to 8.x the package kept the converter's shared libraries in
+	# /usr/lib64 and expected the distro to place them on the library path;
+	# since 9.x they ship inside FileConverter/bin instead, so only copy them
+	# when that directory is actually there.
+	bash -c 'if [ -d oo-extract/usr/lib64 ]; then \
+		cp oo-extract/usr/lib64/* 3rdparty/onlyoffice/documentserver/server/FileConverter/bin/; \
+		cp oo-extract/usr/lib64/* 3rdparty/onlyoffice/documentserver/server/tools/; fi'
 	rm -f onlyoffice-documentserver.x86_64.rpm
 	bash -c 'rm -rf 3rdparty/onlyoffice/documentserver/server/{Common/config/*,DocService}'
 	bash -c 'rm -rf 3rdparty/onlyoffice/documentserver/web-apps/apps/*/main/resources/help/{de,es,fr,it,ru}/images'
 	cp oo-extract/etc/onlyoffice/documentserver/default.json 3rdparty/onlyoffice/documentserver/server/Common/config/
+	# Since 8.x the package ships web-apps api.js as an empty file plus an
+	# api.js.tpl that DocService normally renders at start-up. We do not ship
+	# DocService, so render it here. {{HASH_POSTFIX}} is left in place on
+	# purpose: extendAppPath() only inserts the "/<version>-<hash>" cache
+	# busting path segment once that placeholder is substituted, and we serve
+	# the web-apps tree unversioned.
+	bash -c 'if [ ! -s 3rdparty/onlyoffice/documentserver/web-apps/apps/api/documents/api.js ] && \
+		[ -f 3rdparty/onlyoffice/documentserver/web-apps/apps/api/documents/api.js.tpl ]; then \
+		cp 3rdparty/onlyoffice/documentserver/web-apps/apps/api/documents/api.js.tpl \
+		   3rdparty/onlyoffice/documentserver/web-apps/apps/api/documents/api.js; fi'
 	rm -rf oo-extract
 	jq '.services.CoAuthoring.autoAssembly.enable = "true"' 3rdparty/onlyoffice/documentserver/server/Common/config/default.json > tmp.$$.json
 	mv tmp.$$.json 3rdparty/onlyoffice/documentserver/server/Common/config/default.json
