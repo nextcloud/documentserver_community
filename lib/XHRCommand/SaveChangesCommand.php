@@ -46,10 +46,29 @@ class SaveChangesCommand implements ICommandHandler {
 		return 'saveChanges';
 	}
 
+	/**
+	 * A save may arrive split over several messages: sdkjs slices its change
+	 * array into chunks of at most websocketMaxPayloadSize (1.5 MB) and flags
+	 * the first and last one. Absent flags mean a single, complete message.
+	 */
+	private static function isFirstChunk(array $command): bool {
+		return !isset($command['startSaveChanges']) || (bool)$command['startSaveChanges'];
+	}
+
+	private static function isLastChunk(array $command): bool {
+		return !isset($command['endSaveChanges']) || (bool)$command['endSaveChanges'];
+	}
+
 	public function handle(array $command, Session $session, IIPCChannel $sessionChannel, IIPCChannel $documentChannel, CommandDispatcher $commandDispatcher): void {
 		$changes = json_decode($command['changes']);
 
-		if ($command['deleteIndex']) {
+		$isFirstChunk = self::isFirstChunk($command);
+		$isLastChunk = self::isLastChunk($command);
+
+		// deleteIndex is repeated on every chunk of the same save, and it is
+		// relative to the change store as it was before the save started, so
+		// re-applying it once we have stored a chunk would delete that chunk.
+		if ($isFirstChunk && $command['deleteIndex']) {
 			$this->changeStore->deleteChangesByIndex($session->getDocumentId(), (int)$command['deleteIndex']);
 		}
 
@@ -58,7 +77,6 @@ class SaveChangesCommand implements ICommandHandler {
 		$this->changeStore->addChangesForDocument($session->getDocumentId(), $changes, $session->getUserId(), $session->getUserOriginal());
 
 		$changeIndex = $this->changeStore->getMaxChangeIndexForDocument($session->getDocumentId());
-		;
 
 		$documentChannel->pushMessage(json_encode([
 			'type' => 'saveChanges',
@@ -71,8 +89,27 @@ class SaveChangesCommand implements ICommandHandler {
 			'startIndex' => $startIndex,
 			'changesIndex' => $changeIndex,
 			'locks' => [],
-			'excelAdditionalInfo' => '{}',
+			// Relayed, not synthesised: for spreadsheets this carries the
+			// recalcIndexRows/recalcIndexColumns the receiver needs to shift
+			// other users' locks after a row or column insert, and for text
+			// documents it carries the sender's cursor position, which is how
+			// foreign cursors move during fast co-editing.
+			'excelAdditionalInfo' => $command['excelAdditionalInfo'] ?? null,
+			// Both flags have to be relayed: the receiving sdkjs buffers the
+			// changes of every message whose endSaveChanges is not true and
+			// only applies the batch once it sees the closing one. Sending the
+			// broadcast without them means every remote change is buffered
+			// forever, so nothing a co-author types ever appears.
+			'startSaveChanges' => $isFirstChunk,
+			'endSaveChanges' => $isLastChunk,
 		]));
+
+		if (!$isLastChunk) {
+			// Mid-save: the client waits for savePartChanges before sending the
+			// next chunk, and the locks stay held until the save completes.
+			$sessionChannel->pushMessage('{"type":"savePartChanges","changesIndex":' . $changeIndex . '}');
+			return;
+		}
 
 		if ($command["releaseLocks"]) {
 			$released = $this->lockStore->releaseLocks($session->getDocumentId(), $session->getUserId());
