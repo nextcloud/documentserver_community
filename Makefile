@@ -25,6 +25,7 @@ appstore:
 	mkdir -p $(appstore_build_directory)
 	tar czf $(appstore_package_name).tar.gz \
 	--exclude-vcs \
+	--exclude="../$(app_name)/3rdparty/onlyoffice/documentserver/fonts" \
 	--exclude="../$(app_name)/build" \
 	--exclude="../$(app_name)/tests" \
 	--exclude="../$(app_name)/Makefile" \
@@ -48,8 +49,16 @@ appstore:
 		cp oo-extract/usr/lib64/* 3rdparty/onlyoffice/documentserver/server/FileConverter/bin/; \
 		cp oo-extract/usr/lib64/* 3rdparty/onlyoffice/documentserver/server/tools/; fi'
 	rm -f onlyoffice-documentserver.x86_64.rpm
-	bash -c 'rm -rf 3rdparty/onlyoffice/documentserver/server/{Common/config/*,DocService}'
-	bash -c 'rm -rf 3rdparty/onlyoffice/documentserver/web-apps/apps/*/main/resources/help/{de,es,fr,it,ru}/images'
+	bash -c 'rm -rf 3rdparty/onlyoffice/documentserver/server/{Common/config/*,DocService,Metrics}'
+	# npm and Metrics belong to the Node DocService, which we replace with
+	# the PHP implementation and never ship, so they are dead weight.
+	rm -rf 3rdparty/onlyoffice/documentserver/npm
+	# Every language's help images are served from the english set (see
+	# StaticController::thirdparty), so ship only those. The hardcoded
+	# language list this replaces had gone stale as upstream added pt, tr
+	# and sr-Latn, leaving 200+ MB of screenshots nothing can request.
+	bash -c 'for d in 3rdparty/onlyoffice/documentserver/web-apps/apps/*/main/resources/help/*/images; do \
+		case "$$d" in */help/en/images) ;; *) rm -rf "$$d" ;; esac; done'
 	cp oo-extract/etc/onlyoffice/documentserver/default.json 3rdparty/onlyoffice/documentserver/server/Common/config/
 	# Since 8.x the package ships web-apps api.js as an empty file plus an
 	# api.js.tpl that DocService normally renders at start-up. We do not ship
@@ -97,6 +106,8 @@ appstore:
 		LD_LIBRARY_PATH=. ../../tools/allthemesgen \
 		--converter-dir="$(oo_dir)/server/FileConverter/bin" \
 		--src="$(oo_dir)/sdkjs/slide/themes"
+	# only input for the generator above
+	rm -rf 3rdparty/onlyoffice/documentserver/sdkjs/slide/themes/src
 	sed -i 's/if(yb===d\[a\].ka)/if(d[a]\&\&yb===d[a].ka)/' 3rdparty/onlyoffice/documentserver/sdkjs/*/sdk-all.js || true
 
 version:

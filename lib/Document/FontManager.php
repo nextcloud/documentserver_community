@@ -47,6 +47,13 @@ class FontManager {
 		}
 
 		$this->localAppData->getReadLocalPath($this->getFontDir(), function (string $fontsDir) {
+			// The web font directory is generated here rather than shipped -
+			// it is the same 188 files as core-fonts in the form the browser
+			// downloads, and together they would push the app archive over the
+			// app store's size limit. allfontsgen does not create its output
+			// directory, so a fresh install has nowhere to put them.
+			@mkdir(ConverterBinary::BINARY_DIRECTORY . '/../../../fonts', 0755, true);
+
 			// Absolute paths throughout: since 9.x allfontsgen no longer
 			// resolves relative arguments against the working directory, and
 			// with relative ones it just writes out an empty font list.
