@@ -56,6 +56,27 @@ class AuthCommand implements ICommandHandler {
 		return 'auth';
 	}
 
+	/**
+	 * Whether the client asked for a read-only session.
+	 *
+	 * sdkjs up to 7.5 sent an explicit `view` boolean with the auth command.
+	 * 8.0 dropped it and only sends `mode` ('view' or 'edit') together with
+	 * the `permissions` object from the editor config, so fall back to those.
+	 */
+	private static function isReadOnly(array $command): bool {
+		if (isset($command['view'])) {
+			return (bool)$command['view'];
+		}
+		if (isset($command['mode'])) {
+			return $command['mode'] === 'view';
+		}
+		$permissions = $command['permissions'] ?? [];
+		if (is_array($permissions) && isset($permissions['edit'])) {
+			return !$permissions['edit'];
+		}
+		return false;
+	}
+
 	public function handle(array $command, Session $session, IIPCChannel $sessionChannel, IIPCChannel $documentChannel, CommandDispatcher $commandDispatcher): void {
 		$changes = $this->changeStore->getChangesForDocument($session->getDocumentId());
 
@@ -67,7 +88,7 @@ class AuthCommand implements ICommandHandler {
 		]));
 
 		$user = $command['user'];
-		$readOnly = $command['view'];
+		$readOnly = self::isReadOnly($command);
 
 		$session = $this->sessionManager->authenticate($session, $user['id'], $user['id'], $user['username'], $readOnly);
 

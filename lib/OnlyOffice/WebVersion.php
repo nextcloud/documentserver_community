@@ -30,6 +30,6 @@ class WebVersion {
 		if ($apiJS && preg_match("|DocsAPI\.DocEditor\.version\s*=\s*function\(\) *\{\n\s+return\s'(\d+\.\d+\.\d+)';\n\s+}|", $apiJS, $matches)) {
 			return $matches[1];
 		}
-		return '7.3.3';
+		return '9.4.0';
 	}
 }

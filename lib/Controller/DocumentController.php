@@ -314,7 +314,18 @@ class DocumentController extends Controller {
 				// Wrap as socket.io EVENT: 4=EIO message, 2=sio event.
 				// sdkjs >= 7.3 uses Socket.IO 4.x which delivers the argument
 				// as a plain object, not a JSON string, so pass $data directly.
-				return new EngineIOResponse('42' . json_encode(['message', $data]));
+				//
+				// A PING (EIO type 2) rides along in the same payload, packets
+				// separated by 0x1e. The client resets its ping timeout only
+				// when it sees a PING - a data packet does not count - and a
+				// session that keeps receiving data never reaches the heartbeat
+				// branch below, so without this it tears the transport down
+				// after pingInterval + pingTimeout and reconnects in the middle
+				// of editing. With two people in a document that shows up as
+				// participants dropping out and reappearing under new ids.
+				return new EngineIOResponse(
+					'42' . json_encode(['message', $data]) . "\x1e" . '2'
+				);
 
 			case Channel::TYPE_CLOSE:
 				return new EngineIOResponse('41');  // socket.io DISCONNECT

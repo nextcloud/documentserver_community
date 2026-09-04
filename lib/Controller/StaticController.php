@@ -71,6 +71,17 @@ class StaticController extends Controller {
 		// use english images for all help pages to save space
 		$path = preg_replace("|resources/help/\w+/images|", "resources/help/en/images", $path);
 
+		// A couple of files are requested at the documentserver root while the
+		// package ships them deeper in the tree; upstream nginx maps them.
+		// Without this the editor logs a 404 for each on every document open.
+		$rootAliases = [
+			'document_editor_service_worker.js' => 'sdkjs/common/serviceworker/document_editor_service_worker.js',
+			'themes.json' => 'web-apps/apps/common/main/resources/themes/themes.json',
+		];
+		if (isset($rootAliases[$path])) {
+			$path = $rootAliases[$path];
+		}
+
 		$localPath = __DIR__ . '/../../3rdparty/onlyoffice/documentserver/' . $path;
 
 		return $this->createFileResponse($localPath);
@@ -114,6 +125,7 @@ class StaticController extends Controller {
 		$isHTML = pathinfo($path, PATHINFO_EXTENSION) === 'html';
 		if ($isHTML) {
 			$content = $this->addScriptNonce($content, $this->nonceManager->getNonce());
+			$content = $this->makeStyleSheetsBlocking($content);
 		}
 
 		$mime = $this->mimeTypeHelper->detectPath($path);
@@ -146,6 +158,28 @@ class StaticController extends Controller {
 
 	private function addScriptNonce(string $content, string $nonce): string {
 		return str_replace('<script', "<script nonce=\"$nonce\"", $content);
+	}
+
+	/**
+	 * Load the editor's stylesheets normally instead of asynchronously.
+	 *
+	 * Since 8.0 the editor html pulls its CSS in with the "async CSS" trick:
+	 *   <link rel="stylesheet" href="..." media="print" onload="this.media='all'">
+	 * We serve that html under a CSP carrying a script nonce, and a nonce makes
+	 * the browser ignore 'unsafe-inline', so the inline onload never runs, the
+	 * sheet stays at media="print" and the editor renders unstyled. Rewriting
+	 * these links into plain blocking stylesheets fixes the rendering without
+	 * having to drop the nonce from the policy.
+	 */
+	private function makeStyleSheetsBlocking(string $content): string {
+		return preg_replace_callback(
+			'/<link\b[^>]*rel=(["\'])stylesheet\1[^>]*>/i',
+			function (array $match): string {
+				$tag = preg_replace('/\son(?:load|error)=(["\']).*?\1/i', '', $match[0]);
+				return preg_replace('/\smedia=(["\'])print\1/i', ' media="all"', $tag);
+			},
+			$content
+		);
 	}
 
 	#[NoCSRFRequired]
