@@ -87,6 +87,22 @@ class StaticController extends Controller {
 		return $this->createFileResponse($localPath);
 	}
 
+	/**
+	 * sdkjs, reachable one directory prefix up.
+	 *
+	 * The editor HTML is written for a document server that owns the origin
+	 * root, so its script path for sdkjs walks up past ours - which lives
+	 * three directories deeper - and the browser gives up at
+	 * /3rdparty/sdkjs/... Serving the same files there costs nothing: they are
+	 * already public under the full prefix.
+	 */
+	#[NoCSRFRequired]
+	#[NoAdminRequired]
+	#[PublicPage]
+	public function sdkjsRoot(string $path) {
+		return $this->thirdparty('sdkjs/' . $path);
+	}
+
 	#[NoCSRFRequired]
 	#[NoAdminRequired]
 	#[PublicPage]
