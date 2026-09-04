@@ -39,6 +39,8 @@ use OCP\IUserManager;
 use OCP\IUserSession;
 
 class DocumentStore {
+	private const SNAPSHOT_FILE = 'snapshot';
+
 	private $appData;
 	private $documentConverter;
 	private $config;
@@ -256,6 +258,27 @@ class DocumentStore {
 		});
 
 		return '/convert.' . $targetFormat;
+	}
+
+	/**
+	 * The change index the document was last written out at.
+	 *
+	 * Lets a repeated snapshot of an untouched document cost a query instead of
+	 * a full converter run. -1 for a document that has never been written out,
+	 * so that index 0 (open, nothing typed yet) is not mistaken for it.
+	 */
+	public function getSnapshotIndex(int $documentId): int {
+		$docFolder = $this->getDocumentFolder($documentId);
+		try {
+			return (int)$docFolder->getFile(self::SNAPSHOT_FILE)->getContent();
+		} catch (NotFoundException $e) {
+			return -1;
+		}
+	}
+
+	public function setSnapshotIndex(int $documentId, int $changeIndex): void {
+		$docFolder = $this->getDocumentFolder($documentId);
+		$docFolder->newFile(self::SNAPSHOT_FILE)->putContent((string)$changeIndex);
 	}
 
 	public function stashDocumentUrl(int $documentId, string $url) {

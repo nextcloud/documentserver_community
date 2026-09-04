@@ -67,11 +67,19 @@ class SaveHandler {
 		$this->lockingProvider->acquireLock('documentserver_' . $documentId, ILockingProvider::LOCK_EXCLUSIVE);
 
 		try {
+			$changeIndex = $this->changeStore->getMaxChangeIndexForDocument($documentId);
+			if ($changeIndex === $this->documentStore->getSnapshotIndex($documentId)) {
+				// nothing has been typed since the last one
+				return;
+			}
+
 			$changes = $this->changeStore->getChangesForDocument($documentId);
 
 			if (count($changes)) {
 				$this->documentStore->saveChanges($documentId, $changes);
 			}
+
+			$this->documentStore->setSnapshotIndex($documentId, $changeIndex);
 		} finally {
 			$this->lockingProvider->releaseLock('documentserver_' . $documentId, ILockingProvider::LOCK_EXCLUSIVE);
 		}
