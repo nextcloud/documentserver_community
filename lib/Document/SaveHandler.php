@@ -48,6 +48,35 @@ class SaveHandler {
 		$this->sessionManager = $sessionManager;
 	}
 
+	/**
+	 * Write the document out as it stands, leaving the editing session running.
+	 *
+	 * Not the same job as flushChanges(), which is for a session that is
+	 * ending. saveChanges() replays the change list against the document's
+	 * Editor.bin without rebasing it, so consuming the changes mid-session
+	 * strands the document twice over: a session opened afterwards replays an
+	 * empty list against the untouched baseline and shows the pre-save
+	 * document, and the eventual flush writes the file from a change list that
+	 * no longer holds the earlier edits, losing them.
+	 *
+	 * So a snapshot reads the changes and leaves them alone. The eventual
+	 * flush replays the same list against the same baseline and produces the
+	 * same document, which makes writing one out early free of consequences.
+	 */
+	public function saveSnapshot(int $documentId) {
+		$this->lockingProvider->acquireLock('documentserver_' . $documentId, ILockingProvider::LOCK_EXCLUSIVE);
+
+		try {
+			$changes = $this->changeStore->getChangesForDocument($documentId);
+
+			if (count($changes)) {
+				$this->documentStore->saveChanges($documentId, $changes);
+			}
+		} finally {
+			$this->lockingProvider->releaseLock('documentserver_' . $documentId, ILockingProvider::LOCK_EXCLUSIVE);
+		}
+	}
+
 	public function flushChanges(int $documentId) {
 		$this->lockingProvider->acquireLock('documentserver_' . $documentId, ILockingProvider::LOCK_EXCLUSIVE);
 

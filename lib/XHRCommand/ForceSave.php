@@ -40,6 +40,11 @@ use Psr\Log\LoggerInterface;
  * The reply comes in two parts, and both have to carry the same timestamp: the
  * client stores the one from forceSaveStart and ignores a forceSave whose time
  * does not match it.
+ *
+ * Note this saves a snapshot rather than flushing: people are still editing,
+ * and consuming the change list here would leave the next session to open the
+ * document looking at the version from before the save. See
+ * SaveHandler::saveSnapshot().
  */
 class ForceSave implements ICommandHandler {
 	/** sdkjs c_oAscForceSaveTypes.Button */
@@ -66,7 +71,7 @@ class ForceSave implements ICommandHandler {
 		$time = time() * 1000;
 
 		try {
-			$this->saveHandler->flushChanges($documentId);
+			$this->saveHandler->saveSnapshot($documentId);
 			$success = true;
 		} catch (\Exception $e) {
 			$this->logger->warning('documentserver force save failed for document {doc}: {error}', [
