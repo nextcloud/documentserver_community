@@ -25,9 +25,27 @@ namespace OCA\DocumentServer\Document;
 
 use OCA\DocumentServer\DB\QueryHelper;
 use OCP\AppFramework\Utility\ITimeFactory;
+use OCP\DB\Exception as DBException;
 use OCP\IDBConnection;
 
 class ChangeStore {
+	/**
+	 * How often a batch of changes is re-tried when another editor took the
+	 * change indexes it was aiming for. Every attempt after the first works
+	 * from a max that already includes the other writer's changes, so a
+	 * handful covers far more concurrent savers than a document ever has;
+	 * the bound is only there so a genuinely broken insert cannot loop.
+	 */
+	private const MAX_INSERT_ATTEMPTS = 10;
+
+	/**
+	 * Upper bound, in microseconds, of the wait before a retry. Writers that
+	 * collided are in lockstep by definition, so retrying them all immediately
+	 * just reproduces the collision; the wait is randomised to break that up
+	 * and grows with the attempt count.
+	 */
+	private const RETRY_BACKOFF_USEC = 5000;
+
 	private $connection;
 	private $timeFactory;
 
@@ -39,18 +57,47 @@ class ChangeStore {
 		$this->timeFactory = $timeFactory;
 	}
 
+	/**
+	 * Two editors saving at the same moment used to read the same max change
+	 * index and aim for the same slots. (document_id, change_index) is unique,
+	 * so the loser did not corrupt the change log - it got a constraint
+	 * violation out of an unclosed transaction, which surfaced as a failed
+	 * save. Read the max inside the transaction and retry the batch when it
+	 * collides: by then the other writer has committed, so the fresh max is
+	 * past its changes.
+	 *
+	 * @throws DBException
+	 */
 	public function addChangesForDocument(int $documentId, array $changes, string $user, string $userOriginal) {
 		$time = $this->timeFactory->getTime();
-		$changeIndex = $this->getMaxChangeIndexForDocument($documentId) + 1;
 
-		$this->connection->beginTransaction();
+		for ($attempt = 1;; $attempt++) {
+			$this->connection->beginTransaction();
 
-		foreach ($changes as $change) {
-			$this->addChangeForDocument($documentId, $change, $user, $userOriginal, $time, $changeIndex);
-			$changeIndex++;
+			try {
+				$changeIndex = $this->getMaxChangeIndexForDocument($documentId) + 1;
+
+				foreach ($changes as $change) {
+					$this->addChangeForDocument($documentId, $change, $user, $userOriginal, $time, $changeIndex);
+					$changeIndex++;
+				}
+
+				$this->connection->commit();
+				return;
+			} catch (\Throwable $e) {
+				if ($this->connection->inTransaction()) {
+					$this->connection->rollBack();
+				}
+
+				$isCollision = $e instanceof DBException
+					&& $e->getReason() === DBException::REASON_UNIQUE_CONSTRAINT_VIOLATION;
+				if (!$isCollision || $attempt >= self::MAX_INSERT_ATTEMPTS) {
+					throw $e;
+				}
+
+				usleep(random_int(0, self::RETRY_BACKOFF_USEC * $attempt));
+			}
 		}
-
-		$this->connection->commit();
 	}
 
 	private function addChangeForDocument(int $documentId, string $change, string $user, string $userOriginal, int $time, int $changeIndex) {
