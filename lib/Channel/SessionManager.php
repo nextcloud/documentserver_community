@@ -141,6 +141,20 @@ class SessionManager {
 		return QueryHelper::fetchFirstColumn($query);
 	}
 
+	/**
+	 * Drop a single session, for a client that said it was leaving rather than
+	 * one that stopped polling.
+	 */
+	public function removeSession(string $sessionId): void {
+		$this->ipcFactory->cleanupChannel($sessionId);
+
+		$query = $this->connection->getQueryBuilder();
+
+		$query->delete('documentserver_sess')
+			->where($query->expr()->eq('session_id', $query->createNamedParameter($sessionId)));
+		QueryHelper::executeStatement($query);
+	}
+
 	public function cleanSessions(): int {
 		$expiredSessions = $this->getExpiredSessions();
 

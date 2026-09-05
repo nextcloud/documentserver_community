@@ -13,6 +13,9 @@ return [
 		['name' => 'Document#upload', 'url' => '/3rdparty/onlyoffice/documentserver/upload/{docId}/{user}/{index}', 'verb' => 'POST'],
 		['name' => 'Document#download', 'url' => '/3rdparty/onlyoffice/documentserver/downloadas/{docId}', 'verb' => 'POST'],
 
+		// The editor page saying goodbye on its way out; see js/close-beacon.js.
+		['name' => 'Document#sessionClosed', 'url' => '/session-closed', 'verb' => 'POST'],
+
 		['name' => 'CoAuthoring#command', 'url' => '/coauthoring/CommandService.ashx', 'verb' => 'POST'],
 
 		['name' => 'Convert#convert', 'url' => '/converter', 'verb' => 'POST'],
