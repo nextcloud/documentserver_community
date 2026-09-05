@@ -75,6 +75,24 @@ class Cleanup extends Job {
 						['exception' => $e, 'app' => 'documentserver_community']
 					);
 				}
+			} else {
+				// Write the document out while it is still being edited. The
+				// editor reporting "all changes are saved" means they reached
+				// this server, not that they reached the file, and until this
+				// existed the file was only written once the last participant
+				// left - so a crash, or a browser closed at the wrong moment,
+				// lost the session's work. A snapshot leaves the change list
+				// alone, so the flush above still produces the same document
+				// later; and it returns without running the converter when
+				// nothing has been typed since the last one.
+				try {
+					$this->saveHandler->saveSnapshot($documentId);
+				} catch (\Exception $e) {
+					$this->logger->error(
+						'Error while saving a snapshot of document ' . $documentId,
+						['exception' => $e, 'app' => 'documentserver_community']
+					);
+				}
 			}
 		}
 	}

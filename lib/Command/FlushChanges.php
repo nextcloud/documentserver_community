@@ -61,6 +61,12 @@ class FlushChanges extends Base {
 				null,
 				InputOption::VALUE_NONE,
 				'Flush only inactive pages'
+			)
+			->addOption(
+				'snapshot',
+				null,
+				InputOption::VALUE_NONE,
+				'Write documents that are still being edited out to their file, without ending the editing session'
 			);
 		parent::configure();
 	}
@@ -68,6 +74,24 @@ class FlushChanges extends Base {
 	protected function execute(InputInterface $input, OutputInterface $output) {
 		$documents = $this->documentStore->getOpenDocuments();
 		foreach ($documents as $documentId) {
+			// A snapshot writes the file and leaves the editing session running,
+			// which is the only safe thing to do to a document someone is still
+			// typing into. The background job does this on its own schedule;
+			// the option is here to drive it from cron at a chosen interval, or
+			// to write everything out on demand.
+			if ($input->getOption('snapshot')) {
+				try {
+					$this->saveHandler->saveSnapshot($documentId);
+				} catch (\Exception $e) {
+					$this->logger->error(
+						'Error while saving a snapshot of document ' . $documentId,
+						['exception' => $e, 'app' => 'documentserver_community']
+					);
+					return 1;
+				}
+				continue;
+			}
+
 			if (!$input->getOption('inactive-pages') ||
 			   !$this->sessionManager->isDocumentActive($documentId)) {
 				try {
@@ -77,10 +101,10 @@ class FlushChanges extends Base {
 						'Error while applying changes for document ' . $documentId, 
 						['exception' => $e, 'app' => 'documentserver_community']
 					);
-					return 0;
+					return 1;
 				}
 			}
 		}
-		return 1;
+		return 0;
 	}
 }
