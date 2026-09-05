@@ -7,9 +7,19 @@ appstore_package_name=$(appstore_build_directory)/$(app_name)
 package_name=$(app_name)
 cert_dir=$(HOME)/.nextcloud/certificates
 
-# ONLYOFFICE DocumentServer release to bundle. Override to test another one:
-#   make oo_version=v8.3.3 3rdparty/onlyoffice/documentserver
-oo_version=v9.4.0
+# Document server release to bundle. Euro-Office is a fork of ONLYOFFICE
+# DocumentServer and packages the same tree in the same shape, so one build
+# serves either; what differs is the vendor directory inside the package, which
+# the steps below locate instead of hardcoding. Override to test another
+# release, or to go back to upstream:
+#   make ds_version=v9.3.3 3rdparty/onlyoffice/documentserver
+#   make ds_repo=ONLYOFFICE/DocumentServer ds_version=v9.4.0 3rdparty/onlyoffice/documentserver
+#
+# The local directory keeps its name: it is part of the URLs sdkjs requests
+# (see appinfo/routes.php and JSSettingsHelper), so renaming it is its own
+# change.
+ds_repo=Euro-Office/DocumentServer
+ds_version=v9.3.4-hotfix.1
 oo_dir=$(CURDIR)/3rdparty/onlyoffice/documentserver
 
 all: 3rdparty/onlyoffice/documentserver version
@@ -37,10 +47,22 @@ appstore:
 3rdparty/onlyoffice/documentserver:
 	mkdir -p 3rdparty/onlyoffice
 	mkdir -p oo-extract
-	curl -sLO https://github.com/ONLYOFFICE/DocumentServer/releases/download/$(oo_version)/onlyoffice-documentserver.x86_64.rpm
-	cd oo-extract && rpm2cpio ../onlyoffice-documentserver.x86_64.rpm | cpio -idm
+	# Resolve the asset rather than composing its name: ONLYOFFICE publishes
+	# one fixed filename per release, while Euro-Office puts the version in the
+	# filename and it does not always match the tag (the v9.3.2 release ships a
+	# 9.3.1-dev.1 rpm).
+	url=$$(curl -sfL https://api.github.com/repos/$(ds_repo)/releases/tags/$(ds_version) \
+		| grep -o 'https://[^"]*x86_64[.]rpm' | head -1); \
+	if [ -z "$$url" ]; then echo "no x86_64 rpm asset for $(ds_repo) $(ds_version)" >&2; exit 1; fi; \
+	echo "fetching $$url"; \
+	curl -sL -o documentserver.x86_64.rpm "$$url"
+	cd oo-extract && rpm2cpio ../documentserver.x86_64.rpm | cpio -idm
 	chmod -R 777 oo-extract/
-	cp -r oo-extract/var/www/onlyoffice/documentserver 3rdparty/onlyoffice
+	# var/www/<vendor>/documentserver: "onlyoffice" upstream, "euro-office"
+	# on the fork.
+	src=$$(find oo-extract/var/www -mindepth 2 -maxdepth 2 -type d -name documentserver | head -1); \
+	if [ -z "$$src" ]; then echo 'no documentserver tree in the package' >&2; exit 1; fi; \
+	cp -r "$$src" 3rdparty/onlyoffice
 	# Up to 8.x the package kept the converter's shared libraries in
 	# /usr/lib64 and expected the distro to place them on the library path;
 	# since 9.x they ship inside FileConverter/bin instead, so only copy them
@@ -48,7 +70,7 @@ appstore:
 	bash -c 'if [ -d oo-extract/usr/lib64 ]; then \
 		cp oo-extract/usr/lib64/* 3rdparty/onlyoffice/documentserver/server/FileConverter/bin/; \
 		cp oo-extract/usr/lib64/* 3rdparty/onlyoffice/documentserver/server/tools/; fi'
-	rm -f onlyoffice-documentserver.x86_64.rpm
+	rm -f documentserver.x86_64.rpm
 	bash -c 'rm -rf 3rdparty/onlyoffice/documentserver/server/{Common/config/*,DocService,Metrics}'
 	# npm and Metrics belong to the Node DocService, which we replace with
 	# the PHP implementation and never ship, so they are dead weight.
@@ -59,7 +81,10 @@ appstore:
 	# and sr-Latn, leaving 200+ MB of screenshots nothing can request.
 	bash -c 'for d in 3rdparty/onlyoffice/documentserver/web-apps/apps/*/main/resources/help/*/images; do \
 		case "$$d" in */help/en/images) ;; *) rm -rf "$$d" ;; esac; done'
-	cp oo-extract/etc/onlyoffice/documentserver/default.json 3rdparty/onlyoffice/documentserver/server/Common/config/
+	# Same story as the tree above: etc/<vendor>/documentserver/default.json.
+	cfg=$$(find oo-extract/etc -mindepth 3 -maxdepth 3 -path '*/documentserver/default.json' | head -1); \
+	if [ -z "$$cfg" ]; then echo 'no default.json in the package' >&2; exit 1; fi; \
+	cp "$$cfg" 3rdparty/onlyoffice/documentserver/server/Common/config/
 	# Since 8.x the package ships web-apps api.js as an empty file plus an
 	# api.js.tpl that DocService normally renders at start-up. We do not ship
 	# DocService, so render it here. {{HASH_POSTFIX}} is left in place on
