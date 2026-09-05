@@ -26,10 +26,19 @@ namespace OCA\DocumentServer\Document;
 use OCA\DocumentServer\Channel\SessionManager;
 use OCA\DocumentServer\DocumentConverter;
 use OCP\AppFramework\Utility\ITimeFactory;
+use OCP\IConfig;
 use OCP\Lock\ILockingProvider;
 use OCP\Lock\LockedException;
 
 class SaveHandler {
+	/**
+	 * How long a document being edited may go without being written to its
+	 * file, in seconds. Overridable with
+	 * `occ config:app:set documentserver_community autosave_interval --value=...`,
+	 * 0 turns the periodic write off.
+	 */
+	public const DEFAULT_AUTOSAVE_INTERVAL = 60;
+
 	/**
 	 * How long flushing waits for a write that is already in progress, in
 	 * seconds. The lock is only ever held for as long as the converter takes,
@@ -43,6 +52,7 @@ class SaveHandler {
 	private $documentConverter;
 	private $lockingProvider;
 	private $sessionManager;
+	private $config;
 	private $timeFactory;
 
 	public function __construct(
@@ -51,6 +61,7 @@ class SaveHandler {
 		DocumentConverter $documentConverter,
 		ILockingProvider $lockingProvider,
 		SessionManager $sessionManager,
+		IConfig $config,
 		ITimeFactory $timeFactory
 	) {
 		$this->documentStore = $documentStore;
@@ -58,7 +69,37 @@ class SaveHandler {
 		$this->documentConverter = $documentConverter;
 		$this->lockingProvider = $lockingProvider;
 		$this->sessionManager = $sessionManager;
+		$this->config = $config;
 		$this->timeFactory = $timeFactory;
+	}
+
+	/**
+	 * Write the document out if it has gone longer than the autosave interval
+	 * without being written.
+	 *
+	 * Called from the editing path itself, which is what makes it independent
+	 * of the admin's cron: a document that is being typed into reaches its file
+	 * on its own, whether or not the background job ever runs.
+	 *
+	 * @return bool whether the document was written
+	 */
+	public function saveSnapshotIfDue(int $documentId): bool {
+		$interval = (int)$this->config->getAppValue(
+			'documentserver_community',
+			'autosave_interval',
+			(string)self::DEFAULT_AUTOSAVE_INTERVAL
+		);
+
+		if ($interval <= 0) {
+			return false;
+		}
+
+		$state = $this->documentStore->getSnapshotState($documentId);
+		if (($this->timeFactory->getTime() - $state['time']) < $interval) {
+			return false;
+		}
+
+		return $this->saveSnapshot($documentId);
 	}
 
 	/**
@@ -124,8 +165,8 @@ class SaveHandler {
 	 * Write the assembled document to its file. Caller holds the document lock.
 	 *
 	 * The time is recorded before the converter runs as well as after it, so
-	 * that a document which fails to assemble backs off instead of being
-	 * retried by every writer that comes along.
+	 * that a document which fails to assemble backs off to the autosave
+	 * interval instead of being retried on every save.
 	 */
 	private function writeDocument(int $documentId): bool {
 		$changeIndex = $this->changeStore->getMaxChangeIndexForDocument($documentId);
