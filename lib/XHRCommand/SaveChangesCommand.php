@@ -82,10 +82,11 @@ class SaveChangesCommand implements ICommandHandler {
 			'type' => 'saveChanges',
 			'docId' => $session->getDocumentId(),
 			'userId' => $session->getUserId(),
-			'changes' => array_map(function (string $changeString) use ($session) {
-				$change = new Change($session->getDocumentId(), time(), $changeString, $session->getUserId(), $session->getUserOriginal());
+			'changes' => array_map(function (string $changeString, int $offset) use ($session, $startIndex) {
+				// the store numbers the changes it just stored from $startIndex + 1 up
+				$change = new Change($session->getDocumentId(), time(), $changeString, $session->getUserId(), $session->getUserOriginal(), $startIndex + 1 + $offset);
 				return $change->formatForClient();
-			}, $changes),
+			}, $changes, array_keys($changes)),
 			'startIndex' => $startIndex,
 			'changesIndex' => $changeIndex,
 			'locks' => [],
