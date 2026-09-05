@@ -30,6 +30,15 @@ use OCP\IMemcache;
  * IPC Channels built on top of memcache concurrency primitives
  */
 class MemcacheIPCBackend implements IIPCBackend {
+	/**
+	 * How many consecutive pops may find a claimed slot still empty before the
+	 * slot is written off. A push claims its slot and writes the payload one
+	 * statement later, so a real message lands within a poll or two; the bound
+	 * only exists so that a writer which died in between cannot block the
+	 * channel for good. Channel::getResponse() polls every 100ms.
+	 */
+	private const MAX_PUBLISH_MISSES = 50;
+
 	private $memcache;
 
 	public function __construct(IMemcache $memcache) {
@@ -46,25 +55,53 @@ class MemcacheIPCBackend implements IIPCBackend {
 		$this->memcache->remove("$channel::read_key");
 	}
 
+	/**
+	 * Claiming the slot with an atomic inc is what stops two concurrent pushes
+	 * from writing the same key, so the payload can only be written afterwards.
+	 * That leaves a window in which the slot exists but the message does not,
+	 * which popMessage() has to cope with.
+	 */
 	public function pushMessage(string $channel, string $message) {
 		$key = $this->memcache->inc("$channel::write_key");
 		$this->memcache->set("$channel::message_$key", $message, Channel::TIMEOUT * 4);
 	}
 
 	public function popMessage(string $channel, int $timeout): ?string {
-		$writeKey = $this->memcache->get("$channel::write_key");
-		$readKey = $this->memcache->inc("$channel::read_key");
+		$writeKey = (int)$this->memcache->get("$channel::write_key");
+		$readKey = (int)$this->memcache->get("$channel::read_key") + 1;
 
-		if ($writeKey >= $readKey) {
-			$message = $this->memcache->get("$channel::message_$readKey");
-			$this->memcache->remove("$channel::message_$readKey");
-			return $message;
-		} else {
-			// no unread message, return read pointer
+		if ($writeKey < $readKey) {
+			// no unread message
+			return null;
+		}
 
-			$this->memcache->dec("$channel::read_key");
+		// The read pointer only moves once the message is in hand. Claiming the
+		// slot first - as incrementing read_key up front did - consumed the slot
+		// of a push that had not written its payload yet, and that message was
+		// then gone for good.
+		$message = $this->memcache->get("$channel::message_$readKey");
+
+		if ($message === null || !$this->memcache->cad("$channel::message_$readKey", $message)) {
+			// Either the push has not written its payload yet, or another reader
+			// on this channel took the message between the two calls. Both are
+			// resolved by leaving the pointer alone and letting the next poll
+			// have another go. A slot that stays empty for longer than any push
+			// can take is written off, so a writer that died mid-publish does
+			// not stall the channel.
+			$misses = $this->memcache->inc("$channel::miss_$readKey");
+			if (is_int($misses) && $misses < self::MAX_PUBLISH_MISSES) {
+				return null;
+			}
+
+			$this->memcache->remove("$channel::miss_$readKey");
+			$this->memcache->inc("$channel::read_key");
 
 			return null;
 		}
+
+		$this->memcache->remove("$channel::miss_$readKey");
+		$this->memcache->inc("$channel::read_key");
+
+		return $message;
 	}
 }
