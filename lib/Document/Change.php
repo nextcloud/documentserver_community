@@ -29,13 +29,15 @@ class Change {
 	private $change;
 	private $user;
 	private $userOriginal;
+	private $changeIndex;
 
-	public function __construct(int $documentId, int $time, string $change, string $user, string $userOriginal) {
+	public function __construct(int $documentId, int $time, string $change, string $user, string $userOriginal, int $changeIndex) {
 		$this->documentId = $documentId;
 		$this->time = $time;
 		$this->change = $change;
 		$this->user = $user;
 		$this->userOriginal = $userOriginal;
+		$this->changeIndex = $changeIndex;
 	}
 
 	public function getDocumentId(): int {
@@ -78,7 +80,8 @@ class Change {
 			(int)$row['time'],
 			$row['change'],
 			$row['user'],
-			$row['user_original']
+			$row['user_original'],
+			(int)$row['change_index']
 		);
 	}
 }
