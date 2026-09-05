@@ -37,9 +37,18 @@ use OCP\IConfig;
 use OCP\IUser;
 use OCP\IUserManager;
 use OCP\IUserSession;
+use OCP\Lock\LockedException;
 
 class DocumentStore {
 	private const CHAT_FILE = 'chat.json';
+	private const SNAPSHOT_FILE = 'snapshot';
+
+	/**
+	 * How many times writing the assembled document back to its file is
+	 * retried when Nextcloud's file locking says something else is busy with
+	 * it.
+	 */
+	private const WRITE_ATTEMPTS = 5;
 	private const CHAT_HISTORY_LIMIT = 100;
 
 	private $appData;
@@ -173,10 +182,35 @@ class DocumentStore {
 			$oldUser = $this->userSession->getUser();
 			$this->userSession->setUser($ownerObject);
 
-			$sourceFile->putContent(stream_get_contents($savedContent));
+			$this->writeSourceFile($sourceFile, stream_get_contents($savedContent));
 
 			$this->userSession->setUser($oldUser);
 		});
+	}
+
+	/**
+	 * Write the assembled document back over the file it came from.
+	 *
+	 * Nextcloud's file locking makes this fail while anything else is holding
+	 * the file - a preview being generated, a sync client downloading it - and
+	 * that is not unlikely at the moment somebody closes an editor and lands
+	 * back in the file list, which is where the previews come from. The
+	 * document has already been assembled by then, so waiting out a lock that
+	 * is measured in milliseconds is much cheaper than leaving the file
+	 * unwritten until a background job comes round.
+	 */
+	private function writeSourceFile(File $sourceFile, string $content): void {
+		for ($attempt = 1;; $attempt++) {
+			try {
+				$sourceFile->putContent($content);
+				return;
+			} catch (LockedException $e) {
+				if ($attempt >= self::WRITE_ATTEMPTS) {
+					throw $e;
+				}
+				usleep($attempt * 500 * 1000);
+			}
+		}
 	}
 
 	/**
@@ -287,6 +321,47 @@ class DocumentStore {
 			$messages = array_slice($messages, -self::CHAT_HISTORY_LIMIT);
 		}
 		$docFolder->newFile(self::CHAT_FILE)->putContent(json_encode($messages));
+	}
+
+	/**
+	 * When the document was last written out to its file, and the change index
+	 * it stood at then.
+	 *
+	 * This is what lets a document be written out repeatedly while it is being
+	 * edited without paying for a converter run every time: a document nobody
+	 * has typed into since the last write is already on disk, and one that has
+	 * just been written is not due again until the interval has passed.
+	 *
+	 * The index is -1 for a document that has never been written out, so that
+	 * index 0 - open, one change made - is not mistaken for it. It lives in the
+	 * document's own folder, so it is disposed of with the document.
+	 *
+	 * @return array{index: int, time: int}
+	 */
+	public function getSnapshotState(int $documentId): array {
+		$docFolder = $this->getDocumentFolder($documentId);
+		try {
+			$state = json_decode($docFolder->getFile(self::SNAPSHOT_FILE)->getContent(), true);
+		} catch (NotFoundException $e) {
+			$state = null;
+		}
+
+		if (!is_array($state)) {
+			$state = [];
+		}
+
+		return [
+			'index' => isset($state['index']) ? (int)$state['index'] : -1,
+			'time' => isset($state['time']) ? (int)$state['time'] : 0,
+		];
+	}
+
+	public function setSnapshotState(int $documentId, int $changeIndex, int $time): void {
+		$docFolder = $this->getDocumentFolder($documentId);
+		$docFolder->newFile(self::SNAPSHOT_FILE)->putContent(json_encode([
+			'index' => $changeIndex,
+			'time' => $time,
+		]));
 	}
 
 	public function stashDocumentUrl(int $documentId, string $url) {
