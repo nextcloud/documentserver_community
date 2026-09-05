@@ -52,6 +52,7 @@ use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\Response;
 use OCP\IRequest;
 use OCP\IURLGenerator;
+use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 
 class DocumentController extends Controller {
@@ -81,6 +82,7 @@ class DocumentController extends Controller {
 	private $ipcFactory;
 	private $sessionManager;
 	private LoggerInterface $logger;
+	private ContainerInterface $container;
 
 	public function __construct(
 		$appName,
@@ -92,7 +94,8 @@ class DocumentController extends Controller {
 		WebVersion $webVersion,
 		IIPCFactory $ipcFactory,
 		SessionManager $sessionManager,
-		LoggerInterface $logger
+		LoggerInterface $logger,
+		ContainerInterface $container
 	) {
 		parent::__construct($appName, $request);
 
@@ -104,15 +107,16 @@ class DocumentController extends Controller {
 		$this->ipcFactory = $ipcFactory;
 		$this->sessionManager = $sessionManager;
 		$this->logger = $logger;
+		$this->container = $container;
 	}
 
 	private function getCommandDispatcher(): CommandDispatcher {
 		$dispatcher = new CommandDispatcher();
 		foreach (self::COMMAND_HANDLERS as $class) {
-			$dispatcher->addHandler(\OC::$server->query($class));
+			$dispatcher->addHandler($this->container->get($class));
 		}
 		foreach (self::IDLE_HANDLERS as $class) {
-			$dispatcher->addIdleHandler(\OC::$server->query($class));
+			$dispatcher->addIdleHandler($this->container->get($class));
 		}
 		return $dispatcher;
 	}
