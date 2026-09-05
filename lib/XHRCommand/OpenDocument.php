@@ -28,25 +28,33 @@ use OCA\DocumentServer\Document\DocumentStore;
 use OCA\DocumentServer\Document\PasswordRequiredException;
 use OCA\DocumentServer\IPC\IIPCChannel;
 use OCA\DocumentServer\OnlyOffice\URLDecoder;
+use OCP\Http\Client\IClientService;
 use OCP\ISession;
 use OCP\IURLGenerator;
+use Psr\Log\LoggerInterface;
 
 class OpenDocument implements ICommandHandler {
 	private $urlGenerator;
 	private $documentStore;
 	private $urlDecoder;
 	private $session;
+	private $clientService;
+	private $logger;
 
 	public function __construct(
 		IURLGenerator $urlGenerator,
 		DocumentStore $documentStore,
 		URLDecoder $urlDecoder,
-		ISession $session
+		ISession $session,
+		IClientService $clientService,
+		LoggerInterface $logger
 	) {
 		$this->urlGenerator = $urlGenerator;
 		$this->documentStore = $documentStore;
 		$this->urlDecoder = $urlDecoder;
 		$this->session = $session;
+		$this->clientService = $clientService;
+		$this->logger = $logger;
 	}
 
 	public function getType(): string {
@@ -136,7 +144,7 @@ class OpenDocument implements ICommandHandler {
 		$error = 0;
 		$urls = array_map(function ($inputUrl) use ($session, &$error) {
 			$path = 'media/' . md5($inputUrl) . '.png';
-			$data = fopen($inputUrl, 'r');
+			$data = $this->fetchImage((string)$inputUrl);
 			if ($data) {
 				$this->documentStore->saveDocumentFile($session->getDocumentId(), $path, $data);
 
@@ -169,5 +177,44 @@ class OpenDocument implements ICommandHandler {
 				],
 			],
 		]));
+	}
+
+	/**
+	 * Fetch an image the editor asked the server to import.
+	 *
+	 * The URL is whatever the client put in the command, so this is a request
+	 * the server makes on someone else's say-so and it has to be treated as
+	 * hostile: a bare fopen() here would happily read file:// paths, reach
+	 * services on the server's own network, or hit a cloud metadata endpoint.
+	 *
+	 * Nextcloud's HTTP client is what makes it safe. It refuses a host that
+	 * resolves to a private, loopback or link-local address, re-runs that check
+	 * on every redirect target, and pins the connection to the address it
+	 * validated so a second DNS answer cannot rebind it onto an internal one.
+	 * Only the scheme is left for us to check, because the client passes
+	 * anything else straight to curl.
+	 *
+	 * @return resource|null the response body, or null if the image could not
+	 *                       be fetched
+	 */
+	private function fetchImage(string $inputUrl) {
+		$scheme = strtolower((string)parse_url($inputUrl, PHP_URL_SCHEME));
+		if ($scheme !== 'http' && $scheme !== 'https') {
+			$this->logger->warning('Refused to fetch a document image over an unsupported scheme', [
+				'scheme' => $scheme,
+			]);
+			return null;
+		}
+
+		try {
+			$response = $this->clientService->newClient()->get($inputUrl, ['stream' => true]);
+		} catch (\Throwable $e) {
+			$this->logger->warning('Failed to fetch a document image', ['exception' => $e]);
+			return null;
+		}
+
+		$body = $response->getBody();
+
+		return is_resource($body) ? $body : null;
 	}
 }
