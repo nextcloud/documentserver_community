@@ -39,6 +39,9 @@ use OCP\IUserManager;
 use OCP\IUserSession;
 
 class DocumentStore {
+	private const CHAT_FILE = 'chat.json';
+	private const CHAT_HISTORY_LIMIT = 100;
+
 	private $appData;
 	private $documentConverter;
 	private $config;
@@ -256,6 +259,34 @@ class DocumentStore {
 		});
 
 		return '/convert.' . $targetFormat;
+	}
+
+	/**
+	 * The chat history of an open document.
+	 *
+	 * Kept in the document's own folder rather than a table: it is per-editing
+	 * session state with the same lifetime as the converted document, so
+	 * closeDocument() disposes of it along with everything else. Capped,
+	 * because nothing else would ever trim it.
+	 */
+	public function getChatMessages(int $documentId): array {
+		$docFolder = $this->getDocumentFolder($documentId);
+		try {
+			$messages = json_decode($docFolder->getFile(self::CHAT_FILE)->getContent(), true);
+		} catch (NotFoundException $e) {
+			return [];
+		}
+		return is_array($messages) ? $messages : [];
+	}
+
+	public function addChatMessage(int $documentId, array $message): void {
+		$docFolder = $this->getDocumentFolder($documentId);
+		$messages = $this->getChatMessages($documentId);
+		$messages[] = $message;
+		if (count($messages) > self::CHAT_HISTORY_LIMIT) {
+			$messages = array_slice($messages, -self::CHAT_HISTORY_LIMIT);
+		}
+		$docFolder->newFile(self::CHAT_FILE)->putContent(json_encode($messages));
 	}
 
 	public function stashDocumentUrl(int $documentId, string $url) {

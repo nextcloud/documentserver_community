@@ -33,9 +33,11 @@ use OCA\DocumentServer\IPC\IIPCFactory;
 use OCA\DocumentServer\OnlyOffice\URLDecoder;
 use OCA\DocumentServer\OnlyOffice\WebVersion;
 use OCA\DocumentServer\XHRCommand\AuthCommand;
+use OCA\DocumentServer\XHRCommand\ChatMessage;
 use OCA\DocumentServer\XHRCommand\CommandDispatcher;
 use OCA\DocumentServer\XHRCommand\CursorCommand;
 use OCA\DocumentServer\XHRCommand\GetLock;
+use OCA\DocumentServer\XHRCommand\GetMessages;
 use OCA\DocumentServer\XHRCommand\IsSaveLock;
 use OCA\DocumentServer\XHRCommand\LockExpire;
 use OCA\DocumentServer\XHRCommand\OpenDocument;
@@ -61,6 +63,8 @@ class DocumentController extends Controller {
 		UnlockDocument::class,
 		CursorCommand::class,
 		OpenDocument::class,
+		ChatMessage::class,
+		GetMessages::class,
 	];
 
 	public const IDLE_HANDLERS = [
