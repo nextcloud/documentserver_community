@@ -1,0 +1,51 @@
+# A disposable Nextcloud with this app mounted live, for the browser tests.
+#
+# The project name decides the container names the scripts address, so it is
+# pinned rather than taken from the directory: rig-app-1 and rig-db-1 whatever
+# the checkout is called. Set RIG_PROJECT to run a second one alongside.
+name: ${RIG_PROJECT:-rig}
+
+services:
+  db:
+    image: ${RIG_DB_IMAGE:-mariadb:11.8}
+    command: --transaction-isolation=READ-COMMITTED --log-bin=binlog --binlog-format=ROW
+    environment:
+      MARIADB_ROOT_PASSWORD: rigroot
+      MARIADB_DATABASE: ${RIG_DB_NAME:-nextcloud}
+      MARIADB_USER: ${RIG_DB_USER:-nextcloud}
+      MARIADB_PASSWORD: ${RIG_DB_PASSWORD:-rigpass}
+    volumes:
+      - db:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  app:
+    image: ${RIG_NC_IMAGE:-nextcloud:34.0.3-apache}
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${RIG_PORT:-8099}:80"
+    environment:
+      MYSQL_HOST: db
+      MYSQL_DATABASE: ${RIG_DB_NAME:-nextcloud}
+      MYSQL_USER: ${RIG_DB_USER:-nextcloud}
+      MYSQL_PASSWORD: ${RIG_DB_PASSWORD:-rigpass}
+      NEXTCLOUD_ADMIN_USER: ${RIG_ADMIN_USER:-admin}
+      NEXTCLOUD_ADMIN_PASSWORD: ${RIG_ADMIN_PASSWORD:-rigadmin}
+      NEXTCLOUD_TRUSTED_DOMAINS: "localhost 127.0.0.1"
+      OVERWRITECLIURL: "http://localhost:${RIG_PORT:-8099}"
+      PHP_MEMORY_LIMIT: 1G
+      PHP_UPLOAD_LIMIT: 512M
+    volumes:
+      - nc:/var/www/html
+      # the working copy under test, mounted live, so an edit takes effect
+      # without rebuilding anything
+      - ${APP_SOURCE:-../..}:/var/www/html/custom_apps/documentserver_community
+
+volumes:
+  db:
+  nc:
