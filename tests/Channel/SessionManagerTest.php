@@ -28,12 +28,11 @@ use OCA\DocumentServer\IPC\IIPCFactory;
 use OCA\DocumentServer\Channel\SessionManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\IDBConnection;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\MockObject\MockObject;
 use Test\TestCase;
 
-/**
- * @group DB
- */
+#[Group('DB')]
 class SessionManagerTest extends TestCase {
 	/** @var IDBConnection */
 	private $connection;

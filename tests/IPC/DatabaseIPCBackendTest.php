@@ -27,10 +27,9 @@ use OCA\DocumentServer\IPC\IIPCBackend;
 use OCA\DocumentServer\IPC\DatabaseIPCBackend;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\IDBConnection;
+use PHPUnit\Framework\Attributes\Group;
 
-/**
- * @group DB
- */
+#[Group('DB')]
 class DatabaseIPCBackendTest extends BackendTest {
 	/** @var IDBConnection */
 	private $connection;

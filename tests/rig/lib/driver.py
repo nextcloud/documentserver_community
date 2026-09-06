@@ -5,13 +5,9 @@ read out of the DOM. Every question about what a user actually sees is asked of
 the editor's own document model instead, which is what TEXT_JS and COAUTH_JS are
 for.
 """
-import asyncio, base64, json, os, re, shutil, subprocess, sys, tempfile, time
+import asyncio, base64, json, re, shutil, subprocess, tempfile, time
 import urllib.request
 import websockets
-
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import config
-
 
 LOGIN_JS = r"""(() => {
   const u = document.querySelector('input[name=user], input#user, input[autocomplete="username"]');
