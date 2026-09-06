@@ -56,6 +56,23 @@ class SessionCloser {
 		$this->logger = $logger;
 	}
 
+	/**
+	 * A client that said it is done co-authoring, from a page that is still
+	 * open.
+	 *
+	 * sdkjs sends that whenever it drops the editor to view mode - a licence
+	 * verdict on the number of users in the document, rights taken away,
+	 * disconnectEveryone, a critical error - so it is not a departure, and
+	 * treating it as one wrote the document out and deleted its folder from
+	 * under a page that was still there. The session stops being a participant;
+	 * if it is in fact still polling, its next poll revives it.
+	 */
+	public function sessionStoppedCoAuthoring(Session $session): void {
+		$this->sessionManager->expireSession($session->getSessionId());
+
+		$this->announceParticipants($session);
+	}
+
 	public function sessionLeft(Session $session): void {
 		$documentId = $session->getDocumentId();
 
@@ -64,23 +81,7 @@ class SessionCloser {
 		$participants = $this->sessionManager->getSessionsForDocument($documentId);
 
 		if (count($participants)) {
-			// Tell the people still in the document that this one left, rather
-			// than leaving them with a ghost participant until the session
-			// would have expired.
-			$documentChannel = new IPCMulticast(
-				$this->ipcFactory,
-				$this->sessionManager,
-				$documentId,
-				$session->getSessionId()
-			);
-			$documentChannel->pushMessage(json_encode([
-				'type' => 'connectState',
-				'participantsTimestamp' => time() * 1000,
-				'participants' => array_map(function (Session $participant) {
-					return $participant->formatForClient();
-				}, $participants),
-				'waitAuth' => false,
-			]));
+			$this->announceParticipants($session);
 			return;
 		}
 
@@ -103,5 +104,39 @@ class SessionCloser {
 				'exception' => $e,
 			]);
 		}
+	}
+
+	/**
+	 * Tell whoever is left in the document who that is, so a session that has
+	 * gone does not linger in everyone's participant list until it would have
+	 * expired.
+	 */
+	private function announceParticipants(Session $session): void {
+		$documentId = $session->getDocumentId();
+		$participants = array_filter(
+			$this->sessionManager->getSessionsForDocument($documentId),
+			function (Session $participant) use ($session) {
+				return $participant->getSessionId() !== $session->getSessionId();
+			}
+		);
+
+		if (!count($participants)) {
+			return;
+		}
+
+		$documentChannel = new IPCMulticast(
+			$this->ipcFactory,
+			$this->sessionManager,
+			$documentId,
+			$session->getSessionId()
+		);
+		$documentChannel->pushMessage(json_encode([
+			'type' => 'connectState',
+			'participantsTimestamp' => time() * 1000,
+			'participants' => array_map(function (Session $participant) {
+				return $participant->formatForClient();
+			}, array_values($participants)),
+			'waitAuth' => false,
+		]));
 	}
 }

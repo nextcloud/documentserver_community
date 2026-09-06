@@ -28,14 +28,20 @@ use OCA\DocumentServer\Channel\SessionCloser;
 use OCA\DocumentServer\IPC\IIPCChannel;
 
 /**
- * sdkjs stepping out of the document, from DocsCoApi.disconnect(): the editor
- * dropping to view mode, a document reopened under a new url, rights taken
- * away. The session is done sending changes either way, so it is treated as a
- * departure - see SessionCloser.
+ * sdkjs stepping out of co-authoring, from DocsCoApi.disconnect().
  *
- * The editor being closed does not come through here. DocsAPI's destroyEditor()
- * takes the iframe out of the DOM, which gives the code inside it no chance to
- * say anything; that path is covered by the unload beacon
+ * This is not the editor being closed, and must not be treated as one. sdkjs
+ * sends it whenever it drops the editor to view mode while the page stays
+ * open: a licence verdict on the number of users in the document - which is
+ * evaluated as soon as there is a second participant - rights taken away,
+ * disconnectEveryone, a critical error, a document reopened under a new url.
+ * Ending the session here and writing the document out took the document
+ * folder away from a page that was still editing.
+ *
+ * So it only stops the session being a participant, and a client that turns
+ * out to still be polling revives itself. Closing the editor - destroyEditor()
+ * taking the iframe out of the DOM - and closing the tab say nothing at all
+ * through this channel; they are covered by the unload beacon
  * (js/close-beacon.js).
  */
 class CloseSession implements ICommandHandler {
@@ -50,6 +56,6 @@ class CloseSession implements ICommandHandler {
 	}
 
 	public function handle(array $command, Session $session, IIPCChannel $sessionChannel, IIPCChannel $documentChannel, CommandDispatcher $commandDispatcher): void {
-		$this->sessionCloser->sessionLeft($session);
+		$this->sessionCloser->sessionStoppedCoAuthoring($session);
 	}
 }
