@@ -1,0 +1,99 @@
+name: phpunit
+
+# The tests that do not need a browser: the session table, the IPC backends,
+# and the decisions about when a document's change list may be thrown away.
+# They talk to a real Nextcloud, so this builds one around the app.
+
+on:
+  push:
+    paths:
+      - 'lib/**'
+      - 'tests/**'
+      - '!tests/rig/**'
+      - 'appinfo/**'
+      - '.github/workflows/phpunit.yml'
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  # the branch name, not the ref: a push is refs/heads/x and the pull request
+  # whose head it is is refs/pull/n/merge, and both would otherwise run the
+  # whole thing
+  group: phpunit-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  phpunit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    services:
+      # one of the three IPC backends, and the one an instance under load
+      # actually uses; without it those tests only ever skip
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+    steps:
+      - name: check out the server this app supports
+        uses: actions/checkout@v4
+        with:
+          repository: nextcloud/server
+          # the newest release appinfo/info.xml declares support for
+          ref: stable34
+          submodules: true
+          path: server
+
+      - name: check out the app into it
+        uses: actions/checkout@v4
+        with:
+          path: server/apps/documentserver_community
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: apcu, bcmath, curl, gd, gmp, intl, mbstring, pdo_sqlite, redis, sqlite3, xml, zip
+          ini-values: apc.enable_cli=1
+          coverage: none
+          tools: composer
+
+      - name: server dependencies
+        working-directory: server
+        run: composer install --no-progress --no-interaction
+
+      - name: app dev dependencies (phpunit)
+        working-directory: server/apps/documentserver_community
+        run: composer install --no-progress --no-interaction
+
+      - name: install nextcloud
+        working-directory: server
+        run: |
+          mkdir -p data
+          php occ maintenance:install \
+            --database sqlite --admin-user admin --admin-pass admin --no-interaction
+          php occ app:enable --force documentserver_community
+          php occ config:system:set redis host --value 127.0.0.1
+          php occ config:system:set redis port --value 6379 --type integer
+          php occ app:list | grep -A2 documentserver
+
+      - name: run the tests
+        working-directory: server
+        # from the server root, which is where a Nextcloud test expects to be,
+        # with the app's own phpunit - the server keeps its dependencies in
+        # lib/composer and its dev tools in vendor-bin, so there is no
+        # vendor/bin/phpunit there to borrow
+        run: apps/documentserver_community/vendor/bin/phpunit -c apps/documentserver_community/tests/phpunit.xml
+
+      - name: what the server logged
+        if: failure()
+        working-directory: server
+        run: tail -50 data/nextcloud.log || true

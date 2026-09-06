@@ -1,0 +1,124 @@
+name: integration
+
+# Drives real editors against a real Nextcloud with this app in it. Everything
+# it runs is what tests/rig/README.md describes, so a failure here can be
+# reproduced with the same commands on a laptop.
+
+on:
+  push:
+    paths:
+      - 'lib/**'
+      - 'js/**'
+      - 'appinfo/**'
+      - 'tests/rig/**'
+      - 'Makefile'
+      - '.github/workflows/integration.yml'
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      tests:
+        description: 'which tests to run (blank = all; see run_all.py --list)'
+        required: false
+        default: ''
+  schedule:
+    # the document server tree is rebuilt from upstream weekly, so a release
+    # that breaks the editor shows up here rather than in production
+    - cron: '0 4 * * 1'
+
+permissions:
+  contents: read
+
+concurrency:
+  # the branch name, not the ref: a push is refs/heads/x and the pull request
+  # whose head it is is refs/pull/n/merge, and both would otherwise run the
+  # whole thing
+  group: integration-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  rig:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: read the document server release out of the Makefile
+        id: ds
+        run: |
+          echo "repo=$(grep -m1 '^ds_repo=' Makefile | cut -d= -f2 | tr '/' '-')" >> "$GITHUB_OUTPUT"
+          echo "version=$(grep -m1 '^ds_version=' Makefile | cut -d= -f2)" >> "$GITHUB_OUTPUT"
+
+      - name: restore the document server
+        id: ds-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: 3rdparty/onlyoffice/documentserver
+          key: ds-${{ steps.ds.outputs.repo }}-${{ steps.ds.outputs.version }}-${{ hashFiles('Makefile') }}
+
+      - name: build the document server
+        if: steps.ds-cache.outputs.cache-hit != 'true'
+        env:
+          # the release asset is resolved through the API, which is rate
+          # limited per IP for anonymous callers - shared with every other
+          # runner on the same host
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq rpm cpio jq
+          make 3rdparty/onlyoffice/documentserver
+          du -sh 3rdparty/onlyoffice/documentserver
+
+      # saved here rather than at the end of the job: the whole point of the
+      # cache is the quarter of an hour the build takes, and a job that fails
+      # its tests would otherwise throw it away and rebuild next time
+      - name: keep the document server for the next run
+        if: steps.ds-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: 3rdparty/onlyoffice/documentserver
+          key: ds-${{ steps.ds.outputs.repo }}-${{ steps.ds.outputs.version }}-${{ hashFiles('Makefile') }}
+
+      - name: install what drives the browser
+        run: |
+          python3 -m pip install --quiet websockets requests
+          # the runner image ships Chrome; the rig will take either
+          echo "RIG_CHROMIUM=$(command -v google-chrome || command -v chromium || command -v chromium-browser)" >> "$GITHUB_ENV"
+
+      - name: start the rig
+        env:
+          RIG_PORT: 8099
+        run: tests/rig/rig.sh up
+
+      - name: provision it
+        env:
+          RIG_PORT: 8099
+        run: tests/rig/rig.sh provision
+
+      - name: run the regression suite
+        env:
+          RIG_PORT: 8099
+        run: tests/rig/rig.sh test --keep-going ${{ github.event.inputs.tests }}
+
+      - name: what the app logged
+        if: always()
+        env:
+          RIG_PORT: 8099
+        run: tests/rig/rig.sh logs
+
+      - name: screenshots and reports from the failing sessions
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rig-output
+          path: |
+            /tmp/coedit/**
+            /tmp/rig-*
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: stop the rig
+        if: always()
+        env:
+          RIG_PORT: 8099
+        run: tests/rig/rig.sh down

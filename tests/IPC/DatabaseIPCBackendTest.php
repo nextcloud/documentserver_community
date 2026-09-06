@@ -27,10 +27,9 @@ use OCA\DocumentServer\IPC\IIPCBackend;
 use OCA\DocumentServer\IPC\DatabaseIPCBackend;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\IDBConnection;
+use PHPUnit\Framework\Attributes\Group;
 
-/**
- * @group DB
- */
+#[Group('DB')]
 class DatabaseIPCBackendTest extends BackendTest {
 	/** @var IDBConnection */
 	private $connection;
@@ -38,7 +37,7 @@ class DatabaseIPCBackendTest extends BackendTest {
 	private $timeFactory;
 
 	protected function setupBackend() {
-		$this->connection = \OC::$server->getDatabaseConnection();
+		$this->connection = \OCP\Server::get(IDBConnection::class);
 		$this->timeFactory = $this->createMock(ITimeFactory::class);
 		$this->timeFactory->method('getTime')
 			->willReturn(100);

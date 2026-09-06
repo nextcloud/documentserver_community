@@ -1,0 +1,60 @@
+name: lint
+
+on:
+  push:
+    branches-ignore: []
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lint-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  php:
+    name: php ${{ matrix.php }} syntax
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # what the supported Nextcloud releases run on, and what the servers
+        # this is deployed to actually have
+        php: ['8.1', '8.3', '8.4']
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+
+      - name: lint
+        run: |
+          find lib appinfo tests -name '*.php' -not -path './3rdparty/*' -print0 \
+            | xargs -0 -n1 -P4 php -l
+
+  javascript:
+    name: javascript syntax
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: lint
+        run: for f in js/*.js; do node --check "$f" && echo "ok $f"; done
+
+  python:
+    name: rig scripts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: compile
+        run: python3 -m compileall -q tests/rig
+      - name: shellcheck
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq shellcheck
+          shellcheck -S warning tests/rig/*.sh

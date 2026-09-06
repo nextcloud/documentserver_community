@@ -38,6 +38,9 @@ appstore:
 	--exclude="../$(app_name)/3rdparty/onlyoffice/documentserver/fonts" \
 	--exclude="../$(app_name)/build" \
 	--exclude="../$(app_name)/tests" \
+	--exclude="../$(app_name)/vendor" \
+	--exclude="../$(app_name)/composer.json" \
+	--exclude="../$(app_name)/composer.lock" \
 	--exclude="../$(app_name)/Makefile" \
 	--exclude="../$(app_name)/screenshots" \
 	--exclude="../$(app_name)/.*" \
@@ -51,7 +54,8 @@ appstore:
 	# one fixed filename per release, while Euro-Office puts the version in the
 	# filename and it does not always match the tag (the v9.3.2 release ships a
 	# 9.3.1-dev.1 rpm).
-	url=$$(curl -sfL https://api.github.com/repos/$(ds_repo)/releases/tags/$(ds_version) \
+	url=$$(curl -sfL $${GITHUB_TOKEN:+-H "Authorization: Bearer $$GITHUB_TOKEN"} \
+		https://api.github.com/repos/$(ds_repo)/releases/tags/$(ds_version) \
 		| grep -o 'https://[^"]*x86_64[.]rpm' | head -1); \
 	if [ -z "$$url" ]; then echo "no x86_64 rpm asset for $(ds_repo) $(ds_version)" >&2; exit 1; fi; \
 	echo "fetching $$url"; \

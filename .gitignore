@@ -2,3 +2,5 @@
 build
 oo-extract
 *.rpm
+vendor
+composer.lock

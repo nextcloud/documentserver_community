@@ -1,0 +1,16 @@
+{
+	"name": "nextcloud/documentserver_community",
+	"description": "A document server for Nextcloud, for home users who would rather not run one",
+	"type": "project",
+	"license": "AGPL-3.0-or-later",
+	"config": {
+		"optimize-autoloader": true,
+		"sort-packages": true
+	},
+	"require-dev": {
+		"phpunit/phpunit": "^11.5"
+	},
+	"scripts": {
+		"test:unit": "phpunit -c tests/phpunit.xml"
+	}
+}
