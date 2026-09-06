@@ -38,6 +38,9 @@ appstore:
 	--exclude="../$(app_name)/3rdparty/onlyoffice/documentserver/fonts" \
 	--exclude="../$(app_name)/build" \
 	--exclude="../$(app_name)/tests" \
+	--exclude="../$(app_name)/vendor" \
+	--exclude="../$(app_name)/composer.json" \
+	--exclude="../$(app_name)/composer.lock" \
 	--exclude="../$(app_name)/Makefile" \
 	--exclude="../$(app_name)/screenshots" \
 	--exclude="../$(app_name)/.*" \
