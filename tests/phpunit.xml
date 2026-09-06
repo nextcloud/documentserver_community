@@ -9,7 +9,9 @@
 	a database connection, the app container, Test\TestCase.
 -->
 <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		 xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/11.5/phpunit.xsd"
 		 bootstrap="../../../tests/bootstrap.php"
+		 cacheDirectory=".phpunit.cache"
 		 colors="true"
 		 failOnWarning="true"
 		 failOnRisky="true">
