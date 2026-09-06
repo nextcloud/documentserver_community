@@ -9,6 +9,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: lint-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
 jobs:
   php:
     name: php ${{ matrix.php }} syntax

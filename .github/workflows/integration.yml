@@ -29,7 +29,10 @@ permissions:
   contents: read
 
 concurrency:
-  group: integration-${{ github.ref }}
+  # the branch name, not the ref: a push is refs/heads/x and the pull request
+  # whose head it is is refs/pull/n/merge, and both would otherwise run the
+  # whole thing
+  group: integration-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: true
 
 jobs:
