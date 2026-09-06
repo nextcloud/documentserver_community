@@ -147,11 +147,11 @@ async def main():
         ok = False
         print('   FAIL - the document was written but its session was not ended')
 
-    print('\n===== server log =====')
-    print(subprocess.run(['docker', 'exec', DOCKER_APP, 'sh', '-c',
-                          "grep -o '\"message\":\"[^\"]*documentserver[^\"]*\"' "
-                          "/var/www/html/data/nextcloud.log | tail -25"],
-                         capture_output=True, text=True).stdout)
+    errors = harness.app_log_errors()
+    if errors:
+        print('\n===== errors the app logged =====')
+        for line in errors[:5]:
+            print('  ', line[:200])
 
     print('\n   VERDICT:', 'saving during editing works' if ok else 'FAIL')
     return 0 if ok else 1

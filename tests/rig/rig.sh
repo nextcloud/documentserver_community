@@ -11,7 +11,7 @@
 #   ./rig.sh down          throw it all away, volumes included
 set -uo pipefail
 HERE=$(cd "$(dirname "$0")" && pwd)
-cd "$HERE"
+cd "$HERE" || exit 1
 
 export RIG_PROJECT=${RIG_PROJECT:-rig}
 export RIG_PORT=${RIG_PORT:-8099}

@@ -64,6 +64,8 @@ async def check_format(kind, args):
     ok = True
 
     print(f'\n==> {document["name"]} (fileid {fileid})')
+    # from the blank document, not from whatever the last run typed into it
+    harness.restore_document(kind)
     harness.reset()
 
     session = Session('A', 9222, user, password, args.base, fileid, args.chromium, (420, 400))

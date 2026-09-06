@@ -69,6 +69,28 @@ def reset():
     app_exec(': > /var/www/html/data/nextcloud.log')
 
 
+TEMPLATES = ('/var/www/html/custom_apps/documentserver_community/3rdparty/onlyoffice'
+             '/documentserver/document-templates/new/en-US')
+
+
+def restore_document(kind):
+    """Put the pristine blank document back.
+
+    The sample files keep whatever earlier runs typed into them, which is a
+    problem beyond leftover markers: an empty presentation placeholder takes a
+    click and starts editing, one that already has text in it takes the same
+    click and selects a shape instead. A test that wants to behave like the
+    first time has to start from the file provisioning uploaded.
+    """
+    document = config.DOCUMENTS[kind]
+    user, password = config.credentials(config.ADMIN)
+    app_exec(
+        f'cp {TEMPLATES}/new.{kind} /tmp/pristine.{kind} && '
+        f'curl -s -u {user}:{password} -T /tmp/pristine.{kind} '
+        f'"http://localhost/remote.php/dav/files/{user}/{document["name"]}" && '
+        f'rm -f /tmp/pristine.{kind}')
+
+
 def doc_folders():
     """Open documents, ignoring doc_0 - the scratch folder the connector's
     preview conversions go through, which has nothing to do with editing."""
