@@ -19,25 +19,40 @@ import config
 import harness
 from driver import Session, DISMISS_JS, PROBE_JS, TEXT_JS
 
+# What the editor and the connector ask for. The page around them is
+# Nextcloud's, and its own requests failing - no preview generated for a
+# document yet, no status set for the user - says nothing about whether the
+# editor came up.
+OURS = ('/apps/documentserver_community/', '/apps/onlyoffice/')
+
 # The websocket attempt is expected to fail: PHP cannot upgrade, and the 400 is
-# what makes the client fall back to long polling. Nextcloud has no preview for
-# a document nobody has generated one for yet, which is a Files app 404 and
-# nothing to do with the editor.
-EXPECTED_FAILURES = ('transport=websocket', 'ws://', 'wss://', '/core/preview')
+# what makes the client fall back to long polling.
+EXPECTED_FAILURES = ('transport=websocket', 'ws://', 'wss://')
 
 
 def interesting_failures(session):
+    """Requests the editor made that failed."""
+    urls = {}
+    for event in session.events:
+        if event.get('method') == 'Network.requestWillBeSent':
+            urls[event['params'].get('requestId')] = \
+                event['params'].get('request', {}).get('url', '')
+
     out = []
     for event in session.events:
         method, params = event.get('method'), event.get('params', {})
         if method == 'Network.loadingFailed':
-            text = f"{params.get('type')} {params.get('errorText')} {params.get('requestId')}"
+            url = urls.get(params.get('requestId'), '')
+            text = f"{params.get('type')} {params.get('errorText')} {url}"
         elif method == 'Network.responseReceived':
             response = params.get('response', {})
             if response.get('status', 0) < 400:
                 continue
-            text = f"HTTP {response.get('status')} {response.get('url')}"
+            url = response.get('url', '')
+            text = f"HTTP {response.get('status')} {url}"
         else:
+            continue
+        if not any(mine in url for mine in OURS):
             continue
         if not any(skip in text for skip in EXPECTED_FAILURES):
             out.append(text)
