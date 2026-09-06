@@ -82,7 +82,8 @@ class SessionManagerTest extends TestCase {
 		$this->assertEquals('foo', $session->getSessionId());
 		$this->assertEquals(5, $session->getDocumentId());
 		$this->assertEquals('user', $session->getUser());
-		$this->assertEquals('name', $session->getUser());
+		// the display name, which is a different column and a different getter
+		$this->assertEquals('name', $session->getUserName());
 		$this->assertEquals('original', $session->getUserOriginal());
 		$this->assertEquals(10, $session->getLastSeen());
 	}
@@ -118,16 +119,23 @@ class SessionManagerTest extends TestCase {
 	}
 
 	public function testCleanSessions() {
+		// relative to the timeout rather than to numbers that were right when
+		// it was longer: the one that stops being seen for longer than the
+		// timeout goes, the one that was seen since stays
+		$timeout = SessionManager::EXPIRED_SESSION_TIMEOUT;
+
 		$this->time = 10;
 		$this->manager->newSession('foo', 5);
 
-		$this->time = 50;
+		$this->time = 10 + $timeout;
 		$this->manager->newSession('bar', 5);
 
 		$this->assertNotNull($this->manager->getSession('foo'));
 		$this->assertNotNull($this->manager->getSession('bar'));
 
-		$this->time = 130;
+		// half a timeout later: foo has not been seen for one and a half, bar
+		// for half
+		$this->time = 10 + $timeout + intdiv($timeout, 2);
 		$this->manager->cleanSessions();
 
 		$this->assertNull($this->manager->getSession('foo'));
