@@ -27,6 +27,19 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
+    services:
+      # one of the three IPC backends, and the one an instance under load
+      # actually uses; without it those tests only ever skip
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
     steps:
       - name: check out the server this app supports
         uses: actions/checkout@v4
@@ -45,7 +58,7 @@ jobs:
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.3'
-          extensions: apcu, bcmath, curl, gd, gmp, intl, mbstring, pdo_sqlite, sqlite3, xml, zip
+          extensions: apcu, bcmath, curl, gd, gmp, intl, mbstring, pdo_sqlite, redis, sqlite3, xml, zip
           ini-values: apc.enable_cli=1
           coverage: none
           tools: composer
@@ -65,6 +78,8 @@ jobs:
           php occ maintenance:install \
             --database sqlite --admin-user admin --admin-pass admin --no-interaction
           php occ app:enable --force documentserver_community
+          php occ config:system:set redis host --value 127.0.0.1
+          php occ config:system:set redis port --value 6379 --type integer
           php occ app:list | grep -A2 documentserver
 
       - name: run the tests

@@ -38,7 +38,7 @@ class DatabaseIPCBackendTest extends BackendTest {
 	private $timeFactory;
 
 	protected function setupBackend() {
-		$this->connection = \OC::$server->getDatabaseConnection();
+		$this->connection = \OCP\Server::get(IDBConnection::class);
 		$this->timeFactory = $this->createMock(ITimeFactory::class);
 		$this->timeFactory->method('getTime')
 			->willReturn(100);

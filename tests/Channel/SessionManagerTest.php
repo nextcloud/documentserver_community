@@ -49,7 +49,7 @@ class SessionManagerTest extends TestCase {
 	protected function setUp(): void {
 		parent::setUp();
 
-		$this->connection = \OC::$server->getDatabaseConnection();
+		$this->connection = \OCP\Server::get(IDBConnection::class);
 		$this->timeFactory = $this->createMock(ITimeFactory::class);
 		$this->ipcFactory = $this->createMock(IIPCFactory::class);
 		$this->timeFactory->method('getTime')

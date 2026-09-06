@@ -37,10 +37,15 @@ class RedisIPCBackendTest extends BackendTest {
 		// not exist - getGetRedisFactory - so the test could only ever fatal;
 		// it was never run anywhere.)
 		$factory = \OCP\Server::get(\OC\RedisFactory::class);
-		if (!$factory->isAvailable()) {
-			$this->markTestSkipped('no redis configured');
+		try {
+			if (!$factory->isAvailable()) {
+				$this->markTestSkipped('no redis configured');
+			}
+			$this->redis = $factory->getInstance();
+		} catch (\Exception $e) {
+			// the extension can be there with nothing listening
+			$this->markTestSkipped('redis is not reachable: ' . $e->getMessage());
 		}
-		$this->redis = $factory->getInstance();
 	}
 
 	protected function getBackend(): IIPCBackend {

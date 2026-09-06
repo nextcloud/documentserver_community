@@ -18,6 +18,8 @@
 	<testsuites>
 		<testsuite name="documentserver_community">
 			<directory suffix="Test.php">.</directory>
+			<!-- the shared base the three IPC backend tests extend, not a test -->
+			<exclude>IPC/BackendTest.php</exclude>
 		</testsuite>
 	</testsuites>
 </phpunit>
