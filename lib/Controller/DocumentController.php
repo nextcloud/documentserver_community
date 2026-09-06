@@ -25,6 +25,7 @@ namespace OCA\DocumentServer\Controller;
 
 use OCA\DocumentServer\Channel\Channel;
 use OCA\DocumentServer\Channel\ChannelFactory;
+use OCA\DocumentServer\Channel\SessionCloser;
 use OCA\DocumentServer\Channel\SessionManager;
 use OCA\DocumentServer\Document\DocumentStore;
 use OCA\DocumentServer\EngineIOResponse;
@@ -34,6 +35,7 @@ use OCA\DocumentServer\OnlyOffice\URLDecoder;
 use OCA\DocumentServer\OnlyOffice\WebVersion;
 use OCA\DocumentServer\XHRCommand\AuthCommand;
 use OCA\DocumentServer\XHRCommand\ChatMessage;
+use OCA\DocumentServer\XHRCommand\CloseSession;
 use OCA\DocumentServer\XHRCommand\CommandDispatcher;
 use OCA\DocumentServer\XHRCommand\CursorCommand;
 use OCA\DocumentServer\XHRCommand\GetLock;
@@ -56,6 +58,22 @@ use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 
 class DocumentController extends Controller {
+	/**
+	 * How long the close beacon waits before acting, in seconds: long enough
+	 * for a save the editor got out on its way down to be stored first, rather
+	 * than ending the session under it and turning its last changes into a
+	 * rejected command.
+	 *
+	 * It cannot also be used to check whether the page really went away. The
+	 * poll that session left behind keeps running server-side for up to
+	 * Channel::TIMEOUT seconds and marks the session as seen while it does, so
+	 * a session that is being polled by nobody looks exactly like a live one.
+	 * What the message says is trusted instead, and it is the sender that makes
+	 * that safe: js/close-beacon-host.js only sends it once the editor's frame
+	 * has left the document.
+	 */
+	private const CLOSE_GRACE = 3;
+
 	public const COMMAND_HANDLERS = [
 		AuthCommand::class,
 		IsSaveLock::class,
@@ -66,6 +84,7 @@ class DocumentController extends Controller {
 		OpenDocument::class,
 		ChatMessage::class,
 		GetMessages::class,
+		CloseSession::class,
 	];
 
 	public const IDLE_HANDLERS = [
@@ -81,6 +100,7 @@ class DocumentController extends Controller {
 	private $webVersion;
 	private $ipcFactory;
 	private $sessionManager;
+	private SessionCloser $sessionCloser;
 	private LoggerInterface $logger;
 	private ContainerInterface $container;
 
@@ -94,6 +114,7 @@ class DocumentController extends Controller {
 		WebVersion $webVersion,
 		IIPCFactory $ipcFactory,
 		SessionManager $sessionManager,
+		SessionCloser $sessionCloser,
 		LoggerInterface $logger,
 		ContainerInterface $container
 	) {
@@ -106,6 +127,7 @@ class DocumentController extends Controller {
 		$this->webVersion = $webVersion;
 		$this->ipcFactory = $ipcFactory;
 		$this->sessionManager = $sessionManager;
+		$this->sessionCloser = $sessionCloser;
 		$this->logger = $logger;
 		$this->container = $container;
 	}
@@ -136,6 +158,39 @@ class DocumentController extends Controller {
 				'plugins' => false,
 			],
 		]];
+	}
+
+	/**
+	 * The editor page reporting that it is going away; see js/close-beacon.js.
+	 *
+	 * Ends that session and, if it was the last one in the document, writes the
+	 * document out - the work the browser closing a WebSocket would do on a
+	 * document server that had one.
+	 */
+	#[NoAdminRequired]
+	#[NoCSRFRequired]
+	#[PublicPage]
+	public function sessionClosed(string $sid): Response {
+		$session = $this->sessionManager->getSession($sid);
+		if (!$session) {
+			return new DataResponse('ok');
+		}
+
+		// Nothing is waiting on this response - the page that sent it is gone -
+		// so hold it for the grace period first.
+		ignore_user_abort(true);
+		sleep(self::CLOSE_GRACE);
+
+		$session = $this->sessionManager->getSession($sid);
+		if (!$session) {
+			// gone already: the session expired, or a second beacon for the
+			// same editor got here first
+			return new DataResponse('ok');
+		}
+
+		$this->sessionCloser->sessionLeft($session);
+
+		return new DataResponse('ok');
 	}
 
 	#[NoAdminRequired]

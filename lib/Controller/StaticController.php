@@ -37,12 +37,14 @@ use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\NotFoundResponse;
 use OCP\Files\IMimeTypeDetector;
 use OCP\IRequest;
+use OCP\IURLGenerator;
 
 class StaticController extends Controller {
 	private $mimeTypeHelper;
 	private $nonceManager;
 	private $setupCheck;
 	private $sessionManager;
+	private $urlGenerator;
 
 	public function __construct(
 		$appName,
@@ -50,7 +52,8 @@ class StaticController extends Controller {
 		IMimeTypeDetector $mimeTypeHelper,
 		ContentSecurityPolicyNonceManager $nonceManager,
 		SetupCheck $setupCheck,
-		SessionManager $sessionManager
+		SessionManager $sessionManager,
+		IURLGenerator $urlGenerator
 	) {
 		parent::__construct($appName, $request);
 
@@ -58,6 +61,7 @@ class StaticController extends Controller {
 		$this->nonceManager = $nonceManager;
 		$this->setupCheck = $setupCheck;
 		$this->sessionManager = $sessionManager;
+		$this->urlGenerator = $urlGenerator;
 	}
 
 	#[NoCSRFRequired]
@@ -124,6 +128,13 @@ class StaticController extends Controller {
 				$content = str_replace('__HINT__', addcslashes($hint, "'"), $rawContent);
 				return $this->createFileResponseWithContent($localPath, $content, false);
 			}
+
+			// the page that embeds the editor is the one that can still say
+			// goodbye when the editor's own frame is being removed
+			return $this->createFileResponseWithContent(
+				$localPath,
+				file_get_contents($localPath) . "\n" . $this->closeBeacon('close-beacon-host.js')
+			);
 		}
 
 		return $this->createFileResponse($localPath);
@@ -140,6 +151,8 @@ class StaticController extends Controller {
 	private function createFileResponseWithContent(string $path, string $content, $cache = true) {
 		$isHTML = pathinfo($path, PATHINFO_EXTENSION) === 'html';
 		if ($isHTML) {
+			// before the nonce is applied, so the injected script gets one too
+			$content = $this->addCloseBeacon($path, $content);
 			$content = $this->addScriptNonce($content, $this->nonceManager->getNonce());
 			$content = $this->makeStyleSheetsBlocking($content);
 		}
@@ -170,6 +183,51 @@ class StaticController extends Controller {
 		$response->setContentSecurityPolicy($csp);
 
 		return $response;
+	}
+
+	/**
+	 * Have the editor page tell us when it goes away.
+	 *
+	 * A document server that holds a WebSocket learns of a closed editor from
+	 * the socket closing. Ours is polled over HTTP, so a closed tab - or
+	 * DocsAPI's destroyEditor(), which takes the iframe out of the DOM without
+	 * the code inside it getting a word in - leaves a poll that simply never
+	 * comes back, with nothing running to notice. The document then waited for
+	 * the Cleanup background job to be scheduled before it was written at all
+	 * (#100).
+	 *
+	 * Injected rather than shipped as a file reference so it is covered by the
+	 * nonce added below, and only into the editor entry points: the same tree
+	 * serves help pages and loaders that never open a socket.
+	 */
+	private function addCloseBeacon(string $path, string $content): string {
+		if (!preg_match('#/apps/\w+editor/main/index[\w.]*\.html$#', str_replace('\\', '/', $path))) {
+			return $content;
+		}
+
+		$injected = '<script>' . $this->closeBeacon('close-beacon.js') . '</script>';
+
+		$head = stripos($content, '</head>');
+		if ($head === false) {
+			return $content . $injected;
+		}
+
+		return substr($content, 0, $head) . $injected . substr($content, $head);
+	}
+
+	/**
+	 * One of the goodbye scripts, with the address to send it to.
+	 */
+	private function closeBeacon(string $file): string {
+		$script = @file_get_contents(__DIR__ . '/../../js/' . $file);
+		if ($script === false) {
+			return '';
+		}
+
+		$closeUrl = $this->urlGenerator->linkToRoute('documentserver_community.Document.sessionClosed');
+
+		return 'window.__documentServerCloseUrl = window.__documentServerCloseUrl || '
+			. json_encode($closeUrl) . ";\n" . $script;
 	}
 
 	private function addScriptNonce(string $content, string $nonce): string {

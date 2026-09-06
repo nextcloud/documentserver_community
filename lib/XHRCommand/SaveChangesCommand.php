@@ -28,18 +28,30 @@ use OCA\DocumentServer\Document\Change;
 use OCA\DocumentServer\Document\ChangeStore;
 use OCA\DocumentServer\Document\Lock;
 use OCA\DocumentServer\Document\LockStore;
+use OCA\DocumentServer\Document\SaveHandler;
 use OCA\DocumentServer\IPC\IIPCChannel;
 use OCP\AppFramework\Utility\ITimeFactory;
+use Psr\Log\LoggerInterface;
 
 class SaveChangesCommand implements ICommandHandler {
 	private $changeStore;
 	private $lockStore;
 	private $timeFactory;
+	private $saveHandler;
+	private $logger;
 
-	public function __construct(ChangeStore $changeStore, LockStore $lockStore, ITimeFactory $timeFactory) {
+	public function __construct(
+		ChangeStore $changeStore,
+		LockStore $lockStore,
+		ITimeFactory $timeFactory,
+		SaveHandler $saveHandler,
+		LoggerInterface $logger
+	) {
 		$this->changeStore = $changeStore;
 		$this->lockStore = $lockStore;
 		$this->timeFactory = $timeFactory;
+		$this->saveHandler = $saveHandler;
+		$this->logger = $logger;
 	}
 
 	public function getType(): string {
@@ -128,5 +140,27 @@ class SaveChangesCommand implements ICommandHandler {
 
 		$now = time() * 1000;
 		$sessionChannel->pushMessage('{"type":"unSaveLock","index":' . $changeIndex . ',"time":' . $now . '}');
+
+		// Write the document out if it has been long enough since the last
+		// time. The editor's "all changes are saved" only ever meant that the
+		// changes reached this server: nothing was written to the file until
+		// the last participant had left and the background job had run, so a
+		// browser closed at the wrong moment, or a server that went down, lost
+		// the whole session's work (#100). Doing it from here rather than only
+		// from the job is what makes it independent of the admin's cron.
+		//
+		// After the reply, not before it: assembling the document takes a
+		// second or two, and the client waits for its unSaveLock before it
+		// sends the next batch of changes.
+		try {
+			$this->saveHandler->saveSnapshotIfDue($session->getDocumentId());
+		} catch (\Throwable $e) {
+			// the changes are stored, so this is a write to retry later, not a
+			// failed save
+			$this->logger->warning('documentserver could not write document {doc} out while it is being edited', [
+				'doc' => $session->getDocumentId(),
+				'exception' => $e,
+			]);
+		}
 	}
 }

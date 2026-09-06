@@ -21,6 +21,27 @@ If autoconfiguration fails for any reason, you may manually enter the url. Log i
 
 After community document server update and any related app (OnlyOffice app for example), you should clear your browser cache to get newer version running.
 
+## Saving documents
+
+Documents are written back to Nextcloud:
+
+- while they are being edited, at most once a minute;
+- as soon as the last person closes the document;
+- and by the background job, which catches anything the first two missed - a
+  browser that crashed, a server restarted mid-edit - so a working cron is still
+  worth having.
+
+The periodic write is what bounds how much can be lost when a browser or the
+server goes away. It costs one document assembly per interval per document being
+edited, however much is typed in between, and none at all while nobody is
+typing. To change the interval:
+
+    occ config:app:set documentserver_community autosave_interval --value=120
+
+`0` turns it off, leaving the document to be written when everybody has left.
+`occ documentserver:flush` writes out everything that is open, whether or not
+anybody is still editing it.
+
 ## Adding fonts
 
 You can add custom fonts to the document server using the following occ commands

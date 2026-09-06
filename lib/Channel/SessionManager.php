@@ -141,6 +141,37 @@ class SessionManager {
 		return QueryHelper::fetchFirstColumn($query);
 	}
 
+	/**
+	 * Mark a session as expired without deleting it.
+	 *
+	 * For a client that said it is done co-authoring while its page is still
+	 * open: it stops being a participant, but if it turns out to still be
+	 * polling, its next poll marks it as seen and it simply carries on. Nothing
+	 * is disposed of on the strength of a message a live page can send.
+	 */
+	public function expireSession(string $sessionId): void {
+		$query = $this->connection->getQueryBuilder();
+
+		$query->update('documentserver_sess')
+			->set('last_seen', $query->createNamedParameter(0, \PDO::PARAM_INT))
+			->where($query->expr()->eq('session_id', $query->createNamedParameter($sessionId)));
+		QueryHelper::executeStatement($query);
+	}
+
+	/**
+	 * Drop a single session, for a client that said it was leaving rather than
+	 * one that stopped polling.
+	 */
+	public function removeSession(string $sessionId): void {
+		$this->ipcFactory->cleanupChannel($sessionId);
+
+		$query = $this->connection->getQueryBuilder();
+
+		$query->delete('documentserver_sess')
+			->where($query->expr()->eq('session_id', $query->createNamedParameter($sessionId)));
+		QueryHelper::executeStatement($query);
+	}
+
 	public function cleanSessions(): int {
 		$expiredSessions = $this->getExpiredSessions();
 

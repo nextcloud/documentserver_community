@@ -66,15 +66,24 @@ class Cleanup extends Job {
 
 		$documents = $this->documentStore->getOpenDocuments();
 		foreach ($documents as $documentId) {
-			if (!$this->sessionManager->isDocumentActive($documentId)) {
-				try {
+			try {
+				if ($this->sessionManager->isDocumentActive($documentId)) {
+					// Still being edited. Write the file out anyway - the
+					// editing session keeps its change list and its baseline,
+					// so this costs a converter run and nothing else, and it
+					// means work in progress survives the browser or the
+					// server going away (#100). A document nobody has typed
+					// into since the last write returns without running the
+					// converter at all.
+					$this->saveHandler->saveSnapshot($documentId);
+				} else {
 					$this->saveHandler->flushChanges($documentId);
-				} catch (\Exception $e) {
-					$this->logger->error(
-						'Error while applying changes for document ' . $documentId, 
-						['exception' => $e, 'app' => 'documentserver_community']
-					);
 				}
+			} catch (\Exception $e) {
+				$this->logger->error(
+					'Error while applying changes for document ' . $documentId,
+					['exception' => $e, 'app' => 'documentserver_community']
+				);
 			}
 		}
 	}

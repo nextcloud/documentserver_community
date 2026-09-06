@@ -35,6 +35,17 @@ class Channel {
 
 	public const TIMEOUT = 25;
 
+	/**
+	 * How often a session waiting on its long poll says it is still there.
+	 *
+	 * Without this a session is only marked as seen when a poll starts, so a
+	 * client that is very much present can be 25 seconds "unseen" against a 30
+	 * second expiry - and an expired session is taken for a departed one, which
+	 * now means the document is written out and closed under whoever is still
+	 * editing it.
+	 */
+	public const SEEN_INTERVAL = 5;
+
 	private $sessionId;
 	private $documentId;
 	private $sessionChannel;
@@ -76,10 +87,16 @@ class Channel {
 			return [self::TYPE_OPEN, null];
 		} else {
 			$start = time();
+			$lastSeen = $start;
 			while ((time() - $start) < self::TIMEOUT) {
 				$message = $this->sessionChannel->popMessage(self::TIMEOUT);
 				if ($message) {
 					return [self::TYPE_ARRAY, json_decode($message, true)];
+				}
+
+				if ((time() - $lastSeen) >= self::SEEN_INTERVAL) {
+					$this->sessionManager->markAsSeen($this->sessionId);
+					$lastSeen = time();
 				}
 
 				usleep(100 * 1000);

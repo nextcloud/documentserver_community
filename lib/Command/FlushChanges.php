@@ -71,16 +71,21 @@ class FlushChanges extends Base {
 			if (!$input->getOption('inactive-pages') ||
 			   !$this->sessionManager->isDocumentActive($documentId)) {
 				try {
+					// A document that is still being edited is written out
+					// without its editing session being ended; see
+					// SaveHandler::flushChanges().
 					$this->saveHandler->flushChanges($documentId);
 				} catch (\Exception $e) {
 					$this->logger->error(
-						'Error while applying changes for document ' . $documentId, 
+						'Error while applying changes for document ' . $documentId,
 						['exception' => $e, 'app' => 'documentserver_community']
 					);
-					return 0;
+					// the exit codes were the wrong way round, which makes the
+					// command unusable from cron or a && chain
+					return 1;
 				}
 			}
 		}
-		return 1;
+		return 0;
 	}
 }
