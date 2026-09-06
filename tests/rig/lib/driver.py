@@ -185,7 +185,28 @@ class Session:
             except Exception:
                 break
 
-    async def start(self):
+    async def start(self, attempts=2):
+        """Launch a browser and attach to it.
+
+        A browser that answers on the debugging port can still be on its way
+        out - a page target exists, the connection is accepted, and the process
+        is gone by the first command. Starting again is cheap and a suite that
+        loses forty minutes to it is not.
+        """
+        for attempt in range(1, attempts + 1):
+            try:
+                await self._start_once()
+                # a command it has to answer, rather than trusting the socket
+                await self.send('Runtime.evaluate', expression='1', returnByValue=True)
+                return
+            except Exception as e:
+                print(f'   {self.name}: browser did not come up ({e})')
+                await self.stop()
+                if attempt == attempts:
+                    raise
+                await asyncio.sleep(2)
+
+    async def _start_once(self):
         self.profile = tempfile.mkdtemp(prefix=f'cdp-{self.name}-')
         self.proc = subprocess.Popen([
             self.chromium, '--headless=new', '--no-sandbox', '--disable-gpu',
@@ -304,16 +325,23 @@ class Session:
             f.write(base64.b64decode(img['data']))
 
     async def stop(self):
+        # also the cleanup after a browser that failed to start, so none of
+        # this may assume it got that far
         try:
             await self.conn.close()
         except Exception:
             pass
-        self.proc.terminate()
-        try:
-            self.proc.wait(timeout=10)
-        except Exception:
-            self.proc.kill()
-        shutil.rmtree(self.profile, ignore_errors=True)
+        proc = getattr(self, 'proc', None)
+        if proc:
+            proc.terminate()
+            try:
+                proc.wait(timeout=10)
+            except Exception:
+                proc.kill()
+        profile = getattr(self, 'profile', None)
+        if profile:
+            shutil.rmtree(profile, ignore_errors=True)
+
 
 class Tab(Session):
     """A second tab in a browser that is already running.
@@ -324,7 +352,7 @@ class Tab(Session):
     two-browser tests cannot reach.
     """
 
-    async def start(self):
+    async def _start_once(self):
         req = urllib.request.Request(
             f'http://127.0.0.1:{self.port}/json/new?url=about:blank', method='PUT')
         info = json.load(urllib.request.urlopen(req))
