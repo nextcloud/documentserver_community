@@ -67,6 +67,24 @@ restorecon -R -v /var/www/html/nextcloud
 
 Specific commands and paths will differ based on your specific setup.
 
+## Tests
+
+`tests/rig` is a disposable Nextcloud with this app in it and a set of
+regression tests that drive real editors in headless chromium — they open
+documents, type into them, and then ask the editor what it displays and the
+saved file what it kept. See its README; the short version is:
+
+    make                     # once: the document server this all runs against
+    cd tests/rig
+    ./rig.sh up && ./rig.sh provision
+    ./rig.sh test
+
+`tests/` also holds the unit tests, which run against a Nextcloud checkout:
+
+    vendor-bin/phpunit/vendor/bin/phpunit -c apps/documentserver_community/tests/phpunit.xml
+
+Both run in CI on every push, along with php, javascript and shell linting.
+
 ## Setup from git
 
 When installing from git `make`, `curl`, `rpm2cpio`, and `cpio` are required.
