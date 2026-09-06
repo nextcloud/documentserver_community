@@ -234,7 +234,26 @@ class Session:
             return f"JS error: {res['exceptionDetails'].get('text')}"
         return res.get('result', {}).get('value')
 
-    async def type(self, text, enter=True, row_offset=0):
+    async def type(self, text, enter=True, row_offset=0, attempts=2):
+        """Type text into the document, and make sure it went in.
+
+        A click sometimes lands where the caret does not follow - below the
+        text in a nearly empty document, on a drawing, on an overlay that was
+        still up - and the keystrokes then go nowhere. That is indistinguishable
+        from the change never reaching the server, which is what most of these
+        tests are about, so typing checks the editor's own model and tries once
+        more rather than leaving a test to fail for the wrong reason.
+        """
+        for attempt in range(1, attempts + 1):
+            await self._type_once(text, enter=enter, row_offset=row_offset)
+            await self.drain(3)
+            if text.strip() in str(await self.eval(TEXT_JS)):
+                return True
+            if attempt < attempts:
+                print(f'   {self.name}: the text did not land, typing it again')
+        return False
+
+    async def _type_once(self, text, enter=True, row_offset=0):
         for ev in ('mousePressed', 'mouseReleased'):
             await self.send('Input.dispatchMouseEvent', type=ev,
                             x=self.click[0], y=self.click[1],

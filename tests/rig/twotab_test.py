@@ -72,6 +72,20 @@ async def main():
             print('   A co-auth:', await A.eval(COAUTH_JS))
             print('   B co-auth:', await B.eval(COAUTH_JS))
 
+        await A.drain(8); await B.drain(8)
+        atext, btext = str(await A.eval(TEXT_JS)), str(await B.eval(TEXT_JS))
+        wanted = [f'{t}-{who}{r}' for r in range(1, args.rounds + 1) for who in ('A', 'B')]
+        missA = [m for m in wanted if m not in atext]
+        missB = [m for m in wanted if m not in btext]
+        print('\n   tab A is missing:', missA or 'nothing')
+        print('   tab B is missing:', missB or 'nothing')
+        if missA or missB:
+            ok = False
+            print('   FAIL - a tab does not show what the other one typed')
+
+        # From here on B is not a participant any more, so what B's model holds
+        # is sdkjs's business - going to view mode can roll back changes it had
+        # applied. What matters is what happens to the document and to A.
         print('\n==> tab B is dropped to view mode (what sdkjs does on a licence'
               ' verdict, rights change or disconnectEveryone)')
         await B.eval("document.querySelector('iframe').contentWindow"
@@ -95,16 +109,6 @@ async def main():
             ok = False
             print('   FAIL - the session lost its document when the other one went to view mode')
 
-        await A.drain(8); await B.drain(8)
-        atext, btext = str(await A.eval(TEXT_JS)), str(await B.eval(TEXT_JS))
-        wanted = [f'{t}-{who}{r}' for r in range(1, args.rounds + 1) for who in ('A', 'B')]
-        missA = [m for m in wanted if m not in atext]
-        missB = [m for m in wanted if m not in btext]
-        print('\n   tab A is missing:', missA or 'nothing')
-        print('   tab B is missing:', missB or 'nothing')
-        if missA or missB:
-            ok = False
-            print('   FAIL - a tab does not show what the other one typed')
     finally:
         await B.stop()
         await A.stop()

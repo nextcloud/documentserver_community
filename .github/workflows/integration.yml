@@ -46,9 +46,9 @@ jobs:
           echo "repo=$(grep -m1 '^ds_repo=' Makefile | cut -d= -f2 | tr '/' '-')" >> "$GITHUB_OUTPUT"
           echo "version=$(grep -m1 '^ds_version=' Makefile | cut -d= -f2)" >> "$GITHUB_OUTPUT"
 
-      - name: cache the document server
+      - name: restore the document server
         id: ds-cache
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: 3rdparty/onlyoffice/documentserver
           key: ds-${{ steps.ds.outputs.repo }}-${{ steps.ds.outputs.version }}-${{ hashFiles('Makefile') }}
@@ -65,6 +65,16 @@ jobs:
           sudo apt-get install -y -qq rpm cpio jq
           make 3rdparty/onlyoffice/documentserver
           du -sh 3rdparty/onlyoffice/documentserver
+
+      # saved here rather than at the end of the job: the whole point of the
+      # cache is the quarter of an hour the build takes, and a job that fails
+      # its tests would otherwise throw it away and rebuild next time
+      - name: keep the document server for the next run
+        if: steps.ds-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: 3rdparty/onlyoffice/documentserver
+          key: ds-${{ steps.ds.outputs.repo }}-${{ steps.ds.outputs.version }}-${{ hashFiles('Makefile') }}
 
       - name: install what drives the browser
         run: |
