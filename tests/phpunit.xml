@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+	Run from a Nextcloud server checkout with this app in apps/:
+
+		php -f apps/documentserver_community/tests/phpunit.xml ...
+		vendor/bin/phpunit -c apps/documentserver_community/tests/phpunit.xml
+
+	The bootstrap is the server's, because these tests talk to the real thing:
+	a database connection, the app container, Test\TestCase.
+-->
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		 bootstrap="../../../tests/bootstrap.php"
+		 colors="true"
+		 failOnWarning="true"
+		 failOnRisky="true">
+	<testsuites>
+		<testsuite name="documentserver_community">
+			<directory suffix="Test.php">.</directory>
+		</testsuite>
+	</testsuites>
+</phpunit>

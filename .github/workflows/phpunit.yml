@@ -1,0 +1,72 @@
+name: phpunit
+
+# The tests that do not need a browser: the session table, the IPC backends,
+# and the decisions about when a document's change list may be thrown away.
+# They talk to a real Nextcloud, so this builds one around the app.
+
+on:
+  push:
+    paths:
+      - 'lib/**'
+      - 'tests/**'
+      - '!tests/rig/**'
+      - 'appinfo/**'
+      - '.github/workflows/phpunit.yml'
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: phpunit-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  phpunit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: check out the server this app supports
+        uses: actions/checkout@v4
+        with:
+          repository: nextcloud/server
+          # the newest release appinfo/info.xml declares support for
+          ref: stable34
+          submodules: true
+          path: server
+
+      - name: check out the app into it
+        uses: actions/checkout@v4
+        with:
+          path: server/apps/documentserver_community
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: bcmath, curl, gd, gmp, intl, mbstring, pdo_sqlite, sqlite3, xml, zip
+          coverage: none
+          tools: composer
+
+      - name: server dev dependencies (phpunit)
+        working-directory: server
+        run: composer install --no-progress --no-interaction
+
+      - name: install nextcloud
+        working-directory: server
+        run: |
+          mkdir -p data
+          php occ maintenance:install \
+            --database sqlite --admin-user admin --admin-pass admin --no-interaction
+          php occ app:enable --force documentserver_community
+          php occ app:list | grep -A2 documentserver
+
+      - name: phpunit
+        working-directory: server
+        run: vendor/bin/phpunit -c apps/documentserver_community/tests/phpunit.xml
+
+      - name: what the server logged
+        if: failure()
+        working-directory: server
+        run: tail -50 data/nextcloud.log || true
