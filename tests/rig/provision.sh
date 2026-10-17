@@ -20,7 +20,9 @@ USER2_NAME=${RIG_USER2_NAME:-bob}
 USER2_PASSWORD=${RIG_USER2_PASSWORD:-Kq7-rigTest-3910}
 # Pinned rather than "whatever the app store has today": a connector upgrade
 # changing how the editor is embedded is a thing to find out about deliberately.
-CONNECTOR_VERSION=${RIG_CONNECTOR_VERSION:-10.1.2}
+# 10.1.2 tops out at Nextcloud 34; 10.2.0 is the first release that declares
+# support for 35.
+CONNECTOR_VERSION=${RIG_CONNECTOR_VERSION:-10.2.1}
 
 occ() { docker exec -u www-data "$APP" php occ "$@"; }
 in_app() { docker exec "$APP" sh -c "$*"; }

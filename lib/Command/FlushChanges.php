@@ -71,7 +71,7 @@ class FlushChanges extends Base {
 		parent::configure();
 	}
 
-	protected function execute(InputInterface $input, OutputInterface $output) {
+	protected function execute(InputInterface $input, OutputInterface $output): int {
 		$documents = $this->documentStore->getOpenDocuments();
 
 		// One document that will not assemble - a converter that chokes on it,

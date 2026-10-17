@@ -23,7 +23,7 @@ services:
       retries: 20
 
   app:
-    image: ${RIG_NC_IMAGE:-nextcloud:34.0.3-apache}
+    image: ${RIG_NC_IMAGE:-nextcloud:35.0.2-apache}
     depends_on:
       db:
         condition: service_healthy

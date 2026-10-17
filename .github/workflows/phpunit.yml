@@ -52,7 +52,7 @@ jobs:
         with:
           repository: nextcloud/server
           # the newest release appinfo/info.xml declares support for
-          ref: stable34
+          ref: stable35
           submodules: true
           path: server
 
