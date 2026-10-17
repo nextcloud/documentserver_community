@@ -50,7 +50,7 @@ class Fonts extends Base {
 		parent::configure();
 	}
 
-	protected function execute(InputInterface $input, OutputInterface $output) {
+	protected function execute(InputInterface $input, OutputInterface $output): int {
 		$add = $input->getOption('add');
 		$remove = $input->getOption('remove');
 		$rebuild = $input->getOption('rebuild');
